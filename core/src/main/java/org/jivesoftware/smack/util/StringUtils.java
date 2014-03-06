@@ -804,6 +804,22 @@ public class StringUtils {
         return new String(randBuffer);
     }
 
+
+    /**
+     * Returns true if string is not null and is not empty, false otherwise
+     * Examples:
+     *    isNotEmpty(null) - false
+     *    isNotEmpty("") - false
+     *    isNotEmpty(" ") - true
+     *    isNotEmpty("empty") - true
+     *
+     * @param string checked String
+     * @return true if string is not null and is not empty, false otherwise
+     */
+    public static boolean isNotEmpty(CharSequence string) {
+        return string != null && string.length() != 0;
+    }
+
     private StringUtils() {
         // Not instantiable.
     }
