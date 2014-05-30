@@ -161,7 +161,6 @@ public class Roster {
                 LOGGER.log(Level.SEVERE, "Could not reload Roster", e);
             }
         }
-
         connection.addConnectionListener(new AbstractConnectionListener() {
             public void authenticated(XMPPConnection connection) {
                 // Anonymous users can't have a roster, but it is possible that a Roster instance is

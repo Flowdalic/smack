@@ -53,7 +53,7 @@ import org.jivesoftware.smack.packet.Session;
 public abstract class AbstractXMPPConnection implements XMPPConnection {
     private static final Logger LOGGER = Logger.getLogger(AbstractXMPPConnection.class.getName());
 
-    /**
+    /** 
      * Counter to uniquely identify connections that are created.
      */
     private final static AtomicInteger connectionCounter = new AtomicInteger(0);
@@ -71,35 +71,39 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     protected static Collection<ConnectionCreationListener> getConnectionCreationListeners() {
         return XMPPConnectionRegistry.getConnectionCreationListeners();
     }
-
+ 
     /**
-     * A collection of ConnectionListeners which listen for connection closing and reconnection
-     * events.
+     * A collection of ConnectionListeners which listen for connection closing
+     * and reconnection events.
      */
-    protected final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
+    protected final Collection<ConnectionListener> connectionListeners =
+            new CopyOnWriteArrayList<ConnectionListener>();
 
     /**
-     * A collection of PacketCollectors which collects packets for a specified filter and perform
-     * blocking and polling operations on the result queue.
+     * A collection of PacketCollectors which collects packets for a specified filter
+     * and perform blocking and polling operations on the result queue.
      */
     protected final Collection<PacketCollector> collectors = new ConcurrentLinkedQueue<PacketCollector>();
 
     /**
      * List of PacketListeners that will be notified when a new packet was received.
      */
-    protected final Map<PacketListener, ListenerWrapper> recvListeners = new ConcurrentHashMap<PacketListener, ListenerWrapper>();
+    protected final Map<PacketListener, ListenerWrapper> recvListeners =
+            new ConcurrentHashMap<PacketListener, ListenerWrapper>();
 
     /**
      * List of PacketListeners that will be notified when a new packet was sent.
      */
-    protected final Map<PacketListener, ListenerWrapper> sendListeners = new ConcurrentHashMap<PacketListener, ListenerWrapper>();
+    protected final Map<PacketListener, ListenerWrapper> sendListeners =
+            new ConcurrentHashMap<PacketListener, ListenerWrapper>();
 
     /**
-     * List of PacketInterceptors that will be notified when a new packet is about to be sent to the
-     * server. These interceptors may modify the packet before it is being actually sent to the
-     * server.
+     * List of PacketInterceptors that will be notified when a new packet is about to be
+     * sent to the server. These interceptors may modify the packet before it is being
+     * actually sent to the server.
      */
-    protected final Map<PacketInterceptor, InterceptorWrapper> interceptors = new ConcurrentHashMap<PacketInterceptor, InterceptorWrapper>();
+    protected final Map<PacketInterceptor, InterceptorWrapper> interceptors =
+            new ConcurrentHashMap<PacketInterceptor, InterceptorWrapper>();
 
     /**
      * 
@@ -120,6 +124,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * The Writer which is used for the debugger.
      */
     protected Writer writer;
+
 
     /**
      * The SASLAuthentication manager that is responsible for authenticating with the server.
@@ -194,9 +199,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * Set to true if the server requires the connection to be binded in order to continue.
      * <p>
      * Note that we use AtomicBoolean here because it allows us to set the Boolean *object*, which
-     * we also use as synchronization object. A plain non-atomic Boolean object would be newly
-     * created for every change of the boolean value, which makes it useless as object for
-     * wait()/notify().
+     * we also use as synchronization object. A plain non-atomic Boolean object would be newly created
+     * for every change of the boolean value, which makes it useless as object for wait()/notify().
      */
     private AtomicBoolean bindingRequired = new AtomicBoolean(false);
 
@@ -213,8 +217,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     protected boolean authenticated = false;
 
     /**
-     * Flag that indicates if the user was authenticated with the server when the connection to the
-     * server was closed (abruptly or not).
+     * Flag that indicates if the user was authenticated with the server when the connection
+     * to the server was closed (abruptly or not).
      */
     protected boolean wasAuthenticated = false;
 
@@ -226,7 +230,12 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     protected AbstractXMPPConnection(ConnectionConfiguration configuration) {
         config = configuration;
     }
-
+    
+    /**
+     * Returns the configuration used to connect to the server.
+     * 
+     * @return the configuration used to connect to the server.
+     */
     protected ConnectionConfiguration getConfiguration() {
         return config;
     }
@@ -270,15 +279,15 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     public abstract boolean isUsingCompression();
 
     /**
-     * Establishes a connection to the XMPP server and performs an automatic login only if the
-     * previous connection state was logged (authenticated). It basically creates and maintains a
-     * connection to the server.
+     * Establishes a connection to the XMPP server and performs an automatic login
+     * only if the previous connection state was logged (authenticated). It basically
+     * creates and maintains a connection to the server.
      * <p>
      * Listeners will be preserved from a previous connection.
      * 
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somewhere else besides XMPP protocol level.
-     * @throws IOException
+     * @throws IOException 
      * @throws ConnectionException with detailed information about the failed connection.
      */
     public void connect() throws SmackException, IOException, XMPPException {
@@ -293,12 +302,12 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * Abstract method that concrete subclasses of XMPPConnection need to implement to perform their
      * way of XMPP connection establishment. Implementations must guarantee that this method will
      * block until the last features stanzas has been parsed and the features have been reported
-     * back to XMPPConnection (e.g. by calling @{link
-     * {@link AbstractXMPPConnection#serverRequiresBinding()} and such).
+     * back to XMPPConnection (e.g. by calling @{link {@link AbstractXMPPConnection#serverRequiresBinding()}
+     * and such).
      * <p>
      * Also implementations are required to perform an automatic login if the previous connection
      * state was logged (authenticated).
-     * 
+     *
      * @throws SmackException
      * @throws IOException
      * @throws XMPPException
@@ -306,61 +315,63 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     protected abstract void connectInternal() throws SmackException, IOException, XMPPException;
 
     /**
-     * Logs in to the server using the strongest authentication mode supported by the server, then
-     * sets presence to available. If the server supports SASL authentication then the user will be
-     * authenticated using SASL if not Non-SASL authentication will be tried. If more than five
-     * seconds (default timeout) elapses in each step of the authentication process without a
-     * response from the server, or if an error occurs, a XMPPException will be thrown.
-     * <p>
-     * Before logging in (i.e. authenticate) to the server the connection must be connected. It is
-     * possible to log in without sending an initial available presence by using
-     * {@link ConnectionConfiguration#setSendPresence(boolean)}. If this connection is not
-     * interested in loading its roster upon login then use
-     * {@link ConnectionConfiguration#setRosterLoadedAtLogin(boolean)}. Finally, if you want to not
-     * pass a password and instead use a more advanced mechanism while using SASL then you may be
-     * interested in using
-     * {@link ConnectionConfiguration#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}
-     * . For more advanced login settings see {@link ConnectionConfiguration}.
+     * Logs in to the server using the strongest authentication mode supported by
+     * the server, then sets presence to available. If the server supports SASL authentication 
+     * then the user will be authenticated using SASL if not Non-SASL authentication will 
+     * be tried. If more than five seconds (default timeout) elapses in each step of the 
+     * authentication process without a response from the server, or if an error occurs, a 
+     * XMPPException will be thrown.<p>
+     * 
+     * Before logging in (i.e. authenticate) to the server the connection must be connected.
+     * 
+     * It is possible to log in without sending an initial available presence by using
+     * {@link ConnectionConfiguration#setSendPresence(boolean)}. If this connection is
+     * not interested in loading its roster upon login then use
+     * {@link ConnectionConfiguration#setRosterLoadedAtLogin(boolean)}.
+     * Finally, if you want to not pass a password and instead use a more advanced mechanism
+     * while using SASL then you may be interested in using
+     * {@link ConnectionConfiguration#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}.
+     * For more advanced login settings see {@link ConnectionConfiguration}.
      * 
      * @param username the username.
      * @param password the password or <tt>null</tt> if using a CallbackHandler.
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somehwere else besides XMPP protocol level.
-     * @throws IOException
-     * @throws SaslException
+     * @throws IOException 
+     * @throws SaslException 
      */
-    public void login(String username, String password) throws XMPPException, SmackException,
-                    SaslException, IOException {
+    public void login(String username, String password) throws XMPPException, SmackException, SaslException, IOException {
         login(username, password, "Smack");
     }
 
     /**
-     * Logs in to the server using the strongest authentication mode supported by the server, then
-     * sets presence to available. If the server supports SASL authentication then the user will be
-     * authenticated using SASL if not Non-SASL authentication will be tried. If more than five
-     * seconds (default timeout) elapses in each step of the authentication process without a
-     * response from the server, or if an error occurs, a XMPPException will be thrown.
-     * <p>
-     * Before logging in (i.e. authenticate) to the server the connection must be connected. It is
-     * possible to log in without sending an initial available presence by using
-     * {@link ConnectionConfiguration#setSendPresence(boolean)}. If this connection is not
-     * interested in loading its roster upon login then use
-     * {@link ConnectionConfiguration#setRosterLoadedAtLogin(boolean)}. Finally, if you want to not
-     * pass a password and instead use a more advanced mechanism while using SASL then you may be
-     * interested in using
-     * {@link ConnectionConfiguration#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}
-     * . For more advanced login settings see {@link ConnectionConfiguration}.
+     * Logs in to the server using the strongest authentication mode supported by
+     * the server, then sets presence to available. If the server supports SASL authentication 
+     * then the user will be authenticated using SASL if not Non-SASL authentication will 
+     * be tried. If more than five seconds (default timeout) elapses in each step of the 
+     * authentication process without a response from the server, or if an error occurs, a 
+     * XMPPException will be thrown.<p>
+     * 
+     * Before logging in (i.e. authenticate) to the server the connection must be connected.
+     * 
+     * It is possible to log in without sending an initial available presence by using
+     * {@link ConnectionConfiguration#setSendPresence(boolean)}. If this connection is
+     * not interested in loading its roster upon login then use
+     * {@link ConnectionConfiguration#setRosterLoadedAtLogin(boolean)}.
+     * Finally, if you want to not pass a password and instead use a more advanced mechanism
+     * while using SASL then you may be interested in using
+     * {@link ConnectionConfiguration#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}.
+     * For more advanced login settings see {@link ConnectionConfiguration}.
      * 
      * @param username the username.
      * @param password the password or <tt>null</tt> if using a CallbackHandler.
      * @param resource the resource.
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somehwere else besides XMPP protocol level.
-     * @throws IOException
-     * @throws SaslException
+     * @throws IOException 
+     * @throws SaslException 
      */
-    public abstract void login(String username, String password, String resource)
-                    throws XMPPException, SmackException, SaslException, IOException;
+    public abstract void login(String username, String password, String resource) throws XMPPException, SmackException, SaslException, IOException;
 
     /**
      * Logs in to the server anonymously. Very few servers are configured to support anonymous
@@ -370,15 +381,14 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * 
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somehwere else besides XMPP protocol level.
-     * @throws IOException
-     * @throws SaslException
+     * @throws IOException 
+     * @throws SaslException 
      */
-    public abstract void loginAnonymously() throws XMPPException, SmackException, SaslException,
-                    IOException;
+    public abstract void loginAnonymously() throws XMPPException, SmackException, SaslException, IOException;
 
     /**
-     * Notification message saying that the server requires the client to bind a resource to the
-     * stream.
+     * Notification message saying that the server requires the client to bind a
+     * resource to the stream.
      */
     protected void serverRequiresBinding() {
         synchronized (bindingRequired) {
@@ -389,8 +399,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
 
     /**
      * Notification message saying that the server supports sessions. When a server supports
-     * sessions the client needs to send a Session packet after successfully binding a resource for
-     * the session.
+     * sessions the client needs to send a Session packet after successfully binding a resource
+     * for the session.
      */
     protected void serverSupportsSession() {
         sessionSupported = true;
@@ -433,20 +443,16 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         connectionException = e;
     }
 
-    protected void throwConnectionExceptionOrNoResponse() throws IOException, NoResponseException,
-                    SmackException {
+    protected void throwConnectionExceptionOrNoResponse() throws IOException, NoResponseException, SmackException {
         if (connectionException != null) {
             if (connectionException instanceof IOException) {
                 throw (IOException) connectionException;
-            }
-            else if (connectionException instanceof SmackException) {
+            } else if (connectionException instanceof SmackException) {
                 throw (SmackException) connectionException;
-            }
-            else {
+            } else {
                 throw new SmackException(connectionException);
             }
-        }
-        else {
+        } else {
             throw new NoResponseException();
         }
     }
@@ -462,11 +468,11 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     protected void setServiceName(String serviceName) {
         config.setServiceName(serviceName);
     }
-
+    
     protected void setLoginInfo(String username, String password, String resource) {
         config.setLoginInfo(username, password, resource);
     }
-
+    
     protected void serverSupportsAccountCreation() {
         AccountManager.getInstance(this).setSupportsAccountCreation(true);
     }
@@ -509,7 +515,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             throw new IllegalStateException("Anonymous users can't have a roster");
         }
         // synchronize against login()
-        synchronized (this) {
+        synchronized(this) {
             if (roster == null) {
                 roster = new Roster(this);
             }
@@ -551,36 +557,37 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     /**
-     * Returns the SASLAuthentication manager that is responsible for authenticating with the
-     * server.
+     * Returns the SASLAuthentication manager that is responsible for authenticating with
+     * the server.
      * 
-     * @return the SASLAuthentication manager that is responsible for authenticating with the
-     *         server.
+     * @return the SASLAuthentication manager that is responsible for authenticating with
+     *         the server.
      */
     protected SASLAuthentication getSASLAuthentication() {
         return saslAuthentication;
     }
 
     /**
-     * Closes the connection by setting presence to unavailable then closing the connection to the
-     * XMPP server. The XMPPConnection can still be used for connecting to the server again.
-     * 
-     * @throws NotConnectedException
+     * Closes the connection by setting presence to unavailable then closing the connection to
+     * the XMPP server. The XMPPConnection can still be used for connecting to the server
+     * again.
+     *
+     * @throws NotConnectedException 
      */
     public void disconnect() throws NotConnectedException {
         disconnect(new Presence(Presence.Type.unavailable));
     }
 
     /**
-     * Closes the connection. A custom unavailable presence is sent to the server, followed by
-     * closing the stream. The XMPPConnection can still be used for connecting to the server again.
-     * A custom unavailable presence is useful for communicating offline presence information such
-     * as "On vacation". Typically, just the status text of the presence packet is set with online
-     * information, but most XMPP servers will deliver the full presence packet with whatever data
-     * is set.
+     * Closes the connection. A custom unavailable presence is sent to the server, followed
+     * by closing the stream. The XMPPConnection can still be used for connecting to the server
+     * again. A custom unavailable presence is useful for communicating offline presence
+     * information such as "On vacation". Typically, just the status text of the presence
+     * packet is set with online information, but most XMPP servers will deliver the full
+     * presence packet with whatever data is set.
      * 
      * @param unavailablePresence the presence packet to send during shutdown.
-     * @throws NotConnectedException
+     * @throws NotConnectedException 
      */
     public synchronized void disconnect(Presence unavailablePresence) throws NotConnectedException {
         if (!isConnected()) {
@@ -699,6 +706,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         return sendListeners;
     }
 
+
     /**
      * Process all packet listeners for sending packets.
      * 
@@ -718,7 +726,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     @Override
-    public void addPacketInterceptor(PacketInterceptor packetInterceptor, PacketFilter packetFilter) {
+    public void addPacketInterceptor(PacketInterceptor packetInterceptor,
+            PacketFilter packetFilter) {
         if (packetInterceptor == null) {
             throw new NullPointerException("Packet interceptor is null.");
         }
@@ -740,10 +749,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     /**
-     * Process interceptors. Interceptors may modify the packet that is about to be sent. Since the
-     * thread that requested to send the packet will invoke all interceptors, it is important that
-     * interceptors perform their work as soon as possible so that the thread does not remain
-     * blocked for a long period.
+     * Process interceptors. Interceptors may modify the packet that is about to be sent.
+     * Since the thread that requested to send the packet will invoke all interceptors, it
+     * is important that interceptors perform their work as soon as possible so that the
+     * thread does not remain blocked for a long period.
      * 
      * @param packet the packet that is going to be sent to the server
      */
@@ -756,8 +765,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     /**
-     * Initialize the {@link #debugger}. You can specify a customized {@link SmackDebugger} by setup
-     * the system property <code>smack.debuggerClass</code> to the implementation.
+     * Initialize the {@link #debugger}. You can specify a customized {@link SmackDebugger}
+     * by setup the system property <code>smack.debuggerClass</code> to the implementation.
      * 
      * @throws IllegalStateException if the reader or writer isn't yet initialized.
      * @throws IllegalArgumentException if the SmackDebugger can't be loaded.
@@ -790,11 +799,13 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
                 }
                 if (debuggerClass == null) {
                     try {
-                        debuggerClass = Class.forName("org.jivesoftware.smackx.debugger.EnhancedDebugger");
+                        debuggerClass =
+                                Class.forName("org.jivesoftware.smackx.debugger.EnhancedDebugger");
                     }
                     catch (Exception ex) {
                         try {
-                            debuggerClass = Class.forName("org.jivesoftware.smack.debugger.LiteDebugger");
+                            debuggerClass =
+                                    Class.forName("org.jivesoftware.smack.debugger.LiteDebugger");
                         }
                         catch (Exception ex2) {
                             LOGGER.warning("Unabled to instantiate either Smack debugger class");
@@ -804,15 +815,14 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
                 // Create a new debugger instance. If an exception occurs then disable the debugging
                 // option
                 try {
-                    Constructor<?> constructor = debuggerClass.getConstructor(XMPPConnection.class,
-                                    Writer.class, Reader.class);
+                    Constructor<?> constructor = debuggerClass
+                            .getConstructor(XMPPConnection.class, Writer.class, Reader.class);
                     debugger = (SmackDebugger) constructor.newInstance(this, writer, reader);
                     reader = debugger.getReader();
                     writer = debugger.getWriter();
                 }
                 catch (Exception e) {
-                    throw new IllegalArgumentException("Can't initialize the configured debugger!",
-                                    e);
+                    throw new IllegalArgumentException("Can't initialize the configured debugger!", e);
                 }
             }
             else {
@@ -824,8 +834,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     /**
-     * Set the servers Entity Caps node XMPPConnection holds this information in order to avoid a
-     * dependency to smack-extensions where EntityCapsManager lives from smack.
+     * Set the servers Entity Caps node
+     * 
+     * XMPPConnection holds this information in order to avoid a dependency to
+     * smack-extensions where EntityCapsManager lives from smack.
      * 
      * @param node
      */
@@ -861,10 +873,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     /**
-     * Processes a packet after it's been fully parsed by looping through the installed packet
-     * collectors and listeners and letting them examine the packet to see if they are a match with
-     * the filter.
-     * 
+     * Processes a packet after it's been fully parsed by looping through the installed
+     * packet collectors and listeners and letting them examine the packet to see if
+     * they are a match with the filter.
+     *
      * @param packet the packet to process.
      */
     protected void processPacket(Packet packet) {
@@ -873,7 +885,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         }
 
         // Loop through all collectors and notify the appropriate ones.
-        for (PacketCollector collector : getPacketCollectors()) {
+        for (PacketCollector collector: getPacketCollectors()) {
             collector.processPacket(packet);
         }
 
@@ -896,12 +908,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             for (ListenerWrapper listenerWrapper : recvListeners.values()) {
                 try {
                     listenerWrapper.notifyListener(packet);
-                }
-                catch (NotConnectedException e) {
+                } catch(NotConnectedException e) {
                     LOGGER.log(Level.WARNING, "Got not connected exception, aborting", e);
                     break;
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, "Exception in packet listener", e);
                 }
             }
@@ -983,7 +993,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
          * Notify and process the packet listener if the filter matches the packet.
          * 
          * @param packet the packet which was sent or received.
-         * @throws NotConnectedException
+         * @throws NotConnectedException 
          */
         public void notifyListener(Packet packet) throws NotConnectedException {
             if (packetFilter == null || packetFilter.accept(packet)) {
@@ -1016,7 +1026,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
                 return false;
             }
             if (object instanceof InterceptorWrapper) {
-                return ((InterceptorWrapper) object).packetInterceptor.equals(this.packetInterceptor);
+                return ((InterceptorWrapper) object).packetInterceptor
+                        .equals(this.packetInterceptor);
             }
             else if (object instanceof PacketInterceptor) {
                 return object.equals(this.packetInterceptor);
@@ -1064,25 +1075,5 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         finally {
             super.finalize();
         }
-    }
-
-    /**
-     * Access the ConnectionConfiguration to return if the roster will be loaded from the server
-     * when logging in. This is the common behavior for clients but sometimes clients may want to
-     * differ this or just never do it if not interested in rosters.
-     * 
-     * @return true if the roster will be loaded from the server when logging in.
-     */
-    @Override
-    public boolean isRosterLoadedAtLogin() {
-        return config.isRosterLoadedAtLogin();
-    }
-
-    /**
-     * Get the permanent roster store from the ConnectionConfiguration
-     */
-    @Override
-    public RosterStore getRosterStore() {
-        return config.getRosterStore();
     }
 }
