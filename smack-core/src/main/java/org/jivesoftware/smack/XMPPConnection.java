@@ -142,13 +142,6 @@ public interface XMPPConnection {
     public boolean isUsingCompression();
 
     /**
-     * Returns the configuration used to connect to the server.
-     * 
-     * @return the configuration used to connect to the server.
-     */
-    public ConnectionConfiguration getConfiguration();
-
-    /**
      * Sends the specified packet to the server.
      * 
      * @param packet the packet to send.

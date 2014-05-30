@@ -120,7 +120,7 @@ public class Roster {
      *
      * @param connection an XMPP connection.
      */
-    Roster(final XMPPConnection connection) {
+    Roster(final AbstractXMPPConnection connection) {
         this.connection = connection;
         rosterStore = connection.getConfiguration().getRosterStore();
         // Listen for any roster packets.
@@ -161,8 +161,9 @@ public class Roster {
                 LOGGER.log(Level.SEVERE, "Could not reload Roster", e);
             }
         }
+
         connection.addConnectionListener(new AbstractConnectionListener() {
-            public void authenticated(XMPPConnection connection) {
+            public void authenticated(AbstractXMPPConnection connection) {
                 // Anonymous users can't have a roster, but it is possible that a Roster instance is
                 // retrieved if getRoster() is called *before* connect(). So we have to check here
                 // again if it's an anonymous connection.
