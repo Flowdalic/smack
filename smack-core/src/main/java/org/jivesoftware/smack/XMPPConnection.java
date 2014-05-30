@@ -342,4 +342,8 @@ public interface XMPPConnection {
      * @return the currently active {@link FromMode}
      */
     public FromMode getFromMode();
+
+    public boolean isRosterLoadedAtLogin();
+
+    public RosterStore getRosterStore();
 }
