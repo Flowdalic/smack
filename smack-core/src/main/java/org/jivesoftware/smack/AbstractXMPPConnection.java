@@ -231,8 +231,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         config = configuration;
     }
 
-    @Override
-    public ConnectionConfiguration getConfiguration() {
+    protected ConnectionConfiguration getConfiguration() {
         return config;
     }
 
