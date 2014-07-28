@@ -101,11 +101,11 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
     /**
      * The socket which is used for this connection.
      */
-    private Socket socket;
+    protected Socket socket;
 
-    private String connectionID = null;
+    protected String connectionID = null;
     private String user = null;
-    private boolean connected = false;
+    protected boolean connected = false;
 
     // socketClosed is used concurrent
     // by XMPPTCPConnection, PacketReader, PacketWriter
@@ -116,8 +116,8 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
     private ParsingExceptionCallback parsingExceptionCallback = SmackConfiguration.getDefaultParsingExceptionCallback();
 
-    private PacketWriter packetWriter;
-    private PacketReader packetReader;
+    protected PacketWriter packetWriter;
+    protected PacketReader packetReader;
 
     /**
      * Collection of available stream compression methods offered by the server.
@@ -882,7 +882,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
     protected class PacketReader {
 
-        private Thread readerThread;
+        protected Thread readerThread;
 
         private XmlPullParser parser;
 
@@ -896,7 +896,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
         private volatile boolean done;
 
-        PacketReader() throws SmackException {
+        public PacketReader() throws SmackException {
             this.init();
         }
 
@@ -929,7 +929,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * @throws IOException 
          * @throws SmackException 
          */
-        synchronized void startup() throws IOException, SmackException {
+        public synchronized void startup() throws IOException, SmackException {
             readerThread.start();
 
             try {
@@ -950,7 +950,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         /**
          * Shuts the packet reader down. This method simply sets the 'done' flag to true.
          */
-        void shutdown() {
+        public void shutdown() {
             done = true;
         }
 
@@ -1002,20 +1002,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                         // We found an opening stream. Record information about it, then notify
                         // the connectionID lock so that the packet reader startup can finish.
                         else if (name.equals("stream")) {
-                            // Ensure the correct jabber:client namespace is being used.
-                            if ("jabber:client".equals(parser.getNamespace(null))) {
-                                // Get the connection id.
-                                for (int i=0; i<parser.getAttributeCount(); i++) {
-                                    if (parser.getAttributeName(i).equals("id")) {
-                                        // Save the connectionID
-                                        connectionID = parser.getAttributeValue(i);
-                                    }
-                                    else if (parser.getAttributeName(i).equals("from")) {
-                                        // Use the server name that the server says that it is.
-                                        setServiceName(parser.getAttributeValue(i));
-                                    }
-                                }
-                            }
+                            handleStreamOpened(parser);
                         }
                         else if (name.equals("error")) {
                             throw new StreamErrorException(PacketParserUtils.parseStreamError(parser));
@@ -1102,6 +1089,28 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                     // Close the connection and notify connection listeners of the
                     // error.
                     notifyConnectionError(e);
+                }
+            }
+        }
+
+        /**
+         * Handles an XMPP Stream stanza signaling an opening stream
+         *
+         * @param parser the parser aligned at the Stream start tag
+         */
+        protected void handleStreamOpened(XmlPullParser parser) throws Exception {
+            // Ensure the correct jabber:client namespace is being used.
+            if ("jabber:client".equals(parser.getNamespace(null))) {
+                // Get the connection id.
+                for (int i=0; i<parser.getAttributeCount(); i++) {
+                    if (parser.getAttributeName(i).equals("id")) {
+                        // Save the connectionID
+                        connectionID = parser.getAttributeValue(i);
+                    }
+                    else if (parser.getAttributeName(i).equals("from")) {
+                        // Use the server name that the server says that it is.
+                        setServiceName(parser.getAttributeValue(i));
+                    }
                 }
             }
         }
@@ -1217,7 +1226,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         /**
          * Creates a new packet writer with the specified connection.
          */
-        PacketWriter() {
+        public PacketWriter() {
             init();
         }
 
@@ -1264,7 +1273,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * packet writer will continue writing packets until {@link #shutdown} or an
          * error occurs.
          */
-        void startup() {
+        public void startup() {
             writerThread.start();
         }
 
@@ -1276,7 +1285,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * Shuts down the packet writer. Once this method has been called, no further
          * packets will be written to the server.
          */
-        void shutdown() {
+        public void shutdown() {
             done = true;
             queue.shutdown();
             synchronized(shutdownDone) {
@@ -1320,7 +1329,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                     Packet packet = nextPacket();
                     if (packet != null) {
                         writer.write(packet.toXML().toString());
-
                         if (queue.isEmpty()) {
                             writer.flush();
                         }
@@ -1383,7 +1391,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          *
          * @throws IOException If an error occurs while sending the stanza to the server.
          */
-        void openStream() throws IOException {
+        protected void openStream() throws IOException {
             StringBuilder stream = new StringBuilder();
             stream.append("<stream:stream");
             stream.append(" to=\"").append(getServiceName()).append("\"");

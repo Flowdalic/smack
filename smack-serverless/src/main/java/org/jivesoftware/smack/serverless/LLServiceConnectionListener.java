@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2003-2014 Jive Software.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.jivesoftware.smack.serverless;
 
-package org.jivesoftware.smack;
-
-import org.jivesoftware.smack.packet.Message;
 
 /**
- *
+ * Notification about when new Link-local connections associated with a
+ * specific Link-local service has been established.
  */
-public interface MessageListener<T extends Chat> {
-    void processMessage(T chat, Message message);
+public interface LLServiceConnectionListener {
+
+    /**
+     * A new link-local connection has been established.
+     *
+     * @param connection the new established connection.
+     */
+    public void connectionCreated(XMPPLLConnection connection);
 }

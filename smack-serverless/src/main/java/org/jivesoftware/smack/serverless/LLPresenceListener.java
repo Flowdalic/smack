@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2009 Jonas Ådahl.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smack;
+package org.jivesoftware.smack.serverless;
 
-import org.jivesoftware.smack.packet.Message;
 
 /**
- *
+ * Interface for receiving notifications about presence changes.
  */
-public interface MessageListener<T extends Chat> {
-    void processMessage(T chat, Message message);
+public interface LLPresenceListener {
+    /**
+     * New link-local presence has been discovered.
+     * 
+     * @param presence information about the new presence
+     */
+
+    public void presenceNew(LLPresence presence);
+    /**
+     * A link-local presence has gone offline.
+     * @param presence the presence which went offline.
+     */
+    public void presenceRemove(LLPresence presence);
 }

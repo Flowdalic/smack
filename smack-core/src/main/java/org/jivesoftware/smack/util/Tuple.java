@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2003-2014 Jive Software.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.jivesoftware.smack.util;
 
-package org.jivesoftware.smack;
+public class Tuple<A,B> {
+    public A a;
+    public B b;
 
-import org.jivesoftware.smack.packet.Message;
-
-/**
- *
- */
-public interface MessageListener<T extends Chat> {
-    void processMessage(T chat, Message message);
+    public Tuple(A a, B b) {
+        this.a = a;
+        this.b = b;
+    }
 }
