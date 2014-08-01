@@ -312,6 +312,17 @@ public class SASLAuthentication {
     }
 
     /**
+     * Wrapper for {@link #challengeReceived(String, boolean)}, with <code>finalChallenge</code> set
+     * to <code>false</code>.
+     * 
+     * @param challenge a base64 encoded string representing the challenge.
+     * @throws SmackException
+     */
+    public void challengeReceived(String challenge) throws SmackException {
+        challengeReceived(challenge, false);
+    }
+
+    /**
      * The server is challenging the SASL authentication we just sent. Forward the challenge
      * to the current SASLMechanism we are using. The SASLMechanism will eventually send a response to
      * the server. The length of the challenge-response sequence varies according to the
