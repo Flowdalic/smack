@@ -737,8 +737,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
                         continue;
                     }
                 }
-            }}
-        , "Smack Sending Listeners Notification (" + getConnectionCounter() + ')');
+            }});
     }
 
     @Override

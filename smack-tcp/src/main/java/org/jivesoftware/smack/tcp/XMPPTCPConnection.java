@@ -1715,7 +1715,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                         LOGGER.log(Level.FINER, "Received not connected exception, aborting", e);
                     }
                 }
-            }, "Stanza Acknowledged Listener Executor Thread " + handledCount + " (" + getConnectionCounter() + ')');
+            });
         }
 
         serverHandledStanzasCount = handledCount;

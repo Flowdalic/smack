@@ -133,7 +133,7 @@ public class ServerPingWithAlarmManager extends Manager {
 						public void run() {
 							pingManager.pingServerIfNecessary();
 						}
-					}, "PingServerIfNecessary (" + connection.getConnectionCounter() + ')');
+					});
 				} else {
 					LOGGER.fine("NOT calling pingServerIfNecessary (disabled) on connection "
 							+ connection.getConnectionCounter());
