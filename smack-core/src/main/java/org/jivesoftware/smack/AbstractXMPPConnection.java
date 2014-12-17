@@ -40,7 +40,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.ConnectionConfiguration.ConnectionConfigurationBuilder;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.SmackException.AlreadyConnectedException;
 import org.jivesoftware.smack.SmackException.AlreadyLoggedInException;

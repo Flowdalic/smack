@@ -93,7 +93,7 @@ public abstract class ConnectionConfiguration {
     // Holds the proxy information (such as proxyhost, proxyport, username, password etc)
     protected final ProxyInfo proxy;
 
-    protected ConnectionConfiguration(ConnectionConfigurationBuilder<?,?> builder) {
+    protected ConnectionConfiguration(Builder<?,?> builder) {
         if (builder.username != null) {
             // Do partial version of nameprep on the username.
             username = builder.username.toLowerCase(Locale.US).trim();
@@ -390,7 +390,7 @@ public abstract class ConnectionConfiguration {
      * @param <B> the builder type parameter.
      * @param <C> the resulting connection configuration type parameter.
      */
-    public static abstract class ConnectionConfigurationBuilder<B extends ConnectionConfigurationBuilder<B, C>, C extends ConnectionConfiguration> {
+    public static abstract class Builder<B extends Builder<B, C>, C extends ConnectionConfiguration> {
         private SecurityMode securityMode = SecurityMode.enabled;
         private String keystorePath = System.getProperty("javax.net.ssl.keyStore");
         private String keystoreType = "jks";
@@ -415,7 +415,7 @@ public abstract class ConnectionConfiguration {
         private String host;
         private int port = 5222;
 
-        protected ConnectionConfigurationBuilder() {
+        protected Builder() {
         }
 
         /**

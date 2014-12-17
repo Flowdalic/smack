@@ -28,7 +28,6 @@ import java.util.Set;
 
 import javax.net.ssl.HostnameVerifier;
 
-import org.jivesoftware.smack.ConnectionConfiguration.ConnectionConfigurationBuilder;
 import org.jivesoftware.smack.compression.XMPPInputOutputStream;
 import org.jivesoftware.smack.debugger.ReflectionDebuggerFactory;
 import org.jivesoftware.smack.debugger.SmackDebugger;
