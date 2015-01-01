@@ -267,7 +267,7 @@ public final class SmackConfiguration {
      * Set the default HostnameVerifier that will be used by XMPP connections to verify the hostname
      * of a TLS certificate. XMPP connections are able to overwrite this settings by supplying a
      * HostnameVerifier in their ConnecitonConfiguration with
-     * {@link ConnectionConfigurationBuilder#setHostnameVerifier(HostnameVerifier)}.
+     * {@link ConnectionConfiguration.Builder#setHostnameVerifier(HostnameVerifier)}.
      */
     public static void setDefaultHostnameVerifier(HostnameVerifier verifier) {
         defaultHostnameVerififer = verifier;

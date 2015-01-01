@@ -48,8 +48,6 @@ import org.jivesoftware.smack.packet.StreamOpen;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.StartTls;
-import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
-import org.jivesoftware.smack.parsing.UnparsablePacket;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Challenge;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.SASLFailure;
@@ -72,7 +70,6 @@ import org.jivesoftware.smack.tcp.sm.packet.StreamManagement.StreamManagementFea
 import org.jivesoftware.smack.tcp.sm.predicates.Predicate;
 import org.jivesoftware.smack.tcp.sm.provider.ParseStreamManagement;
 import org.jivesoftware.smack.util.ArrayBlockingQueueWithShutdown;
-import org.jivesoftware.smack.util.Async;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.TLSUtils;
@@ -152,8 +149,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
     private volatile boolean socketClosed = false;
 
     private boolean usingTLS = false;
-
-    private ParsingExceptionCallback parsingExceptionCallback = SmackConfiguration.getDefaultParsingExceptionCallback();
 
     /**
      * Protected access level because of unit test purposes
@@ -294,25 +289,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         return connectionID;
     }
 
-    /**
-     * Install a parsing exception callback, which will be invoked once an exception is encountered while parsing a
-     * stanza
-     * 
-     * @param callback the callback to install
-     */
-    public void setParsingExceptionCallback(ParsingExceptionCallback callback) {
-        parsingExceptionCallback = callback;
-    }
-
-    /**
-     * Get the current active parsing exception callback.
-     *  
-     * @return the active exception callback or null if there is none
-     */
-    public ParsingExceptionCallback getParsingExceptionCallback() {
-        return parsingExceptionCallback;
-    }
-
     @Override
     protected void throwNotConnectedExceptionIfAppropriate() throws NotConnectedException {
         packetWriter.throwNotConnectedExceptionIfDoneAndResumptionNotPossible();
@@ -340,10 +316,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
     }
 
     @Override
-    protected synchronized void loginNonAnonymously() throws XMPPException, SmackException, IOException {
-        String password = config.getPassword();
-        String resource = config.getResource();
-        String username = config.getUsername();
+    protected synchronized void loginNonAnonymously(String username, String password, String resource) throws XMPPException, SmackException, IOException {
         if (saslAuthentication.hasNonAnonymousAuthentication()) {
             // Authenticate using SASL
             if (password != null) {
@@ -979,30 +952,11 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                         case Message.ELEMENT:
                         case IQ.ELEMENT:
                         case Presence.ELEMENT:
-                            int parserDepth = parser.getDepth();
-                            Packet packet;
                             try {
-                                packet = PacketParserUtils.parseStanza(parser,
-                                                XMPPTCPConnection.this);
-                            }
-                            catch (Exception e) {
-                                ParsingExceptionCallback callback = getParsingExceptionCallback();
-                                CharSequence content = PacketParserUtils.parseContentDepth(parser,
-                                                parserDepth);
-                                UnparsablePacket message = new UnparsablePacket(content, e);
-                                if (callback != null) {
-                                    callback.handleUnparsablePacket(message);
-                                }
-                                // The parser is now at the end tag of the unparsable stanza. We need to advance to the next
-                                // start tag in order to avoid an exception which would again lead to the execution of the
-                                // catch block becoming effectively an endless loop.
-                                eventType = parser.next();
-                                continue;
+                                parseAndProcessStanza(parser);
                             } finally {
                                 clientHandledStanzasCount = SMUtils.incrementHeight(clientHandledStanzasCount);
-                                reportStanzaReceived();
                             }
-                            processPacket(packet);
                             break;
                         case "stream":
                             // We found an opening stream.
@@ -1694,7 +1648,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
         // Only spawn a new thread if there is a chance that some listener is invoked
         if (atLeastOneStanzaIdAcknowledgedListener || !stanzaAcknowledgedListeners.isEmpty()) {
-            Async.go(new Runnable() {
+            asyncGo(new Runnable() {
                 @Override
                 public void run() {
                     try {

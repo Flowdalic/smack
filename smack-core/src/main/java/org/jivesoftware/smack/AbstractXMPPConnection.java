@@ -29,9 +29,11 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,12 +67,16 @@ import org.jivesoftware.smack.packet.RosterVer;
 import org.jivesoftware.smack.packet.Session;
 import org.jivesoftware.smack.packet.StartTls;
 import org.jivesoftware.smack.packet.PlainStreamElement;
+import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
+import org.jivesoftware.smack.parsing.UnparsablePacket;
 import org.jivesoftware.smack.provider.PacketExtensionProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.rosterstore.RosterStore;
-import org.jivesoftware.smack.util.Async;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.PacketParserUtils;
+import org.jivesoftware.smack.util.ParserUtils;
+import org.jivesoftware.smack.util.SmackExecutorThreadFactory;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jxmpp.util.XmppStringUtils;
 import org.xmlpull.v1.XmlPullParser;
@@ -124,6 +130,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      */
     private final Map<PacketListener, ListenerWrapper> recvListeners =
             new HashMap<PacketListener, ListenerWrapper>();
+
+    private final Map<PacketListener, ListenerWrapper> asyncRecvListeners = new HashMap<>();
 
     /**
      * List of PacketListeners that will be notified when a new packet was sent.
@@ -208,34 +216,34 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
 
     protected XMPPInputOutputStream compressionHandler;
 
+    private ParsingExceptionCallback parsingExceptionCallback = SmackConfiguration.getDefaultParsingExceptionCallback();
+
     /**
      * ExecutorService used to invoke the PacketListeners on newly arrived and parsed stanzas. It is
      * important that we use a <b>single threaded ExecutorService</b> in order to guarantee that the
      * PacketListeners are invoked in the same order the stanzas arrived.
      */
     private final ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<Runnable>(100), new SmackExecutorThreadFactory(connectionCounterValue));
+                    new ArrayBlockingQueue<Runnable>(100), new SmackExecutorThreadFactory(connectionCounterValue, "IncomingNotifier"));
 
     /**
-     * SmackExecutorThreadFactory is a *static* inner class of XMPPConnection. Note that we must not
-     * use anonymous classes in order to prevent threads from leaking.
+     * Creates an executor service just as {@link Executors#newCachedThreadPool()} would do, but with a keep alive time
+     * of 2 minutes instead of 60 seconds. And a custom thread factory to set meaningful names on the threads and set
+     * them 'daemon'.
      */
-    private static final class SmackExecutorThreadFactory implements ThreadFactory {
-        private final int connectionCounterValue;
-        private int count = 0;
-
-        private SmackExecutorThreadFactory(int connectionCounterValue) {
-            this.connectionCounterValue = connectionCounterValue;
-        }
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable, "Smack Executor Service " + count++ + " ("
-                            + connectionCounterValue + ")");
-            thread.setDaemon(true);
-            return thread;
-        }
-    }
+    private final ExecutorService cachedExecutorService = new ThreadPoolExecutor(
+                    // @formatter:off
+                    0,                                 // corePoolSize
+                    Integer.MAX_VALUE,                 // maximumPoolSize
+                    60L * 2,                           // keepAliveTime
+                    TimeUnit.SECONDS,                  // keepAliveTime unit, note that MINUTES is Android API 9
+                    new SynchronousQueue<Runnable>(),  // workQueue
+                    new SmackExecutorThreadFactory(    // threadFactory
+                                    connectionCounterValue,
+                                    "CachedExecutor"
+                                    )
+                    // @formatter:on
+                    );
 
     private Roster roster;
 
@@ -336,6 +344,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      */
     protected abstract void connectInternal() throws SmackException, IOException, XMPPException;
 
+    private String usedUsername, usedPassword, usedResource;
+
     /**
      * Logs in to the server using the strongest authentication mode supported by
      * the server, then sets presence to available. If the server supports SASL authentication 
@@ -347,12 +357,12 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * Before logging in (i.e. authenticate) to the server the connection must be connected.
      * 
      * It is possible to log in without sending an initial available presence by using
-     * {@link ConnectionConfigurationBuilder#setSendPresence(boolean)}. If this connection is
+     * {@link ConnectionConfiguration.Builder#setSendPresence(boolean)}. If this connection is
      * not interested in loading its roster upon login then use
-     * {@link ConnectionConfigurationBuilder#setRosterLoadedAtLogin(boolean)}.
+     * {@link ConnectionConfiguration.Builder#setRosterLoadedAtLogin(boolean)}.
      * Finally, if you want to not pass a password and instead use a more advanced mechanism
      * while using SASL then you may be interested in using
-     * {@link ConnectionConfigurationBuilder#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}.
+     * {@link ConnectionConfiguration.Builder#setCallbackHandler(javax.security.auth.callback.CallbackHandler)}.
      * For more advanced login settings see {@link ConnectionConfiguration}.
      * 
      * @throws XMPPException if an error occurs on the XMPP protocol level.
@@ -365,11 +375,56 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         if (isAnonymous()) {
             loginAnonymously();
         } else {
-            loginNonAnonymously();
+            // The previously used username, password and resource take over precedence over the
+            // ones from the connection configuration
+            String username = usedUsername != null ? usedUsername : config.getUsername();
+            String password = usedPassword != null ? usedPassword : config.getPassword();
+            String resource = usedResource != null ? usedResource : config.getResource();
+            login(username, password, resource);
         }
     }
 
-    protected abstract void loginNonAnonymously() throws XMPPException, SmackException, IOException;
+    /**
+     * Same as {@link #login(String, String, String)}, but takes the resource from the connection
+     * configuration.
+     * 
+     * @param username
+     * @param password
+     * @throws XMPPException
+     * @throws SmackException
+     * @throws IOException
+     * @see #login
+     */
+    public void login(String username, String password) throws XMPPException, SmackException,
+                    IOException {
+        login(username, password, config.getResource());
+    }
+
+    /**
+     * Login with the given username. You may omit the password if a callback handler is used. If
+     * resource is null, then the server will generate one.
+     * 
+     * @param username
+     * @param password
+     * @param resource
+     * @throws XMPPException
+     * @throws SmackException
+     * @throws IOException
+     * @see #login
+     */
+    public void login(String username, String password, String resource) throws XMPPException,
+                    SmackException, IOException {
+        if (StringUtils.isNullOrEmpty(username)) {
+            throw new IllegalArgumentException("Username must not be null or empty");
+        }
+        usedUsername = username;
+        usedPassword = password;
+        usedResource = resource;
+        loginNonAnonymously(username, password, resource);
+    }
+
+    protected abstract void loginNonAnonymously(String username, String password, String resource)
+                    throws XMPPException, SmackException, IOException;
 
     protected abstract void loginAnonymously() throws XMPPException, SmackException, IOException;
 
@@ -413,7 +468,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         user = response.getJid();
         serviceName = XmppStringUtils.parseDomain(user);
 
-        if (hasFeature(Session.ELEMENT, Session.NAMESPACE) && !getConfiguration().isLegacySessionDisabled()) {
+        Session.Feature sessionFeature = getFeature(Session.ELEMENT, Session.NAMESPACE);
+        // Only bind the session if it's announced as stream feature by the server, is not optional and not disabled
+        // For more information see http://tools.ietf.org/html/draft-cridland-xmpp-session-01
+        if (sessionFeature != null && !sessionFeature.isOptional() && !getConfiguration().isLegacySessionDisabled()) {
             Session session = new Session();
             packetCollector = createPacketCollectorAndSend(new PacketIDFilter(session), session);
             packetCollector.nextResultOrThrow();
@@ -448,8 +506,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     @Override
-    public boolean isAnonymous() {
-        return config.isAnonymous();
+    public final boolean isAnonymous() {
+        return config.getUsername() == null && usedUsername == null;
     }
 
     private String serviceName;
@@ -686,6 +744,24 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     @Override
+    public void addAsyncPacketListener(PacketListener packetListener, PacketFilter packetFilter) {
+        if (packetListener == null) {
+            throw new NullPointerException("Packet listener is null.");
+        }
+        ListenerWrapper wrapper = new ListenerWrapper(packetListener, packetFilter);
+        synchronized (asyncRecvListeners) {
+            asyncRecvListeners.put(packetListener, wrapper);
+        }
+    }
+
+    @Override
+    public boolean removeAsyncPacketListener(PacketListener packetListener) {
+        synchronized (asyncRecvListeners) {
+            return asyncRecvListeners.remove(packetListener) != null;
+        }
+    }
+
+    @Override
     public void addPacketSendingListener(PacketListener packetListener, PacketFilter packetFilter) {
         if (packetListener == null) {
             throw new NullPointerException("Packet listener is null.");
@@ -725,7 +801,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             return;
         }
         // Notify in a new thread, because we can
-        Async.go(new Runnable() {
+        asyncGo(new Runnable() {
             @Override
             public void run() {
                 for (PacketListener listener : listenersToNotify) {
@@ -822,6 +898,28 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         packetReplyTimeout = timeout;
     }
 
+    protected void parseAndProcessStanza(XmlPullParser parser) throws Exception {
+        ParserUtils.assertAtStartTag(parser);
+        int parserDepth = parser.getDepth();
+        Packet stanza = null;
+        try {
+            stanza = PacketParserUtils.parseStanza(parser, this);
+        }
+        catch (Exception e) {
+            CharSequence content = PacketParserUtils.parseContentDepth(parser,
+                            parserDepth);
+            UnparsablePacket message = new UnparsablePacket(content, e);
+            ParsingExceptionCallback callback = getParsingExceptionCallback();
+            if (callback != null) {
+                callback.handleUnparsablePacket(message);
+            }
+        }
+        ParserUtils.assertAtEndTag(parser);
+        if (stanza != null) {
+            processPacket(stanza);
+        }
+    }
+
     /**
      * Processes a packet after it's been fully parsed by looping through the installed
      * packet collectors and listeners and letting them examine the packet to see if
@@ -830,6 +928,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * @param packet the packet to process.
      */
     protected void processPacket(Packet packet) {
+        assert(packet != null);
+        lastStanzaReceived = System.currentTimeMillis();
         // Deliver the incoming packet to listeners.
         executorService.submit(new ListenerNotification(packet));
     }
@@ -857,14 +957,39 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      *
      * @param packet the packet to notify the PacketCollectors and receive listeners about.
      */
-    protected void invokePacketCollectorsAndNotifyRecvListeners(Packet packet) {
+    protected void invokePacketCollectorsAndNotifyRecvListeners(final Packet packet) {
+        // First handle the async recv listeners. Note that this code is very similar to what follows a few lines below,
+        // the only difference is that asyncRecvListeners is used here and that the packet listeners are started in
+        // their own thread.
+        Collection<PacketListener> listenersToNotify = new LinkedList<PacketListener>();
+        synchronized (asyncRecvListeners) {
+            for (ListenerWrapper listenerWrapper : asyncRecvListeners.values()) {
+                if (listenerWrapper.filterMatches(packet)) {
+                    listenersToNotify.add(listenerWrapper.getListener());
+                }
+            }
+        }
+
+        for (final PacketListener listener : listenersToNotify) {
+            asyncGo(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        listener.processPacket(packet);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.SEVERE, "Exception in async packet listener", e);
+                    }
+                }
+            });
+        }
+
         // Loop through all collectors and notify the appropriate ones.
         for (PacketCollector collector: collectors) {
             collector.processPacket(packet);
         }
 
         // Notify the receive listeners interested in the packet
-        List<PacketListener> listenersToNotify = new LinkedList<PacketListener>();
+        listenersToNotify = new LinkedList<PacketListener>();
         synchronized (recvListeners) {
             for (ListenerWrapper listenerWrapper : recvListeners.values()) {
                 if (listenerWrapper.filterMatches(packet)) {
@@ -1009,6 +1134,8 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
 
     @Override
     protected void finalize() throws Throwable {
+        LOGGER.fine("finalizing XMPPConnection ( " + getConnectionCounter()
+                        + "): Shutting down executor services");
         try {
             // It's usually not a good idea to rely on finalize. But this is the easiest way to
             // avoid the "Smack Listener Processor" leaking. The thread(s) of the executor have a
@@ -1016,7 +1143,10 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             // gc'ed. It is possible that the XMPPConnection instance is gc'ed while the
             // listenerExecutor ExecutorService call not be gc'ed until it got shut down.
             executorService.shutdownNow();
+            cachedExecutorService.shutdown();
             removeCallbacksService.shutdownNow();
+        } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "finalize() threw trhowable", t);
         }
         finally {
             super.finalize();
@@ -1055,7 +1185,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
                     streamFeature = Bind.Feature.INSTANCE;
                     break;
                 case Session.ELEMENT:
-                    streamFeature = Session.Feature.INSTANCE;
+                    streamFeature = PacketParserUtils.parseSessionFeature(parser);
                     break;
                 case RosterVer.ELEMENT:
                     if(namespace.equals(RosterVer.NAMESPACE)) {
@@ -1128,7 +1258,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     private final ScheduledExecutorService removeCallbacksService = new ScheduledThreadPoolExecutor(1,
-                    new SmackExecutorThreadFactory(connectionCounterValue));
+                    new SmackExecutorThreadFactory(connectionCounterValue, "RemoveCallbacks"));
 
     @Override
     public void sendStanzaWithResponseCallback(Packet stanza, PacketFilter replyFilter,
@@ -1217,8 +1347,27 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         return lastStanzaReceived;
     }
 
-    protected void reportStanzaReceived() {
-        this.lastStanzaReceived = System.currentTimeMillis();
+    /**
+     * Install a parsing exception callback, which will be invoked once an exception is encountered while parsing a
+     * stanza
+     * 
+     * @param callback the callback to install
+     */
+    public void setParsingExceptionCallback(ParsingExceptionCallback callback) {
+        parsingExceptionCallback = callback;
+    }
+
+    /**
+     * Get the current active parsing exception callback.
+     *  
+     * @return the active exception callback or null if there is none
+     */
+    public ParsingExceptionCallback getParsingExceptionCallback() {
+        return parsingExceptionCallback;
+    }
+
+    protected final void asyncGo(Runnable runnable) {
+        cachedExecutorService.execute(runnable);
     }
 
 }

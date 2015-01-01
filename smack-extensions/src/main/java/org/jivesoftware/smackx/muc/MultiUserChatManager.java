@@ -113,28 +113,27 @@ public class MultiUserChatManager extends Manager {
      */
     private final Map<String, WeakReference<MultiUserChat>> multiUserChats = new HashMap<String, WeakReference<MultiUserChat>>();
 
-    private final PacketListener invitationPacketListener;
-
     private MultiUserChatManager(XMPPConnection connection) {
         super(connection);
         // Listens for all messages that include a MUCUser extension and fire the invitation
         // listeners if the message includes an invitation.
-        invitationPacketListener = new PacketListener() {
+        PacketListener invitationPacketListener = new PacketListener() {
             public void processPacket(Packet packet) {
-                Message message = (Message) packet;
+                final Message message = (Message) packet;
                 // Get the MUCUser extension
-                MUCUser mucUser = MUCUser.from(message);
+                final MUCUser mucUser = MUCUser.from(message);
                 // Check if the MUCUser extension includes an invitation
                 if (mucUser.getInvite() != null) {
                     // Fire event for invitation listeners
-                    for (InvitationListener listener : invitationsListeners) {
-                        listener.invitationReceived(connection(), packet.getFrom(), mucUser.getInvite().getFrom(),
+                    final MultiUserChat muc = getMultiUserChat(packet.getFrom());
+                    for (final InvitationListener listener : invitationsListeners) {
+                        listener.invitationReceived(connection(), muc, mucUser.getInvite().getFrom(),
                                         mucUser.getInvite().getReason(), mucUser.getPassword(), message);
                     }
                 }
             }
         };
-        connection.addPacketListener(invitationPacketListener, INVITATION_FILTER);
+        connection.addAsyncPacketListener(invitationPacketListener, INVITATION_FILTER);
     }
 
     /**

@@ -25,6 +25,8 @@ import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdatalayout.packet.DataLayout;
 import org.jivesoftware.smackx.xdatalayout.provider.DataLayoutProvider;
+import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
+import org.jivesoftware.smackx.xdatavalidation.provider.DataValidationProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -93,12 +95,16 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
         final int initialDepth = parser.getDepth();
         FormField formField = new FormField(parser.getAttributeValue("", "var"));
         formField.setLabel(parser.getAttributeValue("", "label"));
-        formField.setType(parser.getAttributeValue("", "type"));
+        String typeString = parser.getAttributeValue("", "type");
+        if (typeString != null) {
+            formField.setType(FormField.Type.fromString(typeString));
+        }
         outerloop: while (true) {
             int eventType = parser.next();
             switch (eventType) {
             case XmlPullParser.START_TAG:
                 String name = parser.getName();
+                String namespace = parser.getNamespace();
                 switch (name) {
                 case "desc":
                     formField.setDescription(parser.nextText());
@@ -111,6 +117,12 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
                     break;
                 case "option":
                     formField.addOption(parseOption(parser));
+                    break;
+                // See XEP-122 Data Forms Validation
+                case ValidateElement.ELEMENT:
+                    if (namespace.equals(ValidateElement.NAMESPACE)) {
+                        formField.setValidateElement(DataValidationProvider.parse(parser));
+                    }
                     break;
                 }
             case XmlPullParser.END_TAG:

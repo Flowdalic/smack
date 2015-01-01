@@ -580,6 +580,46 @@ public class Roster {
     }
 
     /**
+     * Returns a List of Presence objects for all of a user's current presences if no presence information is available,
+     * such as when you are not subscribed to the user's presence updates.
+     *
+     * @param bareJid a XMPP ID, e.g. jdoe@example.com.
+     * @return a List of Presence objects for all the user's current presences, or an unavailable presence if no
+     *         presence information is available.
+     */
+    public List<Presence> getAllPresences(String bareJid) {
+        Map<String, Presence> userPresences = presenceMap.get(getPresenceMapKey(bareJid));
+        List<Presence> res;
+        if (userPresences == null) {
+            // Create an unavailable presence if none was found
+            Presence unavailable = new Presence(Presence.Type.unavailable);
+            unavailable.setFrom(bareJid);
+            res = new ArrayList<>(Arrays.asList(unavailable));
+        } else {
+            res = new ArrayList<>(userPresences.values());
+        }
+        return res;
+    }
+
+    /**
+     * Returns a List of all <b>available</b> Presence Objects for the given bare JID. If there are no available
+     * presences, then the empty list will be returned.
+     *
+     * @param bareJid the bare JID from which the presences should be retrieved.
+     * @return available presences for the bare JID.
+     */
+    public List<Presence> getAvailablePresences(String bareJid) {
+        List<Presence> allPresences = getAllPresences(bareJid);
+        List<Presence> res = new ArrayList<>(allPresences.size());
+        for (Presence presence : allPresences) {
+            if (presence.isAvailable()) {
+                res.add(presence);
+            }
+        }
+        return res;
+    }
+
+    /**
      * Returns a List of Presence objects for all of a user's current presences
      * or an unavailable presence if the user is unavailable (offline) or if no presence
      * information is available, such as when you are not subscribed to the user's presence
@@ -845,66 +885,69 @@ public class Roster {
      */
     private class PresencePacketListener implements PacketListener {
 
+        /**
+         * Retrieve the user presences (a map from resource to {@link Presence}) for a given key (usually a JID without
+         * a resource). If the {@link #presenceMap} does not contain already a user presence map, then it will be
+         * created.
+         * 
+         * @param key the presence map key
+         * @return the user presences
+         */
+        private Map<String, Presence> getUserPresences(String key) {
+            Map<String, Presence> userPresences = presenceMap.get(key);
+            if (userPresences == null) {
+                userPresences = new ConcurrentHashMap<>();
+                presenceMap.put(key, userPresences);
+            }
+            return userPresences;
+        }
+
         public void processPacket(Packet packet) throws NotConnectedException {
             Presence presence = (Presence) packet;
             String from = presence.getFrom();
             String key = getPresenceMapKey(from);
+            Map<String, Presence> userPresences;
+            Presence response = null;
 
             // If an "available" presence, add it to the presence map. Each presence
             // map will hold for a particular user a map with the presence
             // packets saved for each resource.
-            if (presence.getType() == Presence.Type.available) {
-                Map<String, Presence> userPresences;
+            switch (presence.getType()) {
+            case available:
                 // Get the user presence map
-                if (presenceMap.get(key) == null) {
-                    userPresences = new ConcurrentHashMap<String, Presence>();
-                    presenceMap.put(key, userPresences);
-                }
-                else {
-                    userPresences = presenceMap.get(key);
-                }
+                userPresences = getUserPresences(key);
                 // See if an offline presence was being stored in the map. If so, remove
                 // it since we now have an online presence.
                 userPresences.remove("");
                 // Add the new presence, using the resources as a key.
                 userPresences.put(XmppStringUtils.parseResource(from), presence);
                 // If the user is in the roster, fire an event.
-                RosterEntry entry = entries.get(key);
-                if (entry != null) {
+                if (entries.containsKey(key)) {
                     fireRosterPresenceEvent(presence);
                 }
-            }
+                break;
             // If an "unavailable" packet.
-            else if (presence.getType() == Presence.Type.unavailable) {
+            case unavailable:
                 // If no resource, this is likely an offline presence as part of
                 // a roster presence flood. In that case, we store it.
                 if ("".equals(XmppStringUtils.parseResource(from))) {
-                    Map<String, Presence> userPresences;
                     // Get the user presence map
-                    if (presenceMap.get(key) == null) {
-                        userPresences = new ConcurrentHashMap<String, Presence>();
-                        presenceMap.put(key, userPresences);
-                    }
-                    else {
-                        userPresences = presenceMap.get(key);
-                    }
+                    userPresences = getUserPresences(key);
                     userPresences.put("", presence);
                 }
                 // Otherwise, this is a normal offline presence.
                 else if (presenceMap.get(key) != null) {
-                    Map<String, Presence> userPresences = presenceMap.get(key);
+                    userPresences = presenceMap.get(key);
                     // Store the offline presence, as it may include extra information
                     // such as the user being on vacation.
                     userPresences.put(XmppStringUtils.parseResource(from), presence);
                 }
                 // If the user is in the roster, fire an event.
-                RosterEntry entry = entries.get(key);
-                if (entry != null) {
+                if (entries.containsKey(key)) {
                     fireRosterPresenceEvent(presence);
                 }
-            }
-            else if (presence.getType() == Presence.Type.subscribe) {
-                Presence response = null;
+                break;
+            case subscribe:
                 switch (subscriptionMode) {
                 case accept_all:
                     // Accept all subscription requests.
@@ -923,40 +966,37 @@ public class Roster {
                     response.setTo(presence.getFrom());
                     connection.sendPacket(response);
                 }
-            }
-            else if (presence.getType() == Presence.Type.unsubscribe) {
+                break;
+            case unsubscribe:
                 if (subscriptionMode != SubscriptionMode.manual) {
                     // Acknowledge and accept unsubscription notification so that the
                     // server will stop sending notifications saying that the contact
                     // has unsubscribed to our presence.
-                    Presence response = new Presence(Presence.Type.unsubscribed);
+                    response = new Presence(Presence.Type.unsubscribed);
                     response.setTo(presence.getFrom());
                     connection.sendPacket(response);
                 }
                 // Otherwise, in manual mode so ignore.
-            }
+                break;
             // Error presence packets from a bare JID mean we invalidate all existing
             // presence info for the user.
-            else if (presence.getType() == Presence.Type.error &&
-                    "".equals(XmppStringUtils.parseResource(from)))
-            {
-                Map<String, Presence> userPresences;
-                if (!presenceMap.containsKey(key)) {
-                    userPresences = new ConcurrentHashMap<String, Presence>();
-                    presenceMap.put(key, userPresences);
+            case error:
+                if (!"".equals(XmppStringUtils.parseResource(from))) {
+                    break;
                 }
-                else {
-                    userPresences = presenceMap.get(key);
-                    // Any other presence data is invalidated by the error packet.
-                    userPresences.clear();
-                }
+                userPresences = getUserPresences(key);
+                // Any other presence data is invalidated by the error packet.
+                userPresences.clear();
+
                 // Set the new presence using the empty resource as a key.
                 userPresences.put("", presence);
                 // If the user is in the roster, fire an event.
-                RosterEntry entry = entries.get(key);
-                if (entry != null) {
+                if (entries.containsKey(key)) {
                     fireRosterPresenceEvent(presence);
                 }
+                break;
+            default:
+                break;
             }
         }
     }

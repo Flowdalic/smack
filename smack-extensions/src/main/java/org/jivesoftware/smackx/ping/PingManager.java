@@ -24,7 +24,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,14 +44,19 @@ import org.jivesoftware.smack.filter.IQTypeFilter;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.util.SmackExecutorThreadFactory;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.ping.packet.Ping;
 
 /**
  * Implements the XMPP Ping as defined by XEP-0199. The XMPP Ping protocol allows one entity to
  * ping any other entity by simply sending a ping to the appropriate JID. PingManger also
- * periodically sends XMPP pings to the server every 30 minutes to avoid NAT timeouts and to test
+ * periodically sends XMPP pings to the server to avoid NAT timeouts and to test
  * the connection status.
+ * <p>
+ * The default server ping interval is 30 minutes and can be modified with
+ * {@link #setDefaultPingInterval(int)} and {@link #setPingInterval(int)}.
+ * </p>
  * 
  * @author Florian Schmaus
  * @see <a href="http://www.xmpp.org/extensions/xep-0199.html">XEP-0199:XMPP Ping</a>
@@ -60,8 +64,7 @@ import org.jivesoftware.smackx.ping.packet.Ping;
 public class PingManager extends Manager {
     private static final Logger LOGGER = Logger.getLogger(PingManager.class.getName());
 
-    private static final Map<XMPPConnection, PingManager> INSTANCES = Collections
-            .synchronizedMap(new WeakHashMap<XMPPConnection, PingManager>());
+    private static final Map<XMPPConnection, PingManager> INSTANCES = new WeakHashMap<XMPPConnection, PingManager>();
 
     private static final PacketFilter PING_PACKET_FILTER = new AndFilter(
                     new PacketTypeFilter(Ping.class), IQTypeFilter.GET);
@@ -86,10 +89,14 @@ public class PingManager extends Manager {
         PingManager pingManager = INSTANCES.get(connection);
         if (pingManager == null) {
             pingManager = new PingManager(connection);
+            INSTANCES.put(connection, pingManager);
         }
         return pingManager;
     }
 
+    /**
+     * The default ping interval in seconds used by new PingManager instances. The default is 30 minutes.
+     */
     private static int defaultPingInterval = 60 * 30;
 
     /**
@@ -106,22 +113,6 @@ public class PingManager extends Manager {
 
     private final ScheduledExecutorService executorService;
 
-    private static class PingExecutorThreadFactory implements ThreadFactory {
-        private final int connectionCounterValue;
-
-        public PingExecutorThreadFactory(int connectionCounterValue) {
-            this.connectionCounterValue = connectionCounterValue;
-        }
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable, "Smack Scheduled Ping Executor Service ("
-                            + connectionCounterValue + ")");
-            thread.setDaemon(true);
-            return thread;
-        }
-
-    }
     /**
      * The interval in seconds between pings are send to the users server.
      */
@@ -132,10 +123,9 @@ public class PingManager extends Manager {
     private PingManager(XMPPConnection connection) {
         super(connection);
         executorService = new ScheduledThreadPoolExecutor(1,
-                        new PingExecutorThreadFactory(connection.getConnectionCounter()));
+                        new SmackExecutorThreadFactory(connection.getConnectionCounter(), "Ping"));
         ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection);
         sdm.addFeature(Ping.NAMESPACE);
-        INSTANCES.put(connection, this);
 
         connection.addPacketListener(new PacketListener() {
             // Send a Pong for every Ping
@@ -420,9 +410,13 @@ public class PingManager extends Manager {
 
     @Override
     protected void finalize() throws Throwable {
+        LOGGER.fine("finalizing PingManager: Shutting down executor service");
         try {
             executorService.shutdown();
-        } finally {
+        } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "finalize() threw throwable", t);
+        }
+        finally {
             super.finalize();
         }
     }

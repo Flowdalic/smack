@@ -130,7 +130,8 @@ public class Workgroup {
          */
         MultiUserChatManager.getInstanceFor(connection).addInvitationListener(
                 new org.jivesoftware.smackx.muc.InvitationListener() {
-                    public void invitationReceived(XMPPConnection conn, String room, String inviter,
+                    @Override
+                    public void invitationReceived(XMPPConnection conn, org.jivesoftware.smackx.muc.MultiUserChat room, String inviter,
                                                    String reason, String password, Message message) {
                         inQueue = false;
                         queuePosition = -1;
@@ -388,7 +389,7 @@ public class Workgroup {
             String value = metadata.get(name).toString();
 
             FormField field = new FormField(name);
-            field.setType(FormField.TYPE_TEXT_SINGLE);
+            field.setType(FormField.Type.text_single);
             form.addField(field);
             form.setAnswer(name, value);
         }

@@ -18,11 +18,11 @@
 package org.jivesoftware.smack;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.jivesoftware.smack.SmackException.NotConnectedException;
@@ -114,17 +114,17 @@ public class ChatManager extends Manager{
     /**
      * Maps thread ID to chat.
      */
-    private Map<String, Chat> threadChats = Collections.synchronizedMap(new HashMap<String, Chat>());
+    private Map<String, Chat> threadChats = new ConcurrentHashMap<>();
 
     /**
      * Maps jids to chats
      */
-    private Map<String, Chat> jidChats = Collections.synchronizedMap(new HashMap<String, Chat>());
+    private Map<String, Chat> jidChats = new ConcurrentHashMap<>();
 
     /**
      * Maps base jids to chats
      */
-    private Map<String, Chat> baseJidChats = Collections.synchronizedMap(new HashMap<String, Chat>());
+    private Map<String, Chat> baseJidChats = new ConcurrentHashMap<>();
 
     private Set<ChatManagerListener> chatManagerListeners
             = new CopyOnWriteArraySet<ChatManagerListener>();
@@ -202,7 +202,17 @@ public class ChatManager extends Manager{
      * Creates a new chat and returns it.
      *
      * @param userJID the user this chat is with.
-     * @param listener the listener which will listen for new messages from this chat.
+     * @return the created chat.
+     */
+    public Chat createChat(String userJID) {
+        return createChat(userJID, null);
+    }
+
+    /**
+     * Creates a new chat and returns it.
+     *
+     * @param userJID the user this chat is with.
+     * @param listener the optional listener which will listen for new messages from this chat.
      * @return the created chat.
      */
     public Chat createChat(String userJID, ChatMessageListener listener) {
@@ -214,7 +224,7 @@ public class ChatManager extends Manager{
      * 
      * @param userJID the jid of the user this chat is with
      * @param thread the thread of the created chat.
-     * @param listener the listener to add to the chat
+     * @param listener the optional listener to add to the chat
      * @return the created chat.
      */
     public Chat createChat(String userJID, String thread, ChatMessageListener listener) {
