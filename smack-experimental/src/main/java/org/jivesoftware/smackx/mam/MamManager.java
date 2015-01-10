@@ -17,8 +17,10 @@
 package org.jivesoftware.smackx.mam;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 import org.jivesoftware.smack.ConnectionCreationListener;
@@ -29,6 +31,7 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.forward.packet.Forwarded;
@@ -38,6 +41,7 @@ import org.jivesoftware.smackx.mam.packet.MamPacket;
 import org.jivesoftware.smackx.mam.packet.MamPacket.MamFinExtension;
 import org.jivesoftware.smackx.mam.packet.MamQueryIQ;
 import org.jivesoftware.smackx.mam.packet.MamPacket.MamResultExtension;
+import org.jivesoftware.smackx.xdata.packet.DataForm;
 
 
 /**
@@ -73,6 +77,21 @@ public class MamManager extends Manager {
         sdm.addFeature(MamPacket.NAMESPACE);
     }
 
+    public MamQueryResult queryArchive(Integer max, Date start, Date end, String withJid) throws NoResponseException,
+                    XMPPErrorException, NotConnectedException {
+        DataForm dataForm = null;
+        String queryId = UUID.randomUUID().toString();
+        if (start != null || end != null || withJid != null) {
+
+        }
+        MamQueryIQ mamQueryIQ = new MamQueryIQ(queryId, dataForm);
+        mamQueryIQ.setType(IQ.Type.set);
+        if (max != null) {
+
+        }
+        return queryArchive(mamQueryIQ, 0);
+    }
+
     private MamQueryResult queryArchive(MamQueryIQ mamQueryIq, long extraTimeout) throws NoResponseException,
                     XMPPErrorException, NotConnectedException {
         if (extraTimeout < 0) {
@@ -91,7 +110,7 @@ public class MamManager extends Manager {
             resultCollector.cancel();
             finMessageCollector.cancel();
         }
-        List<Forwarded> messages = new ArrayList<>(resultCollector.getCollectedNumber());
+        List<Forwarded> messages = new ArrayList<>(resultCollector.getCollectedCount());
         for (Message resultMessage = resultCollector.pollResult(); resultMessage != null;) {
             // XEP-313 § 4.2
             MamResultExtension mamResultExtension = MamResultExtension.from(resultMessage);
@@ -108,5 +127,23 @@ public class MamManager extends Manager {
             this.messages = messages;
             this.mamFin = mamFin;
         }
+    }
+
+    /**
+     * Returns true if Message Archive Management is supported by the server.
+     * 
+     * @return true if Message ARchive Management is supported by the server.
+     * @throws NotConnectedException
+     * @throws XMPPErrorException
+     * @throws NoResponseException
+     */
+    public boolean isSupportedByServer() throws NoResponseException, XMPPErrorException, NotConnectedException {
+        return ServiceDiscoveryManager.getInstanceFor(connection()).serverSupportsFeature(MamPacket.NAMESPACE);
+    }
+
+    private static DataForm getNewMamForm() {
+        DataForm form = new DataForm();
+        form.addField(new FormField());
+        return form;
     }
 }

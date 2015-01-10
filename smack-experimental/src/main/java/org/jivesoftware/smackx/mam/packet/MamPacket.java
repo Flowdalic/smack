@@ -56,11 +56,30 @@ public class MamPacket {
 
         public static final String ELEMENT = "fin";
 
-        public final RSMSet rsmSet;
+        private final RSMSet rsmSet;
+        private final boolean complete;
+        private final boolean stable;
 
-        public MamFinExtension(String queryId, RSMSet rsmSet) {
+        public MamFinExtension(String queryId, RSMSet rsmSet, boolean complete, boolean stable) {
             super(queryId);
+            if (rsmSet == null) {
+                throw new IllegalArgumentException("rsmSet must not be null");
+            }
             this.rsmSet = rsmSet;
+            this.complete = complete;
+            this.stable = stable;
+        }
+
+        public RSMSet getRSMSet() {
+            return rsmSet;
+        }
+
+        public boolean isComplete() {
+            return complete;
+        }
+
+        public boolean isStable() {
+            return stable;
         }
 
         @Override
@@ -73,6 +92,8 @@ public class MamPacket {
             XmlStringBuilder xml = new XmlStringBuilder();
             xml.halfOpenElement(this);
             xml.optAttribute("queryid", queryId);
+            xml.optBooleanAttribute("complete", complete);
+            xml.optBooleanAttribute("stable", stable);
             if (rsmSet == null) {
                 xml.closeEmptyElement();
             } else {

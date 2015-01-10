@@ -33,7 +33,6 @@ public class MamQueryIQ extends IQ {
 
     private final String queryId;
     private final String node;
-    private final DataForm form;
 
     private MamQueryIQ(String queryId, String node, DataForm form) {
         super(ELEMENT, NAMESPACE);
@@ -51,8 +50,8 @@ public class MamQueryIQ extends IQ {
                         "Value of the hidden form type field must be '"
                                 + MamPacket.NAMESPACE + "'");
             }
+            addExtension(form);
         }
-        this.form = form;
     }
 
     public MamQueryIQ(DataForm form) {
@@ -63,6 +62,10 @@ public class MamQueryIQ extends IQ {
         this(queryId, null, null);
     }
 
+    public MamQueryIQ(String queryId, DataForm form) {
+        this(queryId, null, form);
+    }
+
     public String getQueryId() {
         return queryId;
     }
@@ -70,14 +73,7 @@ public class MamQueryIQ extends IQ {
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(
             IQChildElementXmlStringBuilder xml) {
-        xml.optAttribute("queryid", queryId);
-        xml.optAttribute("node", node);
-        if (form == null) {
-            xml.setEmptyElement();
-        } else {
-            xml.rightAngleBracket();
-            xml.element(form);
-        }
+        xml.optAttribute("queryid", queryId).optAttribute("node", node).rightAngleBracket();
         return xml;
     }
 
