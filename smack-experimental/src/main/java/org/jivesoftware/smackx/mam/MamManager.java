@@ -41,7 +41,10 @@ import org.jivesoftware.smackx.mam.packet.MamPacket;
 import org.jivesoftware.smackx.mam.packet.MamPacket.MamFinExtension;
 import org.jivesoftware.smackx.mam.packet.MamQueryIQ;
 import org.jivesoftware.smackx.mam.packet.MamPacket.MamResultExtension;
+import org.jivesoftware.smackx.rsm.packet.RSMSet;
+import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
+import org.jxmpp.util.XmppDateTime;
 
 
 /**
@@ -59,7 +62,7 @@ public class MamManager extends Manager {
             }
         });
     }
-    
+
     private static final Map<XMPPConnection, MamManager> INSTANCES = new WeakHashMap<>();
 
     public static synchronized MamManager getInstanceFor(XMPPConnection connection) {
@@ -82,13 +85,44 @@ public class MamManager extends Manager {
         DataForm dataForm = null;
         String queryId = UUID.randomUUID().toString();
         if (start != null || end != null || withJid != null) {
-
+            dataForm = getNewMamForm();
+            if (start != null) {
+                FormField formField = new FormField("start");
+                formField.addValue(XmppDateTime.formatXEP0082Date(start));
+                dataForm.addField(formField);
+            }
+            if (end != null) {
+                FormField formField = new FormField("end");
+                formField.addValue(XmppDateTime.formatXEP0082Date(end));
+                dataForm.addField(formField);
+            }
+            if (withJid != null) {
+                FormField formField = new FormField("with");
+                formField.addValue(withJid);
+                dataForm.addField(formField);
+            }
         }
         MamQueryIQ mamQueryIQ = new MamQueryIQ(queryId, dataForm);
         mamQueryIQ.setType(IQ.Type.set);
         if (max != null) {
-
+            RSMSet rsmSet = new RSMSet(max);
+            mamQueryIQ.addExtension(rsmSet);
         }
+        return queryArchive(mamQueryIQ, 0);
+    }
+
+    public MamQueryResult pageNext(MamQueryResult mamQueryResult, int count) throws NoResponseException,
+                    XMPPErrorException, NotConnectedException {
+        RSMSet previousResultRsmSet = mamQueryResult.mamFin.getRSMSet();
+        RSMSet requestRsmSet = new RSMSet(count, previousResultRsmSet.getLast(), RSMSet.PageDirection.after);
+        return page(mamQueryResult, requestRsmSet);
+    }
+
+    public MamQueryResult page(MamQueryResult mamQueryResult, RSMSet rsmSet) throws NoResponseException,
+                    XMPPErrorException, NotConnectedException {
+        MamQueryIQ mamQueryIQ = new MamQueryIQ(UUID.randomUUID().toString(), mamQueryResult.form);
+        mamQueryIQ.setType(IQ.Type.set);
+        mamQueryIQ.addExtension(rsmSet);
         return queryArchive(mamQueryIQ, 0);
     }
 
@@ -103,7 +137,8 @@ public class MamManager extends Manager {
         PacketCollector finMessageCollector = connection.createPacketCollector(new MamMessageFinFilter(mamQueryIq));
         try {
             connection.createPacketCollectorAndSend(mamQueryIq).nextResultOrThrow();
-            Message mamFinMessage = finMessageCollector.nextResultOrThrow(connection.getPacketReplyTimeout() + extraTimeout);
+            Message mamFinMessage = finMessageCollector.nextResultOrThrow(connection.getPacketReplyTimeout()
+                            + extraTimeout);
             mamFinExtension = MamFinExtension.from(mamFinMessage);
         }
         finally {
@@ -116,16 +151,18 @@ public class MamManager extends Manager {
             MamResultExtension mamResultExtension = MamResultExtension.from(resultMessage);
             messages.add(mamResultExtension.getForwarded());
         }
-        return new MamQueryResult(messages, mamFinExtension);
+        return new MamQueryResult(messages, mamFinExtension, DataForm.from(mamQueryIq));
     }
 
     public static class MamQueryResult {
         public final List<Forwarded> messages;
         public final MamFinExtension mamFin;
+        private final DataForm form;
 
-        private MamQueryResult(List<Forwarded> messages, MamFinExtension mamFin) {
+        private MamQueryResult(List<Forwarded> messages, MamFinExtension mamFin, DataForm form) {
             this.messages = messages;
             this.mamFin = mamFin;
+            this.form = form;
         }
     }
 
@@ -142,8 +179,11 @@ public class MamManager extends Manager {
     }
 
     private static DataForm getNewMamForm() {
-        DataForm form = new DataForm();
-        form.addField(new FormField());
+        FormField field = new FormField(FormField.FORM_TYPE);
+        field.setType(FormField.Type.hidden);
+        field.addValue(MamPacket.NAMESPACE);
+        DataForm form = new DataForm(DataForm.Type.submit);
+        form.addField(field);
         return form;
     }
 }
