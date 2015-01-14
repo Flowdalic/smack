@@ -948,7 +948,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                         final String name = parser.getName();
                         switch (name) {
                         case Message.ELEMENT:
-                        case IQ.ELEMENT:
+                        case IQ.IQ_ELEMENT:
                         case Presence.ELEMENT:
                             try {
                                 parseAndProcessStanza(parser);
@@ -1494,13 +1494,8 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
      * </p>
      * 
      * @param listener the listener to add.
-     * @throws StreamManagementNotEnabledException if Stream Management is not enabled.
      */
-    public void addStanzaAcknowledgedListener(PacketListener listener) throws StreamManagementNotEnabledException {
-        // Prevent users from adding callbacks that will never get removed
-        if (!smWasEnabledAtLeastOnce) {
-            throw new StreamManagementException.StreamManagementNotEnabledException();
-        }
+    public void addStanzaAcknowledgedListener(PacketListener listener) {
         stanzaAcknowledgedListeners.add(listener);
     }
 
@@ -1635,36 +1630,49 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
             ackedStanzas.add(ackedStanza);
         }
 
-        boolean atLeastOneStanzaIdAcknowledgedListener = false;
-        for (Packet ackedStanza : ackedStanzas) {
-            String id = ackedStanza.getPacketID();
-            if (id != null && stanzaAcknowledgedListeners.contains(id)) {
-                atLeastOneStanzaIdAcknowledgedListener = true;
-                break;
+        boolean atLeastOneStanzaAcknowledgedListener = false;
+        if (!stanzaAcknowledgedListeners.isEmpty()) {
+            // If stanzaAcknowledgedListeners is not empty, the we have at least one
+            atLeastOneStanzaAcknowledgedListener = true;
+        }
+        else {
+            // Otherwise we look for a matching id in the stanza *id* acknowledged listeners
+            for (Packet ackedStanza : ackedStanzas) {
+                String id = ackedStanza.getPacketID();
+                if (id != null && stanzaIdAcknowledgedListeners.containsKey(id)) {
+                    atLeastOneStanzaAcknowledgedListener = true;
+                    break;
+                }
             }
         }
 
         // Only spawn a new thread if there is a chance that some listener is invoked
-        if (atLeastOneStanzaIdAcknowledgedListener || !stanzaAcknowledgedListeners.isEmpty()) {
+        if (atLeastOneStanzaAcknowledgedListener) {
             asyncGo(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        for (Packet ackedStanza : ackedStanzas) {
-                            for (PacketListener listener : stanzaAcknowledgedListeners) {
+                    for (Packet ackedStanza : ackedStanzas) {
+                        for (PacketListener listener : stanzaAcknowledgedListeners) {
+                            try {
                                 listener.processPacket(ackedStanza);
                             }
-                            String id = ackedStanza.getPacketID();
-                            if (id != null) {
-                                PacketListener listener = stanzaIdAcknowledgedListeners.remove(id);
-                                if (listener != null) {
-                                    listener.processPacket(ackedStanza);
-                                }
+                            catch (NotConnectedException e) {
+                                LOGGER.log(Level.FINER, "Received not connected exception", e);
                             }
                         }
-                    }
-                    catch (NotConnectedException e) {
-                        LOGGER.log(Level.FINER, "Received not connected exception, aborting", e);
+                        String id = ackedStanza.getPacketID();
+                        if (StringUtils.isNotEmpty(id)) {
+                            return;
+                        }
+                        PacketListener listener = stanzaIdAcknowledgedListeners.remove(id);
+                        if (listener != null) {
+                            try {
+                                listener.processPacket(ackedStanza);
+                            }
+                            catch (NotConnectedException e) {
+                                LOGGER.log(Level.FINER, "Received not connected exception", e);
+                            }
+                        }
                     }
                 }
             });

@@ -264,12 +264,17 @@ public class XMPPError extends AbstractError {
         }
 
         public static Condition fromString(String string) {
+            // Backwards compatibility for older implementations still using RFC 3920. RFC 6120
+            // changed 'xml-not-well-formed' to 'not-well-formed'.
+            if ("xml-not-well-formed".equals(string)) {
+                string = "not-well-formed";
+            }
             string = string.replace('-', '_');
             Condition condition = null;
             try {
                 condition = Condition.valueOf(string);
             } catch (Exception e) {
-                throw new IllegalStateException("Could not transform string '" + string + "' to XMPPErrorConditoin", e);
+                throw new IllegalStateException("Could not transform string '" + string + "' to XMPPErrorCondition", e);
             }
             return condition;
         }
