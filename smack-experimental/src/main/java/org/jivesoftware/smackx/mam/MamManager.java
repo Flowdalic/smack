@@ -133,8 +133,13 @@ public class MamManager extends Manager {
         }
         final XMPPConnection connection = connection();
         MamFinExtension mamFinExtension;
-        PacketCollector resultCollector = connection.createPacketCollector(new MamMessageResultFilter(mamQueryIq));
-        PacketCollector finMessageCollector = connection.createPacketCollector(new MamMessageFinFilter(mamQueryIq));
+        PacketCollector finMessageCollector = connection.createPacketCollector(new MamMessageFinFilter(
+                        mamQueryIq));
+        PacketCollector.Configuration resultCollectorConfiguration = PacketCollector.newConfiguration().setPacketFilter(
+                        new MamMessageResultFilter(mamQueryIq)).setCollectorToReset(
+                        finMessageCollector);
+        PacketCollector resultCollector = connection.createPacketCollector(resultCollectorConfiguration);
+
         try {
             connection.createPacketCollectorAndSend(mamQueryIq).nextResultOrThrow();
             Message mamFinMessage = finMessageCollector.nextResultOrThrow(connection.getPacketReplyTimeout()
