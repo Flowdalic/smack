@@ -69,6 +69,7 @@ import org.jivesoftware.smack.tcp.sm.packet.StreamManagement.StreamManagementFea
 import org.jivesoftware.smack.tcp.sm.predicates.Predicate;
 import org.jivesoftware.smack.tcp.sm.provider.ParseStreamManagement;
 import org.jivesoftware.smack.util.ArrayBlockingQueueWithShutdown;
+import org.jivesoftware.smack.util.Async;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.TLSUtils;
@@ -120,6 +121,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -147,8 +149,12 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
      */
     private boolean disconnectedButResumeable = false;
 
-    // socketClosed is used concurrent
-    // by XMPPTCPConnection, PacketReader, PacketWriter
+    /**
+     * Flag to indicate if the socket was closed intentionally by Smack.
+     * <p>
+     * This boolean flag is used concurrently, therefore it is marked volatile.
+     * </p>
+     */
     private volatile boolean socketClosed = false;
 
     private boolean usingTLS = false;
@@ -209,6 +215,11 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
      */
     private boolean useSm = useSmDefault;
     private boolean useSmResumption = useSmResumptionDefault;
+
+    /**
+     * The counter that the server sends the client about it's current height. For example, if the server sends
+     * {@code <a h='42'/>}, then this will be set to 42 (while also handling the {@link #unacknowledgedStanzas} queue).
+     */
     private long serverHandledStanzasCount = 0;
 
     /**
@@ -221,6 +232,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
      * </p>
      */
     private long clientHandledStanzasCount = 0;
+
     private BlockingQueue<Packet> unacknowledgedStanzas;
 
     /**
@@ -362,7 +374,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         if (isSmAvailable() && useSm) {
             // Remove what is maybe left from previously stream managed sessions
             unacknowledgedStanzas = new ArrayBlockingQueue<Packet>(QUEUE_SIZE);
-            clientHandledStanzasCount = 0;
             serverHandledStanzasCount = 0;
             // XEP-198 3. Enabling Stream Management. If the server response to 'Enable' is 'Failed'
             // then this is a non recoverable error and we therefore throw an exception.
@@ -901,8 +912,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
     protected class PacketReader {
 
-        private Thread readerThread;
-
         XmlPullParser parser;
 
         private volatile boolean done;
@@ -916,14 +925,11 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         void init() throws SmackException {
             done = false;
 
-            readerThread = new Thread() {
+            Async.go(new Runnable() {
                 public void run() {
                     parsePackets();
                 }
-            };
-            readerThread.setName("Smack Packet Reader (" + getConnectionCounter() + ")");
-            readerThread.setDaemon(true);
-            readerThread.start();
+            }, "Smack Packet Reader (" + getConnectionCounter() + ")");
          }
 
         /**
@@ -1044,9 +1050,10 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                                 }
                                 smServerMaxResumptimTime = enabled.getMaxResumptionTime();
                             } else {
-                                // Mark this a aon-resumable stream by setting smSessionId to null
+                                // Mark this a non-resumable stream by setting smSessionId to null
                                 smSessionId = null;
                             }
+                            clientHandledStanzasCount = 0;
                             smWasEnabledAtLeastOnce = true;
                             smEnabledSyncPoint.reportSuccess();
                             LOGGER.fine("Stream Management (XEP-198): succesfully enabled");
@@ -1531,11 +1538,19 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
      * @return the previous listener for this stanza ID or null.
      * @throws StreamManagementNotEnabledException if Stream Management is not enabled.
      */
-    public PacketListener addStanzaIdAcknowledgedListener(String id, PacketListener listener) throws StreamManagementNotEnabledException {
+    public PacketListener addStanzaIdAcknowledgedListener(final String id, PacketListener listener) throws StreamManagementNotEnabledException {
         // Prevent users from adding callbacks that will never get removed
         if (!smWasEnabledAtLeastOnce) {
             throw new StreamManagementException.StreamManagementNotEnabledException();
         }
+        // Remove the listener after max. 12 hours
+        final int removeAfterSeconds = Math.min(getMaxSmResumptionTime() + 60, 12 * 60 * 60);
+        schedule(new Runnable() {
+            @Override
+            public void run() {
+                stanzaIdAcknowledgedListeners.remove(id);
+            }
+        }, removeAfterSeconds, TimeUnit.SECONDS);
         return stanzaIdAcknowledgedListeners.put(id, listener);
     }
 
@@ -1610,14 +1625,23 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
         // See if resumption time is over
         long current = System.currentTimeMillis();
-        int clientResumptionTime = smClientMaxResumptionTime > 0 ? smClientMaxResumptionTime : Integer.MAX_VALUE;
-        int serverResumptionTime = smServerMaxResumptimTime > 0 ? smServerMaxResumptimTime : Integer.MAX_VALUE;
-        long maxResumptionMillies = Math.max(clientResumptionTime, serverResumptionTime) * 1000;
+        long maxResumptionMillies = getMaxSmResumptionTime() * 1000;
         if (shutdownTimestamp + maxResumptionMillies > current) {
             return false;
         } else {
             return true;
         }
+    }
+
+    /**
+     * Get the maximum resumption time in seconds after which a managed stream can be resumed.
+     *
+     * @return the maximum resumption time in seconds.
+     */
+    public int getMaxSmResumptionTime() {
+        int clientResumptionTime = smClientMaxResumptionTime > 0 ? smClientMaxResumptionTime : Integer.MAX_VALUE;
+        int serverResumptionTime = smServerMaxResumptimTime > 0 ? smServerMaxResumptimTime : Integer.MAX_VALUE;
+        return Math.min(clientResumptionTime, serverResumptionTime);
     }
 
     private void processHandledCount(long handledCount) throws NotConnectedException {

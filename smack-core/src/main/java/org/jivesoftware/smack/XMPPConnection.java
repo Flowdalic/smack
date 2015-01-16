@@ -248,7 +248,7 @@ public interface XMPPConnection {
      * 
      * @param configuration the packet collector configuration.
      * @return a new packet collector.
-     * @since 4.2
+     * @since 4.1
      */
     public PacketCollector createPacketCollector(PacketCollector.Configuration configuration);
 

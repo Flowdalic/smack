@@ -62,7 +62,11 @@ public class PacketCollector {
      * all packets will match this collector.
      *
      * @param connection the connection the collector is tied to.
+<<<<<<< HEAD
      * @param configuraiton the configuration used to construct this collector
+=======
+     * @param configuration the configuration used to construct this collector
+>>>>>>> master
      */
     protected PacketCollector(XMPPConnection connection, Configuration configuration) {
         this.connection = connection;
@@ -151,7 +155,7 @@ public class PacketCollector {
      * Returns the next available packet. The method call will block until the connection's default
      * timeout has elapsed.
      * 
-     * @return the next availabe packet.
+     * @return the next available packet.
      */
     public <P extends Packet> P nextResult() {
         return nextResult(connection.getPacketReplyTimeout());
@@ -173,15 +177,19 @@ public class PacketCollector {
         P res = null;
         long remainingWait = timeout;
         waitStart = System.currentTimeMillis();
-        while (res == null && remainingWait > 0) {
+        do {
             try {
                 res = (P) resultQueue.poll(remainingWait, TimeUnit.MILLISECONDS);
-                remainingWait = timeout - (System.currentTimeMillis() - waitStart);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 LOGGER.log(Level.FINE, "nextResult was interrupted", e);
             }
-        }
-        return res;
+            if (res != null) {
+                return res;
+            }
+            remainingWait = timeout - (System.currentTimeMillis() - waitStart);
+        } while (remainingWait > 0);
+        return null;
     }
 
     /**
