@@ -34,15 +34,15 @@ allprojects {
 		builtDate = (new java.text.SimpleDateFormat("yyyy-MM-dd")).format(new Date())
 		oneLineDesc = 'An Open Source XMPP (Jabber) client library'
 		androidProjects = [
-			':smack-tcp',
-			':smack-bosh',
-			':smack-core',
-			':smack-im',
-			':smack-resolver-minidns',
-			':smack-sasl-provided',
-			':smack-extensions',
-			':smack-experimental',
-		].collect{ project(it) }
+			'smack-tcp',
+			'smack-bosh',
+			'smack-core',
+			'smack-im',
+			'smack-resolver-minidns',
+			'smack-sasl-provided',
+			'smack-extensions',
+			'smack-experimental',
+		].collect{ findProject(it) }
 		androidBootClasspath = getAndroidRuntimeJar()
 		androidJavadocOffline = getAndroidJavadocOffline()
 	}
