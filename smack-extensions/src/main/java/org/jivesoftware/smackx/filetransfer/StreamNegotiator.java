@@ -90,6 +90,8 @@ public abstract class StreamNegotiator {
         final StreamInitiation response = createInitiationAccept(initiation,
                 getNamespaces());
 
+        newStreamInitiation(initiation.getFrom(), initiation.getSessionID());
+
         final String eventKey = initiation.getFrom().toString() + '\t' + initiation.getSessionID();
         IQ streamMethodInitiation;
         try {
@@ -118,7 +120,7 @@ public abstract class StreamNegotiator {
      * @param from     The initiator of the file transfer.
      * @param streamID The stream ID related to the transfer.
      */
-    public abstract void newStreamInitiation(String from, String streamID);
+    protected abstract void newStreamInitiation(String from, String streamID);
 
 
     abstract InputStream negotiateIncomingStream(Stanza streamInitiation) throws XMPPErrorException,
