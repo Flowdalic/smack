@@ -24,9 +24,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
@@ -812,6 +812,15 @@ public class InBandBytestreamSession implements BytestreamSession {
 
         }
 
+    }
+
+    /**
+     * @param data
+     * @throws NotConnectedException 
+     */
+    public void processIQPacket(Data data) throws NotConnectedException {
+       inputStream.dataPacketListener.processPacket(data);
+      
     }
 
 }
