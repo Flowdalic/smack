@@ -16,19 +16,54 @@
  */
 package org.jivesoftware.smack.serverless;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.jivesoftware.smack.SmackConfiguration;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.XMPPError;
 import org.jxmpp.jid.BareJid;
 
-public interface LLService {
-    
-    
+public abstract class LLService {
+
+    private static LLService service = null;
+
+    static final int DEFAULT_MIN_PORT = 2300;
+    static final int DEFAULT_MAX_PORT = 2400;
+
+    protected LLPresence presence;
+    private boolean done = false;
+    private boolean initiated = false;
+    private Thread listenerThread;
+
+    private ServerSocket socket;
+
+    private Map<String,LLConnection> incoming =
+            new ConcurrentHashMap<String,LLConnection>();
+    private Map<String,LLConnection> outgoing =
+            new ConcurrentHashMap<String,LLConnection>();
+
+    static {
+        SmackConfiguration.getVersion();
+    }
+
+    public LLService(LLPresence presence) {
+        this.presence = presence;
+        service = this;
+    }
+
+
     /**
      * Fetch list of all the users who are present on the Link Local network.
      * 
      * @return List<BareJid> list of BareJid(s) of all available clients
      */
-    public List<BareJid> getAllClientsPresentOnLLNetwork();
+    public abstract List<BareJid> getAllClientsPresentOnLLNetwork();
     
     
     /**
@@ -36,22 +71,131 @@ public interface LLService {
      * on the network does not mean client is available for chat. It might so
      * happen that client is present on the network but is Away, Busy or 
      * Unavailable for chat. 
-     * 
-     * @param bareJid BareJid of the client
+     *
      * @return true if client was able to broadcast presence on the network
      * successfully and false otherwise
      */
-    public boolean markClientPresentOnLLNetwork(BareJid bareJid);
+    public abstract boolean markClientPresentOnLLNetwork() throws XMPPException;
     
     /**
     * Marks absence of a client on the Link Local Network. Marking absence
     * on the network means client is no longer connected to the Link Local 
     * Network, in simpler terms client has logged out. 
     * 
-    * @param bareJid BareJid of the client
     * @return true if client was able to broadcast absence on the network
     * successfully and false otherwise
     */
-    public boolean markClientAbsentOnLLNetwork(BareJid bareJid);
-    
+    public abstract boolean markClientAbsentOnLLNetwork();
+
+    public void init() throws XMPPException{
+
+        // allocate a new port for remote clients to connect to
+        socket = bindRange(DEFAULT_MIN_PORT, DEFAULT_MAX_PORT);
+
+        // register service on the allocated port
+        markClientPresentOnLLNetwork();
+
+        // start to listen for new connections
+        listenerThread = new Thread() {
+            public void run() {
+                try {
+                    // Listen for connections
+                    listenForConnections();
+
+                } catch (XMPPException e) {
+                }
+            }
+        };
+        listenerThread.setName("Smack Link-local Service Listener");
+        listenerThread.setDaemon(true);
+        listenerThread.start();
+
+        initiated = true;
+
+    }
+
+    /**
+     * Listen for new connections on socket, and spawn XMPPLLConnections
+     * when new connections are established.
+     *
+     * @throws XMPPException whenever an exception occurs
+     */
+    private void listenForConnections() throws XMPPException {
+        while (!done) {
+            try {
+                // wait for new connection
+                Socket s = socket.accept();
+
+                LLConnectionConfiguration config =
+                        new LLConnectionConfiguration(presence, s);
+
+            }
+            catch (SocketException se) {
+                // If we are closing down, it's probably closed socket exception.
+                if (!done) {
+                    throw new XMPPException.XMPPErrorException("Link-local service unexpectedly closed down.",
+                            new XMPPError(XMPPError.Condition.undefined_condition), se);
+                }
+            }
+            catch (IOException ioe) {
+                throw new XMPPException.XMPPErrorException("Link-local service unexpectedly closed down.",
+                        new XMPPError(XMPPError.Condition.undefined_condition), ioe);
+            }
+        }
+    }
+
+
+    /**
+     * Returns a connection to a given service name.
+     * First checks for an outgoing connection, if noone exists,
+     * try ingoing.
+     *
+     * @param serviceName the service name
+     * @return a connection associated with the service name or null if no
+     * connection is available.
+     */
+    LLConnection getConnectionTo(String serviceName) {
+        LLConnection connection = outgoing.get(serviceName);
+        if (connection != null)
+            return connection;
+        return incoming.get(serviceName);
+    }
+
+    protected void serviceNameChanged(String newName, String oldName) {
+        // update our own presence with the new name, for future connections
+        presence.setServiceName(newName);
+
+        // clean up connections
+        LLConnection c;
+        c = getConnectionTo(oldName);
+        if (c != null)
+            c.disconnect();
+        c = getConnectionTo(newName);
+        if (c != null)
+            c.disconnect();
+
+    }
+
+    /**
+     * Bind one socket to any port within a given range.
+     *
+     * @param min the minimum port number allowed
+     * @param max hte maximum port number allowed
+     * @throws XMPPException if binding failed on all allowed ports.
+     */
+    private static ServerSocket bindRange(int min, int max) throws XMPPException {
+        // TODO this method exists also for the local socks5 proxy code and should be factored out into a util
+        int port = 0;
+        for (int try_port = min; try_port <= max; try_port++) {
+            try {
+                ServerSocket socket = new ServerSocket(try_port);
+                return socket;
+            }
+            catch (IOException e) {
+                // failed to bind, try next
+            }
+        }
+        throw new XMPPException.XMPPErrorException("Unable to bind port, no ports available.",
+                new XMPPError(XMPPError.Condition.resource_constraint));
+    }
 }

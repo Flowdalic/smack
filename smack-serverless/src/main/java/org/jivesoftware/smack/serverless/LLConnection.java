@@ -31,6 +31,7 @@ public abstract class LLConnection extends AbstractXMPPConnection{
     protected LLConnection(LLService service, LLConnectionConfiguration configuration) {
         super(configuration);
     }
-    
+
+
     
 }

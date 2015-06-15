@@ -77,6 +77,198 @@ public class LLPresence {
     private int port = 0;
     private String host;
     private String serviceName;
-    
-    
+
+    public LLPresence(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
+    public LLPresence(String serviceName, String host, int port) {
+        this.serviceName = serviceName;
+        this.host = host;
+        this.port = port;
+    }
+
+    public LLPresence(String serviceName, String host, int port,
+                      Map<String,String> records) {
+        this(serviceName, host, port);
+
+        // Parse the map (originating from the TXT fields) and put them
+        // in variables
+        for (Map.Entry<String, String> entry : records.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            switch (key) {
+                case "1st":
+                    setFirstName(value);
+                    break;
+                case "last":
+                    setLastName(value);
+                    break;
+                case "email":
+                    setEmail(value);
+                    break;
+                case "jid":
+                    setJid(value);
+                    break;
+                case "nick":
+                    setNick(value);
+                    break;
+                case "hash":
+                    setHash(value);
+                    break;
+                case "node":
+                    setNode(value);
+                    break;
+                case "ver":
+                    setVer(value);
+                    break;
+                case "status":
+                    setStatus(Mode.valueOf(value));
+                    break;
+                case "msg":
+                    setMsg(value);
+                    break;
+                default:
+                    additionalProperties.put(key, value);
+            }
+        }
+
+    }
+
+    public Map<String, String> toMap() {
+        Map<String, String> map = new HashMap<>(additionalProperties.size() + 20);
+        map.put("txtvers", "1");
+        map.put("1st", firstName);
+        map.put("last", lastName);
+        map.put("email", email);
+        map.put("jid", jid);
+        map.put("nick", nick);
+        map.put("status", status.toString());
+        map.put("msg", msg);
+        map.put("hash", hash);
+        map.put("node", node);
+        map.put("ver", ver);
+        map.put("port.p2ppj", Integer.toString(port));
+
+        map.putAll(additionalProperties);
+
+        return map;
+    }
+
+    /**
+     * Update all the values of the presence.
+     */
+    void update(LLPresence p) {
+        setFirstName(p.getFirstName());
+        setLastName(p.getLastName());
+        setEmail(p.getEmail());
+        setMsg(p.getMsg());
+        setNick(p.getNick());
+        setStatus(p.getStatus());
+        setJid(p.getJid());
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public String getNick() {
+        return nick;
+    }
+
+    public void setNick(String nick) {
+        this.nick = nick;
+    }
+
+    public String getJid() {
+        return jid;
+    }
+
+    public void setJid(String jid) {
+        this.jid = jid;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
+    public String getVer() {
+        return ver;
+    }
+
+    public void setVer(String ver) {
+        this.ver = ver;
+    }
+
+    public String getNode() {
+        return node;
+    }
+
+    public void setNode(String node) {
+        this.node = node;
+    }
+
+    public Mode getStatus() {
+        return status;
+    }
+
+    public void setStatus(Mode status) {
+        this.status = status;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
 }
