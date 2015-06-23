@@ -23,52 +23,18 @@ public class JmDNSService extends LLService implements ServiceListener{
     private ServiceInfo serviceInfo;
     static final String SERVICE_TYPE = "_presence._tcp.local.";
 
-    public JmDNSService(LLPresence presence) {
-        super(presence);
-    }
-
-    /**
-     * Instantiate a new JmDNSService and start to listen for connections.
-     *
-     * @param presence the mDNS presence information that should be used.
-     */
-    public static LLService create(LLPresence presence) throws XMPPException {
-        return create(presence, null);
-    }
-
-    /**
-     * Instantiate a new JmDNSService and start to listen for connections.
-     *
-     * @param presence the mDNS presence information that should be used.
-     * @param addr the INET Address to use.
-     */
-    public static LLService create(LLPresence presence, InetAddress addr) throws XMPPException {
-        // Start the JmDNS daemon.
-        initJmDNS(addr);
-
-        // Start the presence service
-        JmDNSService service = new JmDNSService(presence);
-
-        return service;
-    }
-
-    /**
-     * Start the JmDNS daemon.
-     */
-    private static void initJmDNS(InetAddress addr) throws XMPPException {
+    static {
         try {
             if (jmDNS == null) {
-                if (addr == null) {
                     jmDNS= JmDNS.create();
-                }
-                else {
-                    jmDNS = JmDNS.create(addr);
-                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        catch (IOException ioe) {
-            throw new XMPPException.XMPPErrorException("Failed to create a JmDNS instance", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
-        }
+    }
+
+    public JmDNSService() {
+
     }
 
     @Override
@@ -77,7 +43,7 @@ public class JmDNSService extends LLService implements ServiceListener{
     }
 
     @Override
-    public boolean markClientPresentOnLLNetwork() throws XMPPException {
+    public void announcePresence(LLPresence llPresence) throws XMPPException {
 
         serviceInfo = ServiceInfo.create(SERVICE_TYPE,
                 presence.getServiceName(), presence.getPort(), 0, 0, presence.toMap());
@@ -95,13 +61,15 @@ public class JmDNSService extends LLService implements ServiceListener{
         catch (IOException ioe) {
             throw new XMPPException.XMPPErrorException("Failed to register DNS-SD Service", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
         }
-
-        return false;
     }
 
     @Override
-    public boolean markClientAbsentOnLLNetwork() {
-        return false;
+    public void concealPresence() {
+
+        if (serviceInfo != null) {
+            jmDNS.unregisterService(serviceInfo);
+        }
+
     }
 
     public void serviceNameChanged(String newName, String oldName) {

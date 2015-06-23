@@ -43,20 +43,23 @@ public abstract class LLService {
 
     private ServerSocket socket;
 
-    private Map<String,LLConnection> incoming =
-            new ConcurrentHashMap<String,LLConnection>();
-    private Map<String,LLConnection> outgoing =
-            new ConcurrentHashMap<String,LLConnection>();
+    private Map<String,XMPPLLConnection> incoming =
+            new ConcurrentHashMap<String,XMPPLLConnection>();
+    private Map<String,XMPPLLConnection> outgoing =
+            new ConcurrentHashMap<String,XMPPLLConnection>();
 
     static {
         SmackConfiguration.getVersion();
     }
 
-    public LLService(LLPresence presence) {
-        this.presence = presence;
-        service = this;
-    }
+    public static LLService getInstance() {
 
+        if (service == null) {
+            service = new JmDNSService();
+        }
+
+        return service;
+    }
 
     /**
      * Fetch list of all the users who are present on the Link Local network.
@@ -75,7 +78,8 @@ public abstract class LLService {
      * @return true if client was able to broadcast presence on the network
      * successfully and false otherwise
      */
-    public abstract boolean markClientPresentOnLLNetwork() throws XMPPException;
+    public abstract void announcePresence(LLPresence presence) throws XMPPException;
+
     
     /**
     * Marks absence of a client on the Link Local Network. Marking absence
@@ -85,7 +89,7 @@ public abstract class LLService {
     * @return true if client was able to broadcast absence on the network
     * successfully and false otherwise
     */
-    public abstract boolean markClientAbsentOnLLNetwork();
+    public abstract void concealPresence();
 
     public void init() throws XMPPException{
 
@@ -93,7 +97,7 @@ public abstract class LLService {
         socket = bindRange(DEFAULT_MIN_PORT, DEFAULT_MAX_PORT);
 
         // register service on the allocated port
-        markClientPresentOnLLNetwork();
+        //announcePresence();
 
         // start to listen for new connections
         listenerThread = new Thread() {
@@ -154,8 +158,8 @@ public abstract class LLService {
      * @return a connection associated with the service name or null if no
      * connection is available.
      */
-    LLConnection getConnectionTo(String serviceName) {
-        LLConnection connection = outgoing.get(serviceName);
+    XMPPLLConnection getConnectionTo(String serviceName) {
+        XMPPLLConnection connection = outgoing.get(serviceName);
         if (connection != null)
             return connection;
         return incoming.get(serviceName);
@@ -166,7 +170,7 @@ public abstract class LLService {
         presence.setServiceName(newName);
 
         // clean up connections
-        LLConnection c;
+        XMPPLLConnection c;
         c = getConnectionTo(oldName);
         if (c != null)
             c.disconnect();

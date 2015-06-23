@@ -11,5 +11,5 @@ public interface LLServiceConnectionListener {
      *
      * @param connection the new established connection.
      */
-    public void connectionCreated(LLConnection connection);
+    public void connectionCreated(XMPPLLConnection connection);
 }
