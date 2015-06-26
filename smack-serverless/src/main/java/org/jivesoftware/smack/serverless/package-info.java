@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Ishan Khanna.
+ * Copyright 2015 Ishan Khanna
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,6 @@
 /**
  * Core classes of the Smack Serverless Messaging API.
  * See <a href="www.xmpp.org/extensions/xep-0174.html">XEP-0174</a>
- * 
+ *
  */
 package org.jivesoftware.smack.serverless;

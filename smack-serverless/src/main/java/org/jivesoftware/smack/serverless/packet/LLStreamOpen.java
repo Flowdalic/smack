@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Ishan Khanna.
+ * Copyright 2015 Ishan Khanna
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,17 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
 public class LLStreamOpen extends StreamOpen {
 
     private final String fromService;
-    
+
     public LLStreamOpen(String toService, String fromService) {
         super(toService);
         this.fromService = fromService;
     }
 
-    @Override
-    public XmlStringBuilder toXML() {
+    @Override public XmlStringBuilder toXML() {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("from", fromService);
         xml.rightAngleBracket();
         return xml;
     }
-    
+
 }

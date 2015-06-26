@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Ishan Khanna.
+ * Copyright 2015 Ishan Khanna
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,19 @@ import org.jivesoftware.smack.ConnectionConfiguration;
 import javax.net.SocketFactory;
 import java.net.Socket;
 
-public class LLConnectionConfiguration extends ConnectionConfiguration{
+public class LLConnectionConfiguration extends ConnectionConfiguration {
 
     private LLPresence remotePresence;
     private LLPresence localPresence;
     private Socket socket;
 
     /**
-    * Holds the socket factory that is used to generate the socket in the connection
-    */
+     * Holds the socket factory that is used to generate the socket in the connection.
+     */
     private SocketFactory socketFactory;
 
     /**
-     * Initiating a Link Local Connection when the client is acting has a Host
+     * Initiating a Link Local Connection when the client is acting has a Host.
      * @param localPresence Local Link Presence
      * @param remoteSocket The socket that is associated with this local connection
      */
@@ -44,7 +44,7 @@ public class LLConnectionConfiguration extends ConnectionConfiguration{
     }
 
     /**
-     * This tells if this is a host connection or not
+     * This tells if this is a host connection or not.
      * @return true if this is a host connection and false otherwise
      */
     public boolean isInitiator() {
@@ -52,7 +52,7 @@ public class LLConnectionConfiguration extends ConnectionConfiguration{
     }
 
     /**
-     * Return the remote client's link-local presence information
+     * Return the remote client's link-local presence information.
      * @return the remote client's link-local presence information
      */
     public LLPresence getRemotePresence() {
@@ -60,7 +60,7 @@ public class LLConnectionConfiguration extends ConnectionConfiguration{
     }
 
     /**
-     * Return this client's link-local presence information
+     * Return this client's link-local presence information.
      * @return this client's link-local presence information
      */
     public LLPresence getLocalPresence() {
@@ -69,12 +69,11 @@ public class LLConnectionConfiguration extends ConnectionConfiguration{
 
     /**
      * Return the socket which was instantiated when a connection to a client
-     * was established
+     * was established.
      * @return the socket established when the remote client connected
      */
     public Socket getSocket() {
         return socket;
     }
-
 
 }

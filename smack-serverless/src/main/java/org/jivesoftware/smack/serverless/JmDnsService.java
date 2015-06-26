@@ -1,3 +1,19 @@
+/**
+ *
+ * Copyright 2015 Ishan Khanna
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jivesoftware.smack.serverless;
 
 import org.jivesoftware.smack.XMPPException;
@@ -10,43 +26,38 @@ import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 import javax.jmdns.impl.JmDNSImpl;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by ishan on 16/06/15.
- */
-public class JmDNSService extends LLService implements ServiceListener{
+public class JmDNSService extends LLService implements ServiceListener {
 
-    static JmDNS jmDNS = null;
-    private ServiceInfo serviceInfo;
     static final String SERVICE_TYPE = "_presence._tcp.local.";
+    static JmDNS jmDNS = null;
 
     static {
         try {
             if (jmDNS == null) {
-                    jmDNS= JmDNS.create();
+                jmDNS = JmDNS.create();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        catch (IOException e) {
         }
     }
+
+    private ServiceInfo serviceInfo;
 
     public JmDNSService() {
 
     }
 
-    @Override
-    public List<BareJid> getAllClientsPresentOnLLNetwork() {
+    @Override public List<BareJid> getAllClientsPresentOnLLNetwork() {
         return null;
     }
 
-    @Override
-    public void announcePresence(LLPresence llPresence) throws XMPPException {
+    @Override public void announcePresence(LLPresence llPresence) throws XMPPException {
 
-        serviceInfo = ServiceInfo.create(SERVICE_TYPE,
-                presence.getServiceName(), presence.getPort(), 0, 0, presence.toMap());
+        serviceInfo = ServiceInfo.create(SERVICE_TYPE, presence.getServiceName(), presence.getPort(), 0, 0,
+                        presence.toMap());
         jmDNS.addServiceListener(SERVICE_TYPE, this);
         try {
             String originalServiceName = serviceInfo.getName();
@@ -59,12 +70,12 @@ public class JmDNSService extends LLService implements ServiceListener{
             }
         }
         catch (IOException ioe) {
-            throw new XMPPException.XMPPErrorException("Failed to register DNS-SD Service", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
+            throw new XMPPException.XMPPErrorException("Failed to register DNS-SD Service",
+                            new XMPPError(XMPPError.Condition.undefined_condition), ioe);
         }
     }
 
-    @Override
-    public void concealPresence() {
+    @Override public void concealPresence() {
 
         if (serviceInfo != null) {
             jmDNS.unregisterService(serviceInfo);
@@ -89,7 +100,7 @@ public class JmDNSService extends LLService implements ServiceListener{
      *
      * @param requestedInfo the ServiceInfo instance passed to {@link javax.jmdns.JmDNS#registerService(javax.jmdns.ServiceInfo)}
      * @return the unique service name actually being advertised by JmDNS. If no
-     *         match found, return requestedInfo.getName()
+     * match found, return requestedInfo.getName()
      */
     private String getRealizedServiceName(ServiceInfo requestedInfo) {
         Map<String, ServiceInfo> map = ((JmDNSImpl) jmDNS).getServices();
@@ -101,8 +112,8 @@ public class JmDNSService extends LLService implements ServiceListener{
         // The service name was altered... Search registered services
         // e.g test@example.presence._tcp.local would match test@example (2).presence._tcp.local
         for (ServiceInfo info : map.values()) {
-            if (info.getName().contains(requestedInfo.getName())
-                    && info.getTypeWithSubtype().equals(requestedInfo.getTypeWithSubtype())) {
+            if (info.getName().contains(requestedInfo.getName()) && info.getTypeWithSubtype().equals(
+                            requestedInfo.getTypeWithSubtype())) {
                 return info.getName();
             }
         }
@@ -111,18 +122,15 @@ public class JmDNSService extends LLService implements ServiceListener{
         return requestedInfo.getName();
     }
 
-    @Override
-    public void serviceAdded(ServiceEvent event) {
+    @Override public void serviceAdded(ServiceEvent event) {
 
     }
 
-    @Override
-    public void serviceRemoved(ServiceEvent event) {
+    @Override public void serviceRemoved(ServiceEvent event) {
 
     }
 
-    @Override
-    public void serviceResolved(ServiceEvent event) {
+    @Override public void serviceResolved(ServiceEvent event) {
 
     }
 }

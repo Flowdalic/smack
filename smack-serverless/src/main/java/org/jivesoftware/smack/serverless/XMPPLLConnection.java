@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Ishan Khanna.
+ * Copyright 2015 Ishan Khanna
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import org.jivesoftware.smack.packet.Stanza;
 
 import java.io.IOException;
 
-public class XMPPLLConnection extends AbstractXMPPConnection{
+public class XMPPLLConnection extends AbstractXMPPConnection {
 
     private LLService service;
-    
+
     /**
      * Initialize a new Link-Local Connection.  
      * @param service LLService associated with the connection
@@ -37,44 +37,39 @@ public class XMPPLLConnection extends AbstractXMPPConnection{
         super(configuration);
     }
 
-
-    @Override
-    public boolean isSecureConnection() {
+    @Override public boolean isSecureConnection() {
         return false;
     }
 
-    @Override
-    protected void sendStanzaInternal(Stanza packet) throws SmackException.NotConnectedException, InterruptedException {
+    @Override protected void sendStanzaInternal(Stanza packet)
+                    throws SmackException.NotConnectedException, InterruptedException {
 
     }
 
-    @Override
-    public void send(PlainStreamElement element) throws SmackException.NotConnectedException, InterruptedException {
+    @Override public void send(PlainStreamElement element)
+                    throws SmackException.NotConnectedException, InterruptedException {
 
     }
 
-    @Override
-    public boolean isUsingCompression() {
+    @Override public boolean isUsingCompression() {
         return false;
     }
 
-    @Override
-    protected void connectInternal() throws SmackException, IOException, XMPPException, InterruptedException {
+    @Override protected void connectInternal() throws SmackException, IOException, XMPPException, InterruptedException {
 
     }
 
-    @Override
-    protected void loginNonAnonymously(String username, String password, String resource) throws XMPPException, SmackException, IOException, InterruptedException {
+    @Override protected void loginNonAnonymously(String username, String password, String resource)
+                    throws XMPPException, SmackException, IOException, InterruptedException {
 
     }
 
-    @Override
-    protected void loginAnonymously() throws XMPPException, SmackException, IOException, InterruptedException {
+    @Override protected void loginAnonymously()
+                    throws XMPPException, SmackException, IOException, InterruptedException {
 
     }
 
-    @Override
-    protected void shutdown() {
+    @Override protected void shutdown() {
 
     }
 }

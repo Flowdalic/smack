@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Ishan Khanna.
+ * Copyright 2015 Ishan Khanna
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
-* Class for describing a Link-local presence information according to XEP-0174.
-* XEP-0174 describes how to represent XMPP presences using mDNS/DNS-SD.
-* The presence information is stored as TXT fields; example from the documentation
-* follows:
-* <pre>
-*        juliet IN TXT "txtvers=1"
-*        juliet IN TXT "1st=Juliet"
-*        juliet IN TXT "email=juliet@capulet.lit"
-*        juliet IN TXT "hash=sha-1"
-*        juliet IN TXT "jid=juliet@capulet.lit"
-*        juliet IN TXT "last=Capulet"
-*        juliet IN TXT "msg=Hanging out downtown"
-*        juliet IN TXT "nick=JuliC"
-*        juliet IN TXT "node=http://www.adiumx.com"
-*        juliet IN TXT "phsh=a3839614e1a382bcfebbcf20464f519e81770813"
-*        juliet IN TXT "port.p2pj=5562"
-*        juliet IN TXT "status=avail"
-*        juliet IN TXT "vc=CA!"
-*        juliet IN TXT "ver=66/0NaeaBKkwk85efJTGmU47vXI="
-* </pre>
-*/
+ * Class for describing a Link-local presence information according to XEP-0174.
+ * XEP-0174 describes how to represent XMPP presences using mDNS/DNS-SD.
+ * The presence information is stored as TXT fields; example from the documentation
+ * follows:
+ * <pre>
+ *        juliet IN TXT "txtvers=1"
+ *        juliet IN TXT "1st=Juliet"
+ *        juliet IN TXT "email=juliet@capulet.lit"
+ *        juliet IN TXT "hash=sha-1"
+ *        juliet IN TXT "jid=juliet@capulet.lit"
+ *        juliet IN TXT "last=Capulet"
+ *        juliet IN TXT "msg=Hanging out downtown"
+ *        juliet IN TXT "nick=JuliC"
+ *        juliet IN TXT "node=http://www.adiumx.com"
+ *        juliet IN TXT "phsh=a3839614e1a382bcfebbcf20464f519e81770813"
+ *        juliet IN TXT "port.p2pj=5562"
+ *        juliet IN TXT "status=avail"
+ *        juliet IN TXT "vc=CA!"
+ *        juliet IN TXT "ver=66/0NaeaBKkwk85efJTGmU47vXI="
+ * </pre>
+ */
 
 public class LLPresence {
-    
+
+    // Additional properties (if any)
+    private final Map<String, String> additionalProperties = new HashMap<String, String>();
     // Information about the User gathered from TXT records
     private String firstName;
     private String lastName;
@@ -51,33 +53,19 @@ public class LLPresence {
     private String msg;
     private String nick;
     private String jid;
-    
     // Capabilities version information
     private String hash;
     private String ver;
     private String node;
-    
-    // Additional properties (if any)
-    private final Map<String, String> additionalProperties = new HashMap<String, String>();
-    
-    public static enum Mode {
-        AVAILABLE,
-        AWAY,
-        DND,
-        BUSY
-    }
-    
     /**
-     * As per the documentation, by default the presence status of a link-local 
+     * As per the documentation, by default the presence status of a link-local
      * user will be Available.
      */
     private Mode status = Mode.AVAILABLE;
-    
     // Host Details
     private int port = 0;
     private String host;
     private String serviceName;
-
     public LLPresence(String serviceName) {
         this.serviceName = serviceName;
     }
@@ -88,8 +76,7 @@ public class LLPresence {
         this.port = port;
     }
 
-    public LLPresence(String serviceName, String host, int port,
-                      Map<String,String> records) {
+    public LLPresence(String serviceName, String host, int port, Map<String, String> records) {
         this(serviceName, host, port);
 
         // Parse the map (originating from the TXT fields) and put them
@@ -98,38 +85,38 @@ public class LLPresence {
             String key = entry.getKey();
             String value = entry.getValue();
             switch (key) {
-                case "1st":
-                    setFirstName(value);
-                    break;
-                case "last":
-                    setLastName(value);
-                    break;
-                case "email":
-                    setEmail(value);
-                    break;
-                case "jid":
-                    setJid(value);
-                    break;
-                case "nick":
-                    setNick(value);
-                    break;
-                case "hash":
-                    setHash(value);
-                    break;
-                case "node":
-                    setNode(value);
-                    break;
-                case "ver":
-                    setVer(value);
-                    break;
-                case "status":
-                    setStatus(Mode.valueOf(value));
-                    break;
-                case "msg":
-                    setMsg(value);
-                    break;
-                default:
-                    additionalProperties.put(key, value);
+            case "1st":
+                setFirstName(value);
+                break;
+            case "last":
+                setLastName(value);
+                break;
+            case "email":
+                setEmail(value);
+                break;
+            case "jid":
+                setJid(value);
+                break;
+            case "nick":
+                setNick(value);
+                break;
+            case "hash":
+                setHash(value);
+                break;
+            case "node":
+                setNode(value);
+                break;
+            case "ver":
+                setVer(value);
+                break;
+            case "status":
+                setStatus(Mode.valueOf(value));
+                break;
+            case "msg":
+                setMsg(value);
+                break;
+            default:
+                additionalProperties.put(key, value);
             }
         }
 
@@ -270,5 +257,12 @@ public class LLPresence {
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public static enum Mode {
+        AVAILABLE,
+        AWAY,
+        DND,
+        BUSY
     }
 }
