@@ -20,17 +20,16 @@ package org.jivesoftware.smack.roster;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
-import org.jivesoftware.smack.PacketCollector;
+import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.roster.packet.RosterPacket;
-import org.jxmpp.util.XmppStringUtils;
+import org.jxmpp.jid.Jid;
 
 /**
  * A group of roster entries.
@@ -38,10 +37,9 @@ import org.jxmpp.util.XmppStringUtils;
  * @see Roster#getGroup(String)
  * @author Matt Tucker
  */
-public class RosterGroup {
+public class RosterGroup extends Manager {
 
     private final String name;
-    private final XMPPConnection connection;
     private final Set<RosterEntry> entries;
 
     /**
@@ -51,8 +49,8 @@ public class RosterGroup {
      * @param connection the connection the group belongs to.
      */
     RosterGroup(String name, XMPPConnection connection) {
+        super(connection);
         this.name = name;
-        this.connection = connection;
         entries = new LinkedHashSet<RosterEntry>();
     }
 
@@ -86,7 +84,7 @@ public class RosterGroup {
                 item.removeGroupName(this.name);
                 item.addGroupName(name);
                 packet.addRosterItem(item);
-                connection.createPacketCollectorAndSend(packet).nextResultOrThrow();
+                connection().createPacketCollectorAndSend(packet).nextResultOrThrow();
             }
         }
     }
@@ -120,17 +118,16 @@ public class RosterGroup {
      * @param user the XMPP address of the user (eg "jsmith@example.com").
      * @return the roster entry or <tt>null</tt> if it does not exist in the group.
      */
-    public RosterEntry getEntry(String user) {
+    public RosterEntry getEntry(Jid user) {
         if (user == null) {
             return null;
         }
         // Roster entries never include a resource so remove the resource
         // if it's a part of the XMPP address.
-        user = XmppStringUtils.parseBareJid(user);
-        String userLowerCase = user.toLowerCase(Locale.US);
+        user = user.asBareJid();
         synchronized (entries) {
             for (RosterEntry entry : entries) {
-                if (entry.getUser().equals(userLowerCase)) {
+                if (entry.getJid().equals(user)) {
                     return entry;
                 }
             }
@@ -156,7 +153,7 @@ public class RosterGroup {
      * @param user the XMPP address of the user.
      * @return true if the XMPP address is an entry in this group.
      */
-    public boolean contains(String user) {
+    public boolean contains(Jid user) {
         return getEntry(user) != null;
     }
 
@@ -173,7 +170,6 @@ public class RosterGroup {
      * @throws InterruptedException 
      */
     public void addEntry(RosterEntry entry) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        PacketCollector collector = null;
         // Only add the entry if it isn't already in the list.
         synchronized (entries) {
             if (!entries.contains(entry)) {
@@ -183,11 +179,8 @@ public class RosterGroup {
                 item.addGroupName(getName());
                 packet.addRosterItem(item);
                 // Wait up to a certain number of seconds for a reply from the server.
-                collector = connection.createPacketCollectorAndSend(packet);
+                connection().createPacketCollectorAndSend(packet).nextResultOrThrow();
             }
-        }
-        if (collector != null) {
-            collector.nextResultOrThrow();
         }
     }
 
@@ -205,7 +198,6 @@ public class RosterGroup {
      * @throws InterruptedException 
      */
     public void removeEntry(RosterEntry entry) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        PacketCollector collector = null;
         // Only remove the entry if it's in the entry list.
         // Remove the entry locally, if we wait for RosterPacketListenerprocess>>Packet(Packet)
         // to take place the entry will exist in the group until a packet is received from the 
@@ -218,11 +210,8 @@ public class RosterGroup {
                 item.removeGroupName(this.getName());
                 packet.addRosterItem(item);
                 // Wait up to a certain number of seconds for a reply from the server.
-                collector = connection.createPacketCollectorAndSend(packet);
+                connection().createPacketCollectorAndSend(packet).nextResultOrThrow();
             }
-        }
-        if (collector != null) {
-            collector.nextResultOrThrow();
         }
     }
 

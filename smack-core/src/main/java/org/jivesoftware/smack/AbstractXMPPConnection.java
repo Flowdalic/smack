@@ -62,6 +62,7 @@ import org.jivesoftware.smack.packet.Bind;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Mechanisms;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.Presence;
@@ -71,9 +72,9 @@ import org.jivesoftware.smack.packet.PlainStreamElement;
 import org.jivesoftware.smack.packet.StreamError;
 import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
-import org.jivesoftware.smack.parsing.UnparsablePacket;
 import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
+import org.jivesoftware.smack.sasl.core.SASLAnonymous;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smack.util.PacketParserUtils;
@@ -82,8 +83,9 @@ import org.jivesoftware.smack.util.SmackExecutorThreadFactory;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.util.XmppStringUtils;
 import org.xmlpull.v1.XmlPullParser;
 
@@ -157,7 +159,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * certificate.
      * </p>
      */
-    protected FullJid user;
+    protected EntityFullJid user;
 
     protected boolean connected = false;
 
@@ -193,18 +195,18 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * parsed.
      */
     protected final SynchronizationPoint<Exception> lastFeaturesReceived = new SynchronizationPoint<Exception>(
-                    AbstractXMPPConnection.this);
+                    AbstractXMPPConnection.this, "last stream features received from server");
 
     /**
      * Set to success if the sasl feature has been received.
      */
     protected final SynchronizationPoint<SmackException> saslFeatureReceived = new SynchronizationPoint<SmackException>(
-                    AbstractXMPPConnection.this);
+                    AbstractXMPPConnection.this, "SASL mechanisms stream feature from server");
 
     /**
      * The SASLAuthentication manager that is responsible for authenticating with the server.
      */
-    protected SASLAuthentication saslAuthentication = new SASLAuthentication(this);
+    protected final SASLAuthentication saslAuthentication;
 
     /**
      * A number to uniquely identify connections that are created. This is distinct from the
@@ -232,13 +234,13 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * PacketListeners are invoked in the same order the stanzas arrived.
      */
     private final ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<Runnable>(100), new SmackExecutorThreadFactory(connectionCounterValue, "Incoming Processor"));
+                    new ArrayBlockingQueue<Runnable>(100), new SmackExecutorThreadFactory(this, "Incoming Processor"));
 
     /**
      * This scheduled thread pool executor is used to remove pending callbacks.
      */
     private final ScheduledExecutorService removeCallbacksService = Executors.newSingleThreadScheduledExecutor(
-                    new SmackExecutorThreadFactory(connectionCounterValue, "Remove Callbacks"));
+                    new SmackExecutorThreadFactory(this, "Remove Callbacks"));
 
     /**
      * A cached thread pool executor service with custom thread factory to set meaningful names on the threads and set
@@ -247,7 +249,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     private final ExecutorService cachedExecutorService = Executors.newCachedThreadPool(
                     // @formatter:off
                     new SmackExecutorThreadFactory(    // threadFactory
-                                    connectionCounterValue,
+                                    this,
                                     "Cached Executor"
                                     )
                     // @formatter:on
@@ -259,7 +261,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * is the same as the order of the incoming stanzas. Therefore we use a <i>single</i> threaded executor service.
      */
     private final ExecutorService singleThreadedExecutorService = Executors.newSingleThreadExecutor(new SmackExecutorThreadFactory(
-                    getConnectionCounter(), "Single Threaded Executor"));
+                    this, "Single Threaded Executor"));
 
     /**
      * The used host to establish the connection to
@@ -291,6 +293,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * @param configuration The configuration which is used to establish the connection.
      */
     protected AbstractXMPPConnection(ConnectionConfiguration configuration) {
+        saslAuthentication = new SASLAuthentication(this, configuration);
         config = configuration;
         // Notify listeners that a new connection has been established
         for (ConnectionCreationListener listener : XMPPConnectionRegistry.getConnectionCreationListeners()) {
@@ -302,12 +305,18 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         return config;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public DomainBareJid getServiceName() {
-        if (serviceName != null) {
-            return serviceName;
+        return getXMPPServiceDomain();
+    }
+
+    @Override
+    public DomainBareJid getXMPPServiceDomain() {
+        if (xmppServiceDomain != null) {
+            return xmppServiceDomain;
         }
-        return config.getServiceName();
+        return config.getXMPPServiceDomain();
     }
 
     @Override
@@ -332,11 +341,11 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     public abstract boolean isUsingCompression();
 
     /**
-     * Establishes a connection to the XMPP server and performs an automatic login
-     * only if the previous connection state was logged (authenticated). It basically
+     * Establishes a connection to the XMPP server. It basically
      * creates and maintains a connection to the server.
      * <p>
      * Listeners will be preserved from a previous connection.
+     * </p>
      * 
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somewhere else besides XMPP protocol level.
@@ -371,7 +380,12 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      */
     protected abstract void connectInternal() throws SmackException, IOException, XMPPException, InterruptedException;
 
-    private String usedUsername, usedPassword, usedResource;
+    private String usedUsername, usedPassword;
+
+    /**
+     * The resourcepart used for this connection. May not be the resulting resourcepart if it's null or overridden by the XMPP service.
+     */
+    private Resourcepart usedResource;
 
     /**
      * Logs in to the server using the strongest SASL mechanism supported by
@@ -397,22 +411,16 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * @throws InterruptedException 
      */
     public synchronized void login() throws XMPPException, SmackException, IOException, InterruptedException {
-        if (isAnonymous()) {
-            throwNotConnectedExceptionIfAppropriate();
-            throwAlreadyLoggedInExceptionIfAppropriate();
-            loginAnonymously();
-        } else {
-            // The previously used username, password and resource take over precedence over the
-            // ones from the connection configuration
-            CharSequence username = usedUsername != null ? usedUsername : config.getUsername();
-            String password = usedPassword != null ? usedPassword : config.getPassword();
-            String resource = usedResource != null ? usedResource : config.getResource();
-            login(username, password, resource);
-        }
+        // The previously used username, password and resource take over precedence over the
+        // ones from the connection configuration
+        CharSequence username = usedUsername != null ? usedUsername : config.getUsername();
+        String password = usedPassword != null ? usedPassword : config.getPassword();
+        Resourcepart resource = usedResource != null ? usedResource : config.getResource();
+        login(username, password, resource);
     }
 
     /**
-     * Same as {@link #login(CharSequence, String, String)}, but takes the resource from the connection
+     * Same as {@link #login(CharSequence, String, Resourcepart)}, but takes the resource from the connection
      * configuration.
      * 
      * @param username
@@ -441,7 +449,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * @throws InterruptedException 
      * @see #login
      */
-    public synchronized void login(CharSequence username, String password, String resource) throws XMPPException,
+    public synchronized void login(CharSequence username, String password, Resourcepart resource) throws XMPPException,
                     SmackException, IOException, InterruptedException {
         if (!config.allowNullOrEmptyUsername) {
             StringUtils.requireNotNullOrEmpty(username, "Username must not be null or empty");
@@ -451,13 +459,11 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         usedUsername = username != null ? username.toString() : null;
         usedPassword = password;
         usedResource = resource;
-        loginNonAnonymously(usedUsername, usedPassword, usedResource);
+        loginInternal(usedUsername, usedPassword, usedResource);
     }
 
-    protected abstract void loginNonAnonymously(String username, String password, String resource)
+    protected abstract void loginInternal(String username, String password, Resourcepart resource)
                     throws XMPPException, SmackException, IOException, InterruptedException;
-
-    protected abstract void loginAnonymously() throws XMPPException, SmackException, IOException, InterruptedException;
 
     @Override
     public final boolean isConnected() {
@@ -470,7 +476,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     @Override
-    public final FullJid getUser() {
+    public final EntityFullJid getUser() {
         return user;
     }
 
@@ -482,7 +488,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         return streamId;
     }
 
-    protected void bindResourceAndEstablishSession(String resource) throws XMPPErrorException,
+    protected void bindResourceAndEstablishSession(Resourcepart resource) throws XMPPErrorException,
                     SmackException, InterruptedException {
 
         // Wait until either:
@@ -508,7 +514,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         // from the login() arguments and the configurations service name, as, for example, when SASL External is used,
         // the username is not given to login but taken from the 'external' certificate.
         user = response.getJid();
-        serviceName = user.asDomainBareJid();
+        xmppServiceDomain = user.asDomainBareJid();
 
         Session.Feature sessionFeature = getFeature(Session.ELEMENT, Session.NAMESPACE);
         // Only bind the session if it's announced as stream feature by the server, is not optional and not disabled
@@ -547,11 +553,22 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
 
     @Override
     public final boolean isAnonymous() {
-        return config.getUsername() == null && usedUsername == null
-                        && !config.allowNullOrEmptyUsername;
+        return isAuthenticated() && SASLAnonymous.NAME.equals(getUsedSaslMechansism());
     }
 
-    private DomainBareJid serviceName;
+    /**
+     * Get the name of the SASL mechanism that was used to authenticate this connection. This returns the name of
+     * mechanism which was used the last time this conneciton was authenticated, and will return <code>null</code> if
+     * this connection was not authenticated before.
+     * 
+     * @return the name of the used SASL mechanism.
+     * @since 4.2
+     */
+    public final String getUsedSaslMechansism() {
+        return saslAuthentication.getNameOfLastUsedSaslMechansism();
+    }
+
+    private DomainBareJid xmppServiceDomain;
 
     protected List<HostAddress> hostAddresses;
 
@@ -569,7 +586,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             hostAddress = new HostAddress(config.host, config.port);
             hostAddresses.add(hostAddress);
         } else {
-            hostAddresses = DNSUtil.resolveXMPPDomain(config.serviceName.toString(), failedAddresses);
+            hostAddresses = DNSUtil.resolveXMPPServiceDomain(config.getXMPPServiceDomain().toString(), failedAddresses);
         }
         // If we reach this, then hostAddresses *must not* be empty, i.e. there is at least one host added, either the
         // config.host one or the host representing the service name by DNSUtil
@@ -606,25 +623,26 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
     }
 
     @Override
-    public void sendStanza(Stanza packet) throws NotConnectedException, InterruptedException {
-        Objects.requireNonNull(packet, "Packet must not be null");
+    public void sendStanza(Stanza stanza) throws NotConnectedException, InterruptedException {
+        Objects.requireNonNull(stanza, "Stanza must not be null");
+        assert(stanza instanceof Message || stanza instanceof Presence || stanza instanceof IQ);
 
         throwNotConnectedExceptionIfAppropriate();
         switch (fromMode) {
         case OMITTED:
-            packet.setFrom((Jid) null);
+            stanza.setFrom((Jid) null);
             break;
         case USER:
-            packet.setFrom(getUser());
+            stanza.setFrom(getUser());
             break;
         case UNCHANGED:
         default:
             break;
         }
-        // Invoke interceptors for the new packet that is about to be sent. Interceptors may modify
-        // the content of the packet.
-        firePacketInterceptors(packet);
-        sendStanzaInternal(packet);
+        // Invoke interceptors for the new stanza that is about to be sent. Interceptors may modify
+        // the content of the stanza.
+        firePacketInterceptors(stanza);
+        sendStanzaInternal(stanza);
     }
 
     /**
@@ -957,15 +975,15 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
         catch (Exception e) {
             CharSequence content = PacketParserUtils.parseContentDepth(parser,
                             parserDepth);
-            UnparsablePacket message = new UnparsablePacket(content, e);
+            UnparseableStanza message = new UnparseableStanza(content, e);
             ParsingExceptionCallback callback = getParsingExceptionCallback();
             if (callback != null) {
-                callback.handleUnparsablePacket(message);
+                callback.handleUnparsableStanza(message);
             }
         }
         ParserUtils.assertAtEndTag(parser);
         if (stanza != null) {
-            processPacket(stanza);
+            processStanza(stanza);
         }
     }
 
@@ -974,29 +992,18 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      * stanza(/packet) collectors and listeners and letting them examine the stanza(/packet) to see if
      * they are a match with the filter.
      *
-     * @param packet the stanza(/packet) to process.
+     * @param stanza the stanza to process.
      */
-    protected void processPacket(Stanza packet) {
-        assert(packet != null);
+    protected void processStanza(final Stanza stanza) {
+        assert(stanza != null);
         lastStanzaReceived = System.currentTimeMillis();
         // Deliver the incoming packet to listeners.
-        executorService.submit(new ListenerNotification(packet));
-    }
-
-    /**
-     * A runnable to notify all listeners and stanza(/packet) collectors of a packet.
-     */
-    private class ListenerNotification implements Runnable {
-
-        private final Stanza packet;
-
-        public ListenerNotification(Stanza packet) {
-            this.packet = packet;
-        }
-
-        public void run() {
-            invokePacketCollectorsAndNotifyRecvListeners(packet);
-        }
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                invokePacketCollectorsAndNotifyRecvListeners(stanza);
+            }
+        });
     }
 
     /**
@@ -1199,7 +1206,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
             }
         }
         if (logWarning) {
-            LOGGER.log(Level.WARNING, "Connection closed with error", e);
+            LOGGER.log(Level.WARNING, "Connection " + this + " closed with error", e);
         }
         for (ConnectionListener listener : connectionListeners) {
             try {
@@ -1303,8 +1310,7 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
 
     @Override
     protected void finalize() throws Throwable {
-        LOGGER.fine("finalizing XMPPConnection ( " + getConnectionCounter()
-                        + "): Shutting down executor services");
+        LOGGER.fine("finalizing " + this + ": Shutting down executor services");
         try {
             // It's usually not a good idea to rely on finalize. But this is the easiest way to
             // avoid the "Smack Listener Processor" leaking. The thread(s) of the executor have a
@@ -1567,6 +1573,13 @@ public abstract class AbstractXMPPConnection implements XMPPConnection {
      */
     public ParsingExceptionCallback getParsingExceptionCallback() {
         return parsingExceptionCallback;
+    }
+
+    @Override
+    public final String toString() {
+        EntityFullJid localEndpoint = getUser();
+        String localEndpointString = (localEndpoint == null ?  "not-authenticated" : localEndpoint.toString());
+        return getClass().getSimpleName() + '[' + localEndpointString + "] (" + getConnectionCounter() + ')';
     }
 
     protected final void asyncGo(Runnable runnable) {

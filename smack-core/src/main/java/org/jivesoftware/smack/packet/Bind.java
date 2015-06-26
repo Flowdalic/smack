@@ -17,7 +17,8 @@
 
 package org.jivesoftware.smack.packet;
 
-import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.parts.Resourcepart;
 
 /**
  * IQ stanza(/packet) used by Smack to bind a resource and to obtain the jid assigned by the server.
@@ -35,30 +36,30 @@ public class Bind extends IQ {
     public static final String ELEMENT = "bind";
     public static final String NAMESPACE = "urn:ietf:params:xml:ns:xmpp-bind";
 
-    private final String resource;
-    private final FullJid jid;
+    private final Resourcepart resource;
+    private final EntityFullJid jid;
 
-    public Bind(String resource, FullJid jid) {
+    public Bind(Resourcepart resource, EntityFullJid jid) {
         super(ELEMENT, NAMESPACE);
         this.resource = resource;
         this.jid = jid;
     }
 
-    public String getResource() {
+    public Resourcepart getResource() {
         return resource;
     }
 
-    public FullJid getJid() {
+    public EntityFullJid getJid() {
         return jid;
     }
 
-    public static Bind newSet(String resource) {
+    public static Bind newSet(Resourcepart resource) {
         Bind bind = new Bind(resource, null);
         bind.setType(IQ.Type.set);
         return bind;
     }
 
-    public static Bind newResult(FullJid jid) {
+    public static Bind newResult(EntityFullJid jid) {
         return new Bind(null, jid);
     }
 

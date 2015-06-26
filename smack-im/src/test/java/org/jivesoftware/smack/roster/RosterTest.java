@@ -48,6 +48,7 @@ import org.jivesoftware.smack.util.PacketParserUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.stringprep.XmppStringprepException;
@@ -105,9 +106,9 @@ public class RosterTest extends InitSmackIm {
 
         // Verify roster
         assertTrue("Roster can't be loaded!", roster.waitUntilLoaded());
-        verifyRomeosEntry(roster.getEntry(JidCreate.from("romeo@example.net")));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyRomeosEntry(roster.getEntry(JidCreate.entityBareFrom("romeo@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries.", 3, roster.getEntries().size());
 
         // Verify roster listener
@@ -133,7 +134,7 @@ public class RosterTest extends InitSmackIm {
     @Test
     public void testAddRosterItem() throws Throwable {
         // Constants for the new contact
-        final Jid contactJID = JidCreate.from("nurse@example.com");
+        final BareJid contactJID = JidCreate.entityBareFrom("nurse@example.com");
         final String contactName = "Nurse";
         final String[] contactGroup = {"Servants"};
 
@@ -146,9 +147,9 @@ public class RosterTest extends InitSmackIm {
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
-                assertSame("The provided JID doesn't match the requested!",
+                assertEquals("The provided JID doesn't match the requested!",
                         contactJID,
-                        item.getUser());
+                        item.getJid());
                 assertSame("The provided name doesn't match the requested!",
                         contactName,
                         item.getName());
@@ -190,9 +191,9 @@ public class RosterTest extends InitSmackIm {
                 addedEntry.getGroups().iterator().next().getName());
 
         // Verify the unchanged roster items
-        verifyRomeosEntry(roster.getEntry(JidCreate.from("romeo@example.net")));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyRomeosEntry(roster.getEntry(JidCreate.entityBareFrom("romeo@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries.", 4, roster.getEntries().size());
     }
 
@@ -204,7 +205,7 @@ public class RosterTest extends InitSmackIm {
     @Test
     public void testUpdateRosterItem() throws Throwable {
         // Constants for the updated contact
-        final Jid contactJID = JidCreate.from("romeo@example.net");
+        final BareJid contactJID = JidCreate.entityBareFrom("romeo@example.net");
         final String contactName = "Romeo";
         final String[] contactGroups = {"Friends", "Lovers"};
 
@@ -217,9 +218,9 @@ public class RosterTest extends InitSmackIm {
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
-                assertSame("The provided JID doesn't match the requested!",
+                assertEquals("The provided JID doesn't match the requested!",
                         contactJID,
-                        item.getUser());
+                        item.getJid());
                 assertSame("The provided name doesn't match the requested!",
                         contactName,
                         item.getName());
@@ -264,8 +265,8 @@ public class RosterTest extends InitSmackIm {
                 addedEntry.getGroups().size());
 
         // Verify the unchanged roster items
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries (" + roster.getEntries() + ").",
                 3,
                 roster.getEntries().size());
@@ -279,7 +280,7 @@ public class RosterTest extends InitSmackIm {
     @Test
     public void testDeleteRosterItem() throws Throwable {
         // The contact which should be deleted
-        final Jid contactJID = JidCreate.from("romeo@example.net");
+        final BareJid contactJID = JidCreate.entityBareFrom("romeo@example.net");
 
         // Setup
         assertNotNull("Can't get the roster from the provided connection!", roster);
@@ -290,9 +291,9 @@ public class RosterTest extends InitSmackIm {
         final RosterUpdateResponder serverSimulator = new RosterUpdateResponder() {
             void verifyUpdateRequest(final RosterPacket updateRequest) {
                 final Item item = updateRequest.getRosterItems().iterator().next();
-                assertSame("The provided JID doesn't match the requested!",
+                assertEquals("The provided JID doesn't match the requested!",
                         contactJID,
-                        item.getUser());
+                        item.getJid());
             }
         };
         serverSimulator.start();
@@ -311,8 +312,8 @@ public class RosterTest extends InitSmackIm {
         assertNull("The contact wasn't deleted from the roster!", deletedEntry);
         assertTrue("The roster listener wasn't invoked for the deleted contact!",
                 rosterListener.getDeletedAddresses().contains(contactJID));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries (" + roster.getEntries() + ").",
                 2,
                 roster.getEntries().size());
@@ -325,7 +326,7 @@ public class RosterTest extends InitSmackIm {
      */
     @Test
     public void testSimpleRosterPush() throws Throwable {
-        final Jid contactJID = JidCreate.from("nurse@example.com");
+        final BareJid contactJID = JidCreate.entityBareFrom("nurse@example.com");
         assertNotNull("Can't get the roster from the provided connection!", roster);
         final StringBuilder sb = new StringBuilder();
         sb.append("<iq id=\"rostertest1\" type=\"set\" ")
@@ -340,7 +341,7 @@ public class RosterTest extends InitSmackIm {
         rosterListener.reset();
 
         // Simulate receiving the roster push
-        connection.processPacket(rosterPush);
+        connection.processStanza(rosterPush);
         rosterListener.waitUntilInvocationOrTimeout();
 
         // Verify the roster entry of the new contact
@@ -356,9 +357,9 @@ public class RosterTest extends InitSmackIm {
                 addedEntry.getGroups().size());
 
         // Verify the unchanged roster items
-        verifyRomeosEntry(roster.getEntry(JidCreate.from("romeo@example.net")));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyRomeosEntry(roster.getEntry(JidCreate.entityBareFrom("romeo@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries.", 4, roster.getEntries().size());
     }
 
@@ -370,16 +371,16 @@ public class RosterTest extends InitSmackIm {
      */
     @Test
     public void testIgnoreInvalidFrom() throws XmppStringprepException {
-        final Jid spammerJid = JidCreate.from("spam@example.com");
+        final BareJid spammerJid = JidCreate.entityBareFrom("spam@example.com");
         RosterPacket packet = new RosterPacket();
         packet.setType(Type.set);
         packet.setTo(connection.getUser());
-        packet.setFrom(JidCreate.from("mallory@example.com"));
+        packet.setFrom(JidCreate.entityBareFrom("mallory@example.com"));
         packet.addRosterItem(new Item(spammerJid, "Cool products!"));
 
         final String requestId = packet.getStanzaId();
         // Simulate receiving the roster push
-        connection.processPacket(packet);
+        connection.processStanza(packet);
 
         // Smack should reply with an error IQ
         ErrorIQ errorIQ = (ErrorIQ) connection.getSentPacket();
@@ -398,7 +399,7 @@ public class RosterTest extends InitSmackIm {
     @Test(timeout=5000)
     public void testAddEmptyGroupEntry() throws Throwable {
         // Constants for the new contact
-        final Jid contactJID = JidCreate.from("nurse@example.com");
+        final BareJid contactJID = JidCreate.entityBareFrom("nurse@example.com");
         final String contactName = "Nurse";
         final String[] contactGroup = {""};
 
@@ -413,7 +414,7 @@ public class RosterTest extends InitSmackIm {
                 final Item item = updateRequest.getRosterItems().iterator().next();
                 assertSame("The provided JID doesn't match the requested!",
                         contactJID,
-                        item.getUser());
+                        item.getJid());
                 assertSame("The provided name doesn't match the requested!",
                         contactName,
                         item.getName());
@@ -450,9 +451,9 @@ public class RosterTest extends InitSmackIm {
                 addedEntry.getGroups().size());
 
         // Verify the unchanged roster items
-        verifyRomeosEntry(roster.getEntry(JidCreate.from("romeo@example.net")));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyRomeosEntry(roster.getEntry(JidCreate.entityBareFrom("romeo@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries.", 4, roster.getEntries().size());
     }
 
@@ -464,7 +465,7 @@ public class RosterTest extends InitSmackIm {
      */
     @Test
     public void testEmptyGroupRosterPush() throws Throwable {
-        final Jid contactJID = JidCreate.from("nurse@example.com");
+        final BareJid contactJID = JidCreate.entityBareFrom("nurse@example.com");
         assertNotNull("Can't get the roster from the provided connection!", roster);
         final StringBuilder sb = new StringBuilder();
         sb.append("<iq id=\"rostertest2\" type=\"set\" ")
@@ -481,7 +482,7 @@ public class RosterTest extends InitSmackIm {
         rosterListener.reset();
 
         // Simulate receiving the roster push
-        connection.processPacket(rosterPush);
+        connection.processStanza(rosterPush);
         rosterListener.waitUntilInvocationOrTimeout();
 
         // Verify the roster entry of the new contact
@@ -497,9 +498,9 @@ public class RosterTest extends InitSmackIm {
                 addedEntry.getGroups().size());
 
         // Verify the unchanged roster items
-        verifyRomeosEntry(roster.getEntry(JidCreate.from("romeo@example.net")));
-        verifyMercutiosEntry(roster.getEntry(JidCreate.from("mercutio@example.com")));
-        verifyBenvoliosEntry(roster.getEntry(JidCreate.from("benvolio@example.net")));
+        verifyRomeosEntry(roster.getEntry(JidCreate.entityBareFrom("romeo@example.net")));
+        verifyMercutiosEntry(roster.getEntry(JidCreate.entityBareFrom("mercutio@example.com")));
+        verifyBenvoliosEntry(roster.getEntry(JidCreate.entityBareFrom("benvolio@example.net")));
         assertSame("Wrong number of roster entries.", 4, roster.getEntries().size());
     }
 
@@ -518,12 +519,12 @@ public class RosterTest extends InitSmackIm {
             rosterPush.setTo(connection.getUser());
 
             // prepare the buddy's item entry which should be removed
-            final RosterPacket.Item item = new RosterPacket.Item(entry.getUser(), entry.getName());
+            final RosterPacket.Item item = new RosterPacket.Item(entry.getJid(), entry.getName());
             item.setItemType(ItemType.remove);
             rosterPush.addRosterItem(item);
 
             // simulate receiving the roster push
-            connection.processPacket(rosterPush);
+            connection.processStanza(rosterPush);
         }
     }
 
@@ -555,23 +556,23 @@ public class RosterTest extends InitSmackIm {
                 rosterResult.setStanzaId(rosterRequest.getStanzaId());
 
                 // prepare romeo's roster entry
-                final Item romeo = new Item(JidCreate.from("romeo@example.net"), "Romeo");
+                final Item romeo = new Item(JidCreate.entityBareFrom("romeo@example.net"), "Romeo");
                 romeo.addGroupName("Friends");
                 romeo.setItemType(ItemType.both);
                 rosterResult.addRosterItem(romeo);
 
                 // prepare mercutio's roster entry
-                final Item mercutio = new Item(JidCreate.from("mercutio@example.com"), "Mercutio");
+                final Item mercutio = new Item(JidCreate.entityBareFrom("mercutio@example.com"), "Mercutio");
                 mercutio.setItemType(ItemType.from);
                 rosterResult.addRosterItem(mercutio);
 
                 // prepare benvolio's roster entry
-                final Item benvolio = new Item(JidCreate.from("benvolio@example.net"), "Benvolio");
+                final Item benvolio = new Item(JidCreate.entityBareFrom("benvolio@example.net"), "Benvolio");
                 benvolio.setItemType(ItemType.both);
                 rosterResult.addRosterItem(benvolio);
 
                 // simulate receiving the roster result and exit the loop
-                connection.processPacket(rosterResult);
+                connection.processStanza(rosterResult);
                 break;
             }
         }
@@ -671,11 +672,11 @@ public class RosterTest extends InitSmackIm {
                         rosterPush.setType(Type.set);
                         rosterPush.setTo(connection.getUser());
                         rosterPush.addRosterItem(item);
-                        connection.processPacket(rosterPush);
+                        connection.processStanza(rosterPush);
 
                         // Create and process the IQ response
                         final IQ response = IQ.createResultIQ(rosterRequest);
-                        connection.processPacket(response);
+                        connection.processStanza(response);
 
                         // Verify the roster update request
                         assertSame("A roster set MUST contain one and only one <item/> element.",

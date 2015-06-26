@@ -51,7 +51,7 @@ public abstract class AbstractSmackLowLevelIntegrationTest extends AbstractSmack
             builder.setCustomSSLContext(sc);
         }
         builder.setSecurityMode(configuration.securityMode);
-        builder.setServiceName(service);
+        builder.setXmppDomain(service);
         return builder;
     }
 
@@ -60,7 +60,7 @@ public abstract class AbstractSmackLowLevelIntegrationTest extends AbstractSmack
         try {
             callback.connectionCallback(connection);
         } finally {
-            connection.disconnect();
+            IntTestUtil.disconnectAndMaybeDelete(connection, true);
         }
     }
 

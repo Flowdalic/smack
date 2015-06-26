@@ -16,15 +16,19 @@
  */
 package org.jivesoftware.smack;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
 import org.igniterealtime.smack.inttest.AbstractSmackLowLevelIntegrationTest;
 import org.igniterealtime.smack.inttest.Configuration;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.TestNotPossibleException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.FromMatchesFilter;
+import org.jivesoftware.smack.filter.MessageWithBodiesFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.junit.AfterClass;
@@ -57,20 +61,34 @@ public class StreamManagementTest extends AbstractSmackLowLevelIntegrationTest {
     }
 
     @SmackIntegrationTest
-    public void testStreamManagement(XMPPTCPConnection conOne, XMPPTCPConnection conTwo) throws InterruptedException, KeyManagementException,
-                    NoSuchAlgorithmException, SmackException, IOException, XMPPException,
-                    TestNotPossibleException {
-        send("Hi, what's up?", conOne, conTwo);
+    public void testStreamManagement(XMPPTCPConnection conOne, XMPPTCPConnection conTwo) throws InterruptedException,
+                    SmackException, IOException, XMPPException {
+        final String body1 = "Hi, what's up? " + testRunId;
+        final String body2 = "Hi, what's up? I've been just instantly shutdown" + testRunId;
+        final String body3 = "Hi, what's up? I've been just resumed" + testRunId;
 
-        conOne.instantShutdown();
+        final PacketCollector collector = conTwo.createPacketCollector(new AndFilter(
+                        MessageWithBodiesFilter.INSTANCE,
+                        FromMatchesFilter.createFull(conOne.getUser())));
 
-        send("Hi, what's up? I've been just instantly shutdown", conOne, conTwo);
+        try {
+            send(body1, conOne, conTwo);
+            assertMessageWithBodyReceived(body1, collector);
 
-        // Reconnect with xep198
-        conOne.connect();
+            conOne.instantShutdown();
 
-        send("Hi, what's up? I've been just resumed", conOne, conTwo);
-        // TODO check that all messages where received
+            send(body2, conOne, conTwo);
+
+            // Reconnect with xep198
+            conOne.connect().login();
+            assertMessageWithBodyReceived(body2, collector);
+
+            send(body3, conOne, conTwo);
+            assertMessageWithBodyReceived(body3, collector);
+        }
+        finally {
+            collector.cancel();
+        }
     }
 
     private static void send(String messageString, XMPPConnection from, XMPPConnection to)
@@ -78,5 +96,11 @@ public class StreamManagementTest extends AbstractSmackLowLevelIntegrationTest {
         Message message = new Message(to.getUser());
         message.setBody(messageString);
         from.sendStanza(message);
+    }
+
+    private static void assertMessageWithBodyReceived(String body, PacketCollector collector) throws InterruptedException {
+        Message message = collector.nextResult();
+        assertNotNull(message);
+        assertEquals(body, message.getBody());
     }
 }

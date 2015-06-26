@@ -32,7 +32,7 @@ import org.jivesoftware.smack.util.ObservableWriter;
 import org.jivesoftware.smack.util.ReaderListener;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.WriterListener;
-import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
 
 import javax.swing.AbstractAction;
@@ -621,7 +621,7 @@ public class EnhancedDebugger implements SmackDebugger {
         connPanel.add(
                 label,
                 new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 21, 0, new Insets(0, 0, 0, 0), 0, 0));
-        JFormattedTextField field = new JFormattedTextField(connection.getServiceName());
+        JFormattedTextField field = new JFormattedTextField(connection.getXMPPServiceDomain());
         field.setMinimumSize(new java.awt.Dimension(150, 20));
         field.setMaximumSize(new java.awt.Dimension(150, 20));
         field.setEditable(false);
@@ -743,7 +743,7 @@ public class EnhancedDebugger implements SmackDebugger {
     }
 
     @Override
-    public void userHasLogged(final FullJid user) {
+    public void userHasLogged(final EntityFullJid user) {
         final EnhancedDebugger debugger = this;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

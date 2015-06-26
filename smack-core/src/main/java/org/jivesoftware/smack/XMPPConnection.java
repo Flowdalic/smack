@@ -27,7 +27,7 @@ import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.PlainStreamElement;
 import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.EntityFullJid;
 
 /**
  * The XMPPConnection interface provides an interface for connections to an XMPP server and
@@ -78,8 +78,19 @@ public interface XMPPConnection {
      * authenticating with the server the returned value may be different.
      * 
      * @return the name of the service provided by the XMPP server.
+     // TODO remove this once the java bugs are fixed, causing a warning
+//     * @deprecated use {@link #getXMPPServiceDomain()} instead.
      */
+//    @Deprecated
     public DomainBareJid getServiceName();
+
+    /**
+     * Returns the XMPP Domain of the service provided by the XMPP server and used for this connection. After
+     * authenticating with the server the returned value may be different.
+     * 
+     * @return the XMPP domain of this XMPP session.
+     */
+    public DomainBareJid getXMPPServiceDomain();
 
     /**
      * Returns the host name of the server where the XMPP server is running. This would be the
@@ -104,7 +115,7 @@ public interface XMPPConnection {
      * 
      * @return the full XMPP address of the user logged in.
      */
-    public FullJid getUser();
+    public EntityFullJid getUser();
 
     /**
      * Returns the stream ID for this connection, which is the value set by the server

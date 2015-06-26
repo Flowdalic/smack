@@ -30,9 +30,8 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.xdata.Form;
-import org.jivesoftware.smackx.xdata.packet.DataForm;
-import org.jxmpp.jid.BareJid;
+import org.jivesoftware.smackx.muc.MultiUserChat.MucCreateConfigFormHandle;
+import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Localpart;
@@ -53,7 +52,7 @@ public class MultiUserChatIntegrationTest extends AbstractSmackIntegrationTest {
         mucManagerOne = MultiUserChatManager.getInstanceFor(conOne);
         mucManagerTwo = MultiUserChatManager.getInstanceFor(conTwo);
 
-        List<DomainBareJid> services = mucManagerOne.getServiceNames();
+        List<DomainBareJid> services = mucManagerOne.getXMPPServiceDomains();
         if (services.isEmpty()) {
             throw new TestNotPossibleException("No MUC (XEP-45) service found");
         }
@@ -64,7 +63,7 @@ public class MultiUserChatIntegrationTest extends AbstractSmackIntegrationTest {
 
     @SmackIntegrationTest
     public void mucTest() throws TimeoutException, Exception {
-        BareJid mucAddress = JidCreate.bareFrom(Localpart.from("smack-inttest-" + randomString), mucService.getDomain());
+        EntityBareJid mucAddress = JidCreate.entityBareFrom(Localpart.from("smack-inttest-" + randomString), mucService.getDomain());
 
         MultiUserChat mucAsSeenByOne = mucManagerOne.getMultiUserChat(mucAddress);
         MultiUserChat mucAsSeenByTwo = mucManagerTwo.getMultiUserChat(mucAddress);
@@ -82,9 +81,9 @@ public class MultiUserChatIntegrationTest extends AbstractSmackIntegrationTest {
             }
         });
 
-        boolean newlyCreated = mucAsSeenByOne.createOrJoin(Resourcepart.from("one-" + randomString));
-        if (newlyCreated) {
-            mucAsSeenByOne.sendConfigurationForm(new Form(DataForm.Type.submit));
+        MucCreateConfigFormHandle handle = mucAsSeenByOne.createOrJoin(Resourcepart.from("one-" + randomString));
+        if (handle != null) {
+            handle.makeInstant();
         }
         mucAsSeenByTwo.join(Resourcepart.from("two-" + randomString));
 

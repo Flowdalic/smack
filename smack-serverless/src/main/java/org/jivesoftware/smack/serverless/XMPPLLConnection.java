@@ -21,6 +21,7 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.PlainStreamElement;
 import org.jivesoftware.smack.packet.Stanza;
+import org.jxmpp.jid.parts.Resourcepart;
 
 import java.io.IOException;
 
@@ -59,17 +60,14 @@ public class XMPPLLConnection extends AbstractXMPPConnection {
 
     }
 
-    @Override protected void loginNonAnonymously(String username, String password, String resource)
-                    throws XMPPException, SmackException, IOException, InterruptedException {
-
-    }
-
-    @Override protected void loginAnonymously()
-                    throws XMPPException, SmackException, IOException, InterruptedException {
-
-    }
-
     @Override protected void shutdown() {
 
+    }
+
+    @Override
+    protected void loginInternal(String username, String password,
+            Resourcepart resource) throws XMPPException, SmackException,
+            IOException, InterruptedException {
+        // TODO Auto-generated method stub
     }
 }

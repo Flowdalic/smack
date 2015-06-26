@@ -42,6 +42,7 @@ import org.jivesoftware.smack.sasl.packet.SaslStreamElements.SASLFailure;
 import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Success;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.parts.Resourcepart;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 import org.igniterealtime.jbosh.AbstractBody;
@@ -112,12 +113,12 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
      *             (e.g. 7070 for http://domain.lt:7070/http-bind).
      * @param filePath the file which is described by the URL
      *             (e.g. /http-bind for http://domain.lt:7070/http-bind).
-     * @param xmppDomain the XMPP service name
+     * @param xmppServiceDomain the XMPP service name
      *             (e.g. domain.lt for the user alice@domain.lt)
      */
-    public XMPPBOSHConnection(String username, String password, boolean https, String host, int port, String filePath, DomainBareJid xmppDomain) {
+    public XMPPBOSHConnection(String username, String password, boolean https, String host, int port, String filePath, DomainBareJid xmppServiceDomain) {
         this(BOSHConfiguration.builder().setUseHttps(https).setHost(host)
-                .setPort(port).setFile(filePath).setServiceName(xmppDomain)
+                .setPort(port).setFile(filePath).setXmppDomain(xmppServiceDomain)
                 .setUsernameAndPassword(username, password).build());
     }
 
@@ -132,7 +133,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     }
 
     @Override
-    protected void connectInternal() throws SmackException {
+    protected void connectInternal() throws SmackException, InterruptedException {
         done = false;
         try {
             // Ensure a clean starting state
@@ -144,7 +145,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
 
             // Initialize BOSH client
             BOSHClientConfig.Builder cfgBuilder = BOSHClientConfig.Builder
-                    .create(config.getURI(), config.getServiceName().toString());
+                    .create(config.getURI(), config.getXMPPServiceDomain().toString());
             if (config.isProxyEnabled()) {
                 cfgBuilder.setProxy(config.getProxyAddress(), config.getProxyPort());
             }
@@ -210,38 +211,12 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
     }
 
     @Override
-    protected void loginNonAnonymously(String username, String password, String resource)
-            throws XMPPException, SmackException, IOException, InterruptedException {
-        if (saslAuthentication.hasNonAnonymousAuthentication()) {
-            // Authenticate using SASL
-            if (password != null) {
-                 saslAuthentication.authenticate(username, password, resource);
-            } else {
-                saslAuthentication.authenticate(resource, config.getCallbackHandler());
-            }
-        } else {
-            throw new SmackException("No non-anonymous SASL authentication mechanism available");
-        }
+    protected void loginInternal(String username, String password, Resourcepart resource) throws XMPPException,
+                    SmackException, IOException, InterruptedException {
+        // Authenticate using SASL
+        saslAuthentication.authenticate(username, password);
 
         bindResourceAndEstablishSession(resource);
-
-        afterSuccessfulLogin(false);
-    }
-
-    @Override
-    protected void loginAnonymously() throws XMPPException, SmackException, IOException, InterruptedException {
-        // Wait with SASL auth until the SASL mechanisms have been received
-        saslFeatureReceived.checkIfSuccessOrWaitOrThrow();
-
-        if (saslAuthentication.hasAnonymousAuthentication()) {
-            saslAuthentication.authenticateAnonymously();
-        }
-        else {
-            // Authenticate using Non-SASL
-            throw new SmackException("No anonymous SASL authentication mechanism available");
-        }
-
-        bindResourceAndEstablishSession(null);
 
         afterSuccessfulLogin(false);
     }
@@ -520,7 +495,7 @@ public class XMPPBOSHConnection extends AbstractXMPPConnection {
                                                 XMPPBOSHConnection.XMPP_BOSH_NS).setAttribute(
                                                 BodyQName.createWithPrefix(XMPPBOSHConnection.XMPP_BOSH_NS, "restart",
                                                                 "xmpp"), "true").setAttribute(
-                                                BodyQName.create(XMPPBOSHConnection.BOSH_URI, "to"), getServiceName().toString()).build());
+                                                BodyQName.create(XMPPBOSHConnection.BOSH_URI, "to"), getXMPPServiceDomain().toString()).build());
                                 Success success = new Success(parser.nextText());
                                 getSASLAuthentication().authenticated(success);
                                 break;

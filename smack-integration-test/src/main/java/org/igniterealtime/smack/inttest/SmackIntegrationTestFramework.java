@@ -51,7 +51,6 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration.Builder;
@@ -103,7 +102,7 @@ public class SmackIntegrationTestFramework {
                 final Method method = failedTest.testMethod;
                 final String className = method.getDeclaringClass().getName();
                 final String methodName = method.getName();
-                final Exception cause = failedTest.failureReason;
+                final Throwable cause = failedTest.failureReason;
                 LOGGER.severe(className + CLASS_METHOD_SEP + methodName + " failed: " + cause);
             }
             System.exit(2);
@@ -141,7 +140,7 @@ public class SmackIntegrationTestFramework {
         else {
             testPackages = config.testPackages.toArray(new String[config.testPackages.size()]);
         }
-        Reflections reflections = new Reflections((Object[]) testPackages, new SubTypesScanner(),
+        Reflections reflections = new Reflections(testPackages, new SubTypesScanner(),
                         new TypeAnnotationsScanner(), new MethodAnnotationsScanner(), new MethodParameterScanner());
         Set<Class<? extends AbstractSmackIntegrationTest>> inttestClasses = reflections.getSubTypesOf(AbstractSmackIntegrationTest.class);
         Set<Class<? extends AbstractSmackLowLevelIntegrationTest>> lowLevelInttestClasses = reflections.getSubTypesOf(AbstractSmackLowLevelIntegrationTest.class);
@@ -355,7 +354,7 @@ public class SmackIntegrationTestFramework {
 
                 for (Method testMethod : smackIntegrationTestMethods) {
                     final String testPrefix = testClass.getSimpleName() + '.'
-                                    + testMethod.getName() + ": ";
+                                    + testMethod.getName() + " (" + testType + "): ";
                     // Invoke all test methods on the test instance
                     LOGGER.info(testPrefix + "Start");
                     long testStart = System.currentTimeMillis();
@@ -381,10 +380,17 @@ public class SmackIntegrationTestFramework {
                                             null, (TestNotPossibleException) cause));
                             continue;
                         }
-                        Exception nonFatalException = throwFatalException(cause);
+                        Throwable nonFatalFailureReason;
+                        // junit assert's throw an AssertionError if they fail, those should not be
+                        // thrown up, as it would be done by throwFatalException()
+                        if (cause instanceof AssertionError) {
+                            nonFatalFailureReason = cause;
+                        } else {
+                            nonFatalFailureReason = throwFatalException(cause);
+                        }
                         // An integration test failed
                         testRunResult.failedIntegrationTests.add(new FailedTest(testMethod, testStart, testEnd, null,
-                                        nonFatalException));
+                                        nonFatalFailureReason));
                         LOGGER.log(Level.SEVERE, testPrefix + "Failed", e);
                     }
                     catch (IllegalArgumentException | IllegalAccessException e) {
@@ -425,7 +431,7 @@ public class SmackIntegrationTestFramework {
         }
     }
 
-    private void invokeLowLevel(Method testMethod, AbstractSmackIntTest test) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    private void invokeLowLevel(Method testMethod, AbstractSmackIntTest test) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException {
         // We have checked before that every parameter, if any, is of type XMPPTCPConnection
         final int numberOfConnections = testMethod.getParameterTypes().length;
         XMPPTCPConnection[] connections = null;
@@ -451,28 +457,13 @@ public class SmackIntegrationTestFramework {
         }
         finally {
             for (int i = 0; i < numberOfConnections; ++i) {
-                try {
-                    AccountManager.getInstance(connections[i]).deleteAccount();
-                    LOGGER.info("Successfully deleted account for connection ("
-                                    + connections[i].getConnectionCounter() + ')');
-                }
-                catch (NoResponseException | XMPPErrorException | NotConnectedException
-                                | InterruptedException e) {
-                    LOGGER.log(Level.SEVERE, "Could not delete account", e);
-                }
-                connections[i].disconnect();
+                IntTestUtil.disconnectAndMaybeDelete(connections[i], true);
             }
         }
     }
 
-    protected void disconnectAndMaybeDelete(XMPPTCPConnection connection)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException,
-                    InterruptedException {
-        if (config.registerAccounts) {
-            AccountManager am = AccountManager.getInstance(connection);
-            am.deleteAccount();
-        }
-        connection.disconnect();
+    protected void disconnectAndMaybeDelete(XMPPTCPConnection connection) throws InterruptedException {
+        IntTestUtil.disconnectAndMaybeDelete(connection, config.registerAccounts);
     }
 
     protected SmackIntegrationTestEnvironment prepareEnvironment() throws SmackException,
@@ -532,7 +523,7 @@ public class SmackIntegrationTestFramework {
         }
         // @formatter:off
         Builder builder = XMPPTCPConnectionConfiguration.builder()
-                        .setServiceName(config.service)
+                        .setXmppDomain(config.service)
                         .setUsernameAndPassword(accountUsername, accountPassword)
                         .setResource(middlefix + '-' + testRunResult.testRunId)
                         .setSecurityMode(config.securityMode);
@@ -567,7 +558,7 @@ public class SmackIntegrationTestFramework {
             builder.setCustomSSLContext(sc);
         }
         builder.setSecurityMode(config.securityMode);
-        builder.setServiceName(config.service);
+        builder.setXmppDomain(config.service);
         XMPPTCPConnection connection = new XMPPTCPConnection(builder.build());
         connection.connect();
         UsernameAndPassword uap = IntTestUtil.registerAccount(connection);
@@ -575,11 +566,8 @@ public class SmackIntegrationTestFramework {
         return connection;
     }
 
-    private static Exception throwFatalException(Throwable e) throws Error, NotConnectedException, NoResponseException,
+    private static Exception throwFatalException(Throwable e) throws Error, NoResponseException,
                     InterruptedException {
-        if (e instanceof NotConnectedException) {
-            throw (NotConnectedException) e;
-        }
         if (e instanceof NoResponseException) {
             throw (NoResponseException) e;
         }

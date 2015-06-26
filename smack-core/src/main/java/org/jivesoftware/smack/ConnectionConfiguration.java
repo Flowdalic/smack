@@ -17,9 +17,22 @@
 
 package org.jivesoftware.smack;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jivesoftware.smack.packet.Session;
 import org.jivesoftware.smack.proxy.ProxyInfo;
+import org.jivesoftware.smack.sasl.SASLMechanism;
+import org.jivesoftware.smack.sasl.core.SASLAnonymous;
+import org.jivesoftware.smack.util.CollectionUtil;
+import org.jivesoftware.smack.util.Objects;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.parts.Resourcepart;
+import org.jxmpp.stringprep.XmppStringprepException;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.HostnameVerifier;
@@ -40,11 +53,12 @@ public abstract class ConnectionConfiguration {
     }
 
     /**
-     * Hostname of the XMPP server. Usually servers use the same service name as the name
+     * The XMPP domain of the XMPP Service. Usually servers use the same service name as the name
      * of the server. However, there are some servers like google where host would be
      * talk.google.com and the serviceName would be gmail.com.
      */
-    protected final DomainBareJid serviceName;
+    protected final DomainBareJid xmppServiceDomain;
+
     protected final String host;
     protected final int port;
 
@@ -65,7 +79,7 @@ public abstract class ConnectionConfiguration {
 
     private final CharSequence username;
     private final String password;
-    private final String resource;
+    private final Resourcepart resource;
 
     /**
      * Initial presence as of RFC 6121 § 4.2
@@ -93,6 +107,8 @@ public abstract class ConnectionConfiguration {
 
     protected final boolean allowNullOrEmptyUsername;
 
+    private final Set<String> enabledSaslMechanisms;
+
     protected ConnectionConfiguration(Builder<?,?> builder) {
         username = builder.username;
         password = builder.password;
@@ -101,9 +117,9 @@ public abstract class ConnectionConfiguration {
         // Resource can be null, this means that the server must provide one
         resource = builder.resource;
 
-        serviceName = builder.serviceName;
-        if (serviceName == null) {
-            throw new IllegalArgumentException("Must provide XMPP service name");
+        xmppServiceDomain = builder.xmppServiceDomain;
+        if (xmppServiceDomain == null) {
+            throw new IllegalArgumentException("Must define the XMPP domain");
         }
         host = builder.host;
         port = builder.port;
@@ -130,15 +146,30 @@ public abstract class ConnectionConfiguration {
         legacySessionDisabled = builder.legacySessionDisabled;
         debuggerEnabled = builder.debuggerEnabled;
         allowNullOrEmptyUsername = builder.allowEmptyOrNullUsername;
+        enabledSaslMechanisms = builder.enabledSaslMechanisms;
+
+        // If the enabledSaslmechanisms are set, then they must not be empty
+        assert(enabledSaslMechanisms != null ? !enabledSaslMechanisms.isEmpty() : true);
     }
 
     /**
      * Returns the server name of the target server.
      *
      * @return the server name of the target server.
+     * @deprecated use {@link #getXMPPServiceDomain()} instead.
      */
+    @Deprecated
     public DomainBareJid getServiceName() {
-        return serviceName;
+        return xmppServiceDomain;
+    }
+
+    /**
+     * Returns the XMPP domain used by this configuration.
+     *
+     * @return the XMPP domain.
+     */
+    public DomainBareJid getXMPPServiceDomain() {
+        return xmppServiceDomain;
     }
 
     /**
@@ -324,7 +355,7 @@ public abstract class ConnectionConfiguration {
      *
      * @return the resource to use when trying to reconnect to the server.
      */
-    public String getResource() {
+    public Resourcepart getResource() {
         return resource;
     }
 
@@ -348,6 +379,24 @@ public abstract class ConnectionConfiguration {
     public boolean isCompressionEnabled() {
         // Compression for non-TCP connections is always disabled
         return false;
+    }
+
+    /**
+     * Check if the given SASL mechansism is enabled in this connection configuration.
+     *
+     * @param saslMechanism
+     * @return true if the given SASL mechanism is enabled, false otherwise.
+     */
+    public boolean isEnabledSaslMechanism(String saslMechanism) {
+        // If enabledSaslMechanisms is not set, then all mechanisms are enabled per default
+        if (enabledSaslMechanisms == null) {
+            return true;
+        }
+        return enabledSaslMechanisms.contains(saslMechanism);
+    }
+
+    public Set<String> getEnabledSaslMechanisms() {
+        return Collections.unmodifiableSet(enabledSaslMechanisms);
     }
 
     /**
@@ -376,17 +425,19 @@ public abstract class ConnectionConfiguration {
         private HostnameVerifier hostnameVerifier;
         private CharSequence username;
         private String password;
-        private String resource = "Smack";
+        private Resourcepart resource;
         private boolean sendPresence = true;
         private boolean legacySessionDisabled = false;
         private ProxyInfo proxy;
         private CallbackHandler callbackHandler;
         private boolean debuggerEnabled = SmackConfiguration.DEBUG;
         private SocketFactory socketFactory;
-        private DomainBareJid serviceName;
+        private DomainBareJid xmppServiceDomain;
         private String host;
         private int port = 5222;
         private boolean allowEmptyOrNullUsername = false;
+        private boolean saslMechanismsSealed;
+        private Set<String> enabledSaslMechanisms;
 
         protected Builder() {
         }
@@ -413,9 +464,21 @@ public abstract class ConnectionConfiguration {
          *
          * @param serviceName the service name
          * @return a reference to this builder.
+         * @deprecated use {@link #setXmppDomain(DomainBareJid)} instead.
          */
+        @Deprecated
         public B setServiceName(DomainBareJid serviceName) {
-            this.serviceName = serviceName;
+            return setXmppDomain(serviceName);
+        }
+
+        /**
+         * Set the service name of this XMPP service (i.e., the XMPP domain).
+         *
+         * @param xmppServiceDomain the service name
+         * @return a reference to this builder.
+         */
+        public B setXmppDomain(DomainBareJid xmppServiceDomain) {
+            this.xmppServiceDomain = xmppServiceDomain;
             return getThis();
         }
 
@@ -429,9 +492,22 @@ public abstract class ConnectionConfiguration {
          * @param resource the resource to use.
          * @return a reference to this builder.
          */
-        public B setResource(String resource) {
+        public B setResource(Resourcepart resource) {
             this.resource = resource;
             return getThis();
+        }
+
+        /**
+         * Set the resource to use.
+         *
+         * @param resource the non-null CharSequence to use a resource.
+         * @return a reference ot this builder.
+         * @throws XmppStringprepException if the CharSequence is not a valid resourcepart.
+         * @see #setResource(Resourcepart)
+         */
+        public B setResource(CharSequence resource) throws XmppStringprepException {
+            Objects.requireNonNull(resource, "resource must not be null");
+            return setResource(Resourcepart.from(resource.toString()));
         }
 
         public B setHost(String host) {
@@ -518,7 +594,7 @@ public abstract class ConnectionConfiguration {
          * @return a reference to this builder.
          */
         public B setCustomSSLContext(SSLContext context) {
-            this.customSSLContext = context;
+            this.customSSLContext = Objects.requireNonNull(context, "The SSLContext must not be null");
             return getThis();
         }
 
@@ -616,6 +692,17 @@ public abstract class ConnectionConfiguration {
         }
 
         /**
+         * Set the information about the Proxy used for the connection.
+         *
+         * @param proxyInfo the Proxy information.
+         * @return a reference to this builder.
+         */
+        public B setProxyInfo(ProxyInfo proxyInfo) {
+            this.proxy = proxyInfo;
+            return getThis();
+        }
+
+        /**
          * Allow <code>null</code> or the empty String as username.
          *
          * Some SASL mechanisms (e.g. SASL External) may also signal the username (as "authorization identity"), in
@@ -625,6 +712,92 @@ public abstract class ConnectionConfiguration {
          */
         public B allowEmptyOrNullUsernames() {
             allowEmptyOrNullUsername = true;
+            return getThis();
+        }
+
+        /**
+         * Perform anonymous authentication using SASL ANONYMOUS. Your XMPP service must support this authentication
+         * mechanism. This method also calls {@link #addEnabledSaslMechanism(String)} with "ANONYMOUS" as argument.
+         * 
+         * @return a reference to this builder.
+         */
+        public B performSaslAnonymousAuthentication() {
+            if (!SASLAuthentication.isSaslMechanismRegistered(SASLAnonymous.NAME)) {
+                throw new IllegalArgumentException("SASL " + SASLAnonymous.NAME + " is not registered");
+            }
+            throwIfEnabledSaslMechanismsSet();
+
+            allowEmptyOrNullUsernames();
+            addEnabledSaslMechanism(SASLAnonymous.NAME);
+            saslMechanismsSealed = true;
+            return getThis();
+        }
+
+        /**
+         * Perform authentication using SASL EXTERNAL. Your XMPP service must support this
+         * authentication mechanism. This method also calls {@link #addEnabledSaslMechanism(String)} with "EXTERNAL" as
+         * argument. It also calls {@link #allowEmptyOrNullUsernames()} and {@link #setSecurityMode(SecurityMode)} to
+         * {@link SecurityMode#required}.
+         *
+         * @return a reference to this builder.
+         */
+        public B performSaslExternalAuthentication(SSLContext sslContext) {
+            if (!SASLAuthentication.isSaslMechanismRegistered(SASLMechanism.EXTERNAL)) {
+                throw new IllegalArgumentException("SASL " + SASLMechanism.EXTERNAL + " is not registered");
+            }
+            setCustomSSLContext(sslContext);
+            throwIfEnabledSaslMechanismsSet();
+
+            allowEmptyOrNullUsernames();
+            setSecurityMode(SecurityMode.required);
+            addEnabledSaslMechanism(SASLMechanism.EXTERNAL);
+            saslMechanismsSealed = true;
+            return getThis();
+        }
+
+        private void throwIfEnabledSaslMechanismsSet() {
+            if (enabledSaslMechanisms != null) {
+                throw new IllegalStateException("Enabled SASL mechanisms found");
+            }
+        }
+
+        /**
+         * Add the given mechanism to the enabled ones. See {@link #addEnabledSaslMechanism(Collection)} for a discussion about enabled SASL mechanisms.
+         *
+         * @param saslMechanism the name of the mechanism to enable.
+         * @return a reference to this builder.
+         */
+        public B addEnabledSaslMechanism(String saslMechanism) {
+            return addEnabledSaslMechanism(Arrays.asList(StringUtils.requireNotNullOrEmpty(saslMechanism,
+                            "saslMechanism must not be null or empty")));
+        }
+
+        /**
+         * Enable the given SASL mechanisms. If you never add a mechanism to the set of enabled ones, <b>all mechanisms
+         * known to Smack</b> will be enabled. Only explicitly enable particular SASL mechanisms if you want to limit
+         * the used mechanisms to the enabled ones.
+         * 
+         * @param saslMechanisms a collection of names of mechanisms to enable.
+         * @return a reference to this builder.
+         */
+        public B addEnabledSaslMechanism(Collection<String> saslMechanisms) {
+            if (saslMechanismsSealed) {
+                throw new IllegalStateException("The enabled SASL mechanisms are sealed, you can not add new ones");
+            }
+            CollectionUtil.requireNotEmpty(saslMechanisms, "saslMechanisms");
+            Set<String> blacklistedMechanisms = SASLAuthentication.getBlacklistedSASLMechanisms();
+            for (String mechanism : saslMechanisms) {
+                if (!SASLAuthentication.isSaslMechanismRegistered(mechanism)) {
+                    throw new IllegalArgumentException("SASL " + mechanism + " is not avaiable. Consider registering it with Smack");
+                }
+                if (blacklistedMechanisms.contains(mechanism)) {
+                    throw new IllegalArgumentException("SALS " + mechanism + " is blacklisted.");
+                }
+            }
+            if (enabledSaslMechanisms == null) {
+                enabledSaslMechanisms = new HashSet<>(saslMechanisms.size());
+            }
+            enabledSaslMechanisms.addAll(saslMechanisms);
             return getThis();
         }
 

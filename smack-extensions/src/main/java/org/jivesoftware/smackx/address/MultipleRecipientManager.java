@@ -28,9 +28,9 @@ import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.address.packet.MultipleAddresses;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
-import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.FullJid;
+import org.jxmpp.jid.EntityFullJid;
 import org.jxmpp.jid.Jid;
 
 import java.util.ArrayList;
@@ -178,9 +178,9 @@ public class MultipleRecipientManager {
                 to.add(original.getFrom());
             }
             // Remove the sender from the TO/CC list (try with bare JID too)
-            FullJid from = connection.getUser();
+            EntityFullJid from = connection.getUser();
             if (!to.remove(from) && !cc.remove(from)) {
-                BareJid bareJID = from.asBareJid();
+                EntityBareJid bareJID = from.asEntityBareJid();
                 to.remove(bareJID);
                 cc.remove(bareJID);
             }
@@ -283,11 +283,7 @@ public class MultipleRecipientManager {
      */
     private static DomainBareJid getMultipleRecipienServiceAddress(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection);
-        List<DomainBareJid> services = sdm.findServices(MultipleAddresses.NAMESPACE, true, true);
-        if (services.size() > 0) {
-            return services.get(0);
-        }
-        return null;
+        return sdm.findService(MultipleAddresses.NAMESPACE, true);
     }
 
     /**

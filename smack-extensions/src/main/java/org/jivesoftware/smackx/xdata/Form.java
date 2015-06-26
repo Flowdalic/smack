@@ -350,16 +350,18 @@ public class Form {
      * @return the field of the form whose variable matches the specified variable.
      */
     public FormField getField(String variable) {
-        if (variable == null || variable.equals("")) {
-            throw new IllegalArgumentException("Variable must not be null or blank.");
-        }
-        // Look for the field whose variable matches the requested variable
-        for (FormField field : getFields()) {
-            if (variable.equals(field.getVariable())) {
-                return field;
-            }
-        }
-        return null;
+        return dataForm.getField(variable);
+    }
+
+    /**
+     * Check if a field with the given variable exists.
+     *
+     * @param variable the variable to check for.
+     * @return true if a field with the variable exists, false otherwise.
+     * @since 4.2
+     */
+    public boolean hasField(String variable) {
+        return dataForm.hasField(variable);
     }
 
     /**
