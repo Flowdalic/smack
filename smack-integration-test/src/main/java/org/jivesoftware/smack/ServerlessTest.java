@@ -43,22 +43,24 @@ public class ServerlessTest extends AbstractSmackLowLevelIntegrationTest {
             }
 
             @Override public void serviceRemoved(ServiceEvent event) {
-
+                LOGGER.info(event.toString());
             }
 
             @Override public void serviceResolved(ServiceEvent event) {
-
+                LOGGER.info(event.toString());
             }
         });
-        jmdns.registerService(ServiceInfo.create("_presence._tcp.local.", "juliet@pronto._presence._tcp.local.", 5562,
+        jmdns.registerService(ServiceInfo.create(PRESENCE, "juliet@pronto", 5562,
                         "Testing Service A"));
-        Thread.sleep(10000);
-        jmdns.registerService(ServiceInfo.create("_presence._tcp.local.", "romeo@doronto._presence._tcp.local.", 5563,
+        jmdns.registerService(ServiceInfo.create(PRESENCE, "romeo@doronto", 5563,
                         "Testing Service B"));
+
         Thread.sleep(10000);
+
         for (ServiceInfo si : jmdns.list(PRESENCE)) {
             LOGGER.info(si.toString());
         }
+
         Thread.sleep(5000);
     }
 }
