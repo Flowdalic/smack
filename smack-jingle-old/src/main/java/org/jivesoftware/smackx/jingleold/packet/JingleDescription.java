@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
 
 /**
@@ -30,7 +30,7 @@ import org.jivesoftware.smackx.jingleold.media.PayloadType;
  *
  * @author Alvaro Saurin <alvaro.saurin@gmail.com>
  */
-public abstract class JingleDescription implements PacketExtension {
+public abstract class JingleDescription implements ExtensionElement {
 
 	private static final Logger LOGGER = Logger.getLogger(JingleDescription.class.getName());
 
@@ -125,7 +125,7 @@ public abstract class JingleDescription implements PacketExtension {
         Iterator<PayloadType> jinglePtsIter = getPayloadTypes();
 
         while (jinglePtsIter.hasNext()) {
-            PayloadType jpt = (PayloadType) jinglePtsIter.next();
+            PayloadType jpt = jinglePtsIter.next();
             if (jpt instanceof PayloadType.Audio) {
                 PayloadType.Audio jpta = (PayloadType.Audio) jpt;
                 result.add(jpta);
@@ -156,7 +156,7 @@ public abstract class JingleDescription implements PacketExtension {
 
         synchronized (payloads) {
             if (payloads.size() > 0) {
-                buf.append("<").append(getElementName());
+                buf.append('<').append(getElementName());
                 buf.append(" xmlns=\"").append(getNamespace()).append("\" >");
 
                 for (PayloadType payloadType : payloads) {
@@ -164,7 +164,7 @@ public abstract class JingleDescription implements PacketExtension {
                         buf.append(payloadType.toXML());
                     }
                 }
-                buf.append("</").append(getElementName()).append(">");
+                buf.append("</").append(getElementName()).append('>');
             }
         }
 
@@ -172,7 +172,7 @@ public abstract class JingleDescription implements PacketExtension {
     }
 
     /**
-     * Jingle audio description
+     * Jingle audio description.
      */
     public static class Audio extends JingleDescription {
 
@@ -183,7 +183,7 @@ public abstract class JingleDescription implements PacketExtension {
         }
 
         /**
-         * Utility constructor, with a PayloadType
+         * Utility constructor, with a PayloadType.
          */
         public Audio(final PayloadType pt) {
             super();

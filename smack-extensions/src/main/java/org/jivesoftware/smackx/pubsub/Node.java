@@ -21,16 +21,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.filter.FlexibleStanzaTypeFilter;
 import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.IQ.Type;
 import org.jivesoftware.smackx.delay.DelayInformationManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
@@ -46,14 +45,13 @@ import org.jivesoftware.smackx.xdata.Form;
 
 abstract public class Node
 {
-	protected XMPPConnection con;
-	protected String id;
-	protected String to;
-	
-	protected ConcurrentHashMap<ItemEventListener<Item>, PacketListener> itemEventToListenerMap = new ConcurrentHashMap<ItemEventListener<Item>, PacketListener>();
-	protected ConcurrentHashMap<ItemDeleteListener, PacketListener> itemDeleteToListenerMap = new ConcurrentHashMap<ItemDeleteListener, PacketListener>();
-	protected ConcurrentHashMap<NodeConfigListener, PacketListener> configEventToListenerMap = new ConcurrentHashMap<NodeConfigListener, PacketListener>();
-	
+    protected final PubSubManager pubSubManager;
+    protected final String id;
+
+	protected ConcurrentHashMap<ItemEventListener<Item>, StanzaListener> itemEventToListenerMap = new ConcurrentHashMap<ItemEventListener<Item>, StanzaListener>();
+	protected ConcurrentHashMap<ItemDeleteListener, StanzaListener> itemDeleteToListenerMap = new ConcurrentHashMap<ItemDeleteListener, StanzaListener>();
+	protected ConcurrentHashMap<NodeConfigListener, StanzaListener> configEventToListenerMap = new ConcurrentHashMap<NodeConfigListener, StanzaListener>();
+
 	/**
 	 * Construct a node associated to the supplied connection with the specified 
 	 * node id.
@@ -61,25 +59,14 @@ abstract public class Node
 	 * @param connection The connection the node is associated with
 	 * @param nodeName The node id
 	 */
-	Node(XMPPConnection connection, String nodeName)
+	Node(PubSubManager pubSubManager, String nodeId)
 	{
-		con = connection;
-		id = nodeName;
+		this.pubSubManager = pubSubManager;
+		id = nodeId;
 	}
 
 	/**
-	 * Some XMPP servers may require a specific service to be addressed on the 
-	 * server.
-	 * 
-	 *   For example, OpenFire requires the server to be prefixed by <b>pubsub</b>
-	 */
-	void setTo(String toAddress)
-	{
-		to = toAddress;
-	}
-
-	/**
-	 * Get the NodeId
+	 * Get the NodeId.
 	 * 
 	 * @return the node id
 	 */
@@ -95,30 +82,32 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public ConfigureForm getNodeConfiguration() throws NoResponseException, XMPPErrorException, NotConnectedException
+	public ConfigureForm getNodeConfiguration() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
         PubSub pubSub = createPubsubPacket(Type.get, new NodeExtension(
                         PubSubElementType.CONFIGURE_OWNER, getId()), PubSubNamespace.OWNER);
-		Packet reply = sendPubsubPacket(pubSub);
+		Stanza reply = sendPubsubPacket(pubSub);
 		return NodeUtils.getFormFromPacket(reply, PubSubElementType.CONFIGURE_OWNER);
 	}
-	
+
 	/**
-	 * Update the configuration with the contents of the new {@link Form}
+	 * Update the configuration with the contents of the new {@link Form}.
 	 * 
 	 * @param submitForm
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public void sendConfigurationForm(Form submitForm) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public void sendConfigurationForm(Form submitForm) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
         PubSub packet = createPubsubPacket(Type.set, new FormNode(FormNodeType.CONFIGURE_OWNER,
                         getId(), submitForm), PubSubNamespace.OWNER);
-		con.createPacketCollectorAndSend(packet).nextResultOrThrow();
+        pubSubManager.getConnection().createPacketCollectorAndSend(packet).nextResultOrThrow();
 	}
-	
+
 	/**
 	 * Discover node information in standard {@link DiscoverInfo} format.
 	 * 
@@ -126,15 +115,16 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException if there was no response from the server.
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public DiscoverInfo discoverInfo() throws NoResponseException, XMPPErrorException, NotConnectedException
+	public DiscoverInfo discoverInfo() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
 		DiscoverInfo info = new DiscoverInfo();
-		info.setTo(to);
+		info.setTo(pubSubManager.getServiceJid());
 		info.setNode(getId());
-		return (DiscoverInfo) con.createPacketCollectorAndSend(info).nextResultOrThrow();
+		return pubSubManager.getConnection().createPacketCollectorAndSend(info).nextResultOrThrow();
 	}
-	
+
 	/**
 	 * Get the subscriptions currently associated with this node.
 	 * 
@@ -142,9 +132,10 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 * 
 	 */
-	public List<Subscription> getSubscriptions() throws NoResponseException, XMPPErrorException, NotConnectedException
+	public List<Subscription> getSubscriptions() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
         return getSubscriptions(null, null);
 	}
@@ -153,7 +144,7 @@ abstract public class Node
      * Get the subscriptions currently associated with this node.
      * <p>
      * {@code additionalExtensions} can be used e.g. to add a "Result Set Management" extension.
-     * {@code returnedExtensions} will be filled with the packet extensions found in the answer.
+     * {@code returnedExtensions} will be filled with the stanza(/packet) extensions found in the answer.
      * </p>
      *
      * @param additionalExtensions
@@ -163,9 +154,10 @@ abstract public class Node
      * @throws NoResponseException
      * @throws XMPPErrorException
      * @throws NotConnectedException
+     * @throws InterruptedException 
      */
-    public List<Subscription> getSubscriptions(List<PacketExtension> additionalExtensions, Collection<PacketExtension> returnedExtensions)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public List<Subscription> getSubscriptions(List<ExtensionElement> additionalExtensions, Collection<ExtensionElement> returnedExtensions)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         return getSubscriptions(additionalExtensions, returnedExtensions, null);
     }
 
@@ -176,11 +168,12 @@ abstract public class Node
      * @throws XMPPErrorException
      * @throws NoResponseException
      * @throws NotConnectedException
+     * @throws InterruptedException 
      * @see #getSubscriptionsAsOwner(List, Collection)
      * @since 4.1
      */
     public List<Subscription> getSubscriptionsAsOwner() throws NoResponseException, XMPPErrorException,
-                    NotConnectedException {
+                    NotConnectedException, InterruptedException {
         return getSubscriptionsAsOwner(null, null);
     }
 
@@ -193,31 +186,32 @@ abstract public class Node
      * </p>
      * <p>
      * {@code additionalExtensions} can be used e.g. to add a "Result Set Management" extension.
-     * {@code returnedExtensions} will be filled with the packet extensions found in the answer.
+     * {@code returnedExtensions} will be filled with the stanza(/packet) extensions found in the answer.
      * </p>
      *
      * @param additionalExtensions
-     * @param returnedExtensions a collection that will be filled with the returned packet extensions
+     * @param returnedExtensions a collection that will be filled with the returned stanza(/packet) extensions
      * @return List of {@link Subscription}
      * @throws NoResponseException
      * @throws XMPPErrorException
      * @throws NotConnectedException
+     * @throws InterruptedException 
      * @see <a href="http://www.xmpp.org/extensions/xep-0060.html#owner-subscriptions-retrieve">XEP-60 § 8.8.1 -
      *      Retrieve Subscriptions List</a>
      * @since 4.1
      */
-    public List<Subscription> getSubscriptionsAsOwner(List<PacketExtension> additionalExtensions,
-                    Collection<PacketExtension> returnedExtensions) throws NoResponseException, XMPPErrorException,
-                    NotConnectedException {
+    public List<Subscription> getSubscriptionsAsOwner(List<ExtensionElement> additionalExtensions,
+                    Collection<ExtensionElement> returnedExtensions) throws NoResponseException, XMPPErrorException,
+                    NotConnectedException, InterruptedException {
         return getSubscriptions(additionalExtensions, returnedExtensions, PubSubNamespace.OWNER);
     }
 
-    private List<Subscription> getSubscriptions(List<PacketExtension> additionalExtensions,
-                    Collection<PacketExtension> returnedExtensions, PubSubNamespace pubSubNamespace)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private List<Subscription> getSubscriptions(List<ExtensionElement> additionalExtensions,
+                    Collection<ExtensionElement> returnedExtensions, PubSubNamespace pubSubNamespace)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         PubSub pubSub = createPubsubPacket(Type.get, new NodeExtension(PubSubElementType.SUBSCRIPTIONS, getId()), pubSubNamespace);
         if (additionalExtensions != null) {
-            for (PacketExtension pe : additionalExtensions) {
+            for (ExtensionElement pe : additionalExtensions) {
                 pubSub.addExtension(pe);
             }
         }
@@ -236,9 +230,10 @@ abstract public class Node
 	 * @throws NoResponseException
 	 * @throws XMPPErrorException
 	 * @throws NotConnectedException
+	 * @throws InterruptedException 
 	 */
     public List<Affiliation> getAffiliations() throws NoResponseException, XMPPErrorException,
-                    NotConnectedException {
+                    NotConnectedException, InterruptedException {
         return getAffiliations(null, null);
     }
 
@@ -246,7 +241,7 @@ abstract public class Node
      * Get the affiliations of this node.
      * <p>
      * {@code additionalExtensions} can be used e.g. to add a "Result Set Management" extension.
-     * {@code returnedExtensions} will be filled with the packet extensions found in the answer.
+     * {@code returnedExtensions} will be filled with the stanza(/packet) extensions found in the answer.
      * </p>
      *
      * @param additionalExtensions additional {@code PacketExtensions} add to the request
@@ -256,12 +251,61 @@ abstract public class Node
      * @throws NoResponseException
      * @throws XMPPErrorException
      * @throws NotConnectedException
+     * @throws InterruptedException 
      */
-    public List<Affiliation> getAffiliations(List<PacketExtension> additionalExtensions, Collection<PacketExtension> returnedExtensions)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
-        PubSub pubSub = createPubsubPacket(Type.get, new NodeExtension(PubSubElementType.AFFILIATIONS, getId()));
+    public List<Affiliation> getAffiliations(List<ExtensionElement> additionalExtensions, Collection<ExtensionElement> returnedExtensions)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+
+        return getAffiliations(PubSubNamespace.BASIC, additionalExtensions, returnedExtensions);
+    }
+
+    /**
+     * Retrieve the affiliation list for this node as owner.
+     *
+     * @return list of entities whose affiliation is not 'none'.
+     * @throws NoResponseException
+     * @throws XMPPErrorException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @see #getAffiliations(List, Collection)
+     * @since 4.2
+     */
+    public List<Affiliation> getAffiliationsAsOwner()
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+
+        return getAffiliationsAsOwner(null, null);
+    }
+
+    /**
+     * Retrieve the affiliation list for this node as owner.
+     * <p>
+     * Note that this is an <b>optional</b> PubSub feature ('pubusb#modify-affiliations').
+     * </p>
+     *
+     * @param additionalExtensions optional additional extension elements add to the request.
+     * @param returnedExtensions an optional collection that will be filled with the returned
+     *        extension elements.
+     * @return list of entities whose affiliation is not 'none'.
+     * @throws NoResponseException
+     * @throws XMPPErrorException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @see <a href="http://www.xmpp.org/extensions/xep-0060.html#owner-affiliations-retrieve">XEP-60 § 8.9.1 Retrieve Affiliations List</a>
+     * @since 4.2
+     */
+    public List<Affiliation> getAffiliationsAsOwner(List<ExtensionElement> additionalExtensions, Collection<ExtensionElement> returnedExtensions)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+
+        return getAffiliations(PubSubNamespace.OWNER, additionalExtensions, returnedExtensions);
+    }
+
+    private List<Affiliation> getAffiliations(PubSubNamespace namespace, List<ExtensionElement> additionalExtensions,
+                    Collection<ExtensionElement> returnedExtensions) throws NoResponseException, XMPPErrorException,
+                    NotConnectedException, InterruptedException {
+
+        PubSub pubSub = createPubsubPacket(Type.get, new NodeExtension(PubSubElementType.AFFILIATIONS, getId()), namespace);
         if (additionalExtensions != null) {
-            for (PacketExtension pe : additionalExtensions) {
+            for (ExtensionElement pe : additionalExtensions) {
                 pubSub.addExtension(pe);
             }
         }
@@ -271,6 +315,35 @@ abstract public class Node
         }
         AffiliationsExtension affilElem = (AffiliationsExtension) reply.getExtension(PubSubElementType.AFFILIATIONS);
         return affilElem.getAffiliations();
+    }
+
+    /**
+     * Modify the affiliations for this PubSub node as owner. The {@link Affiliation}s given must be created with the
+     * {@link Affiliation#Affiliation(org.jxmpp.jid.BareJid, Affiliation.Type)} constructor.
+     * <p>
+     * Note that this is an <b>optional</b> PubSub feature ('pubusb#modify-affiliations').
+     * </p>
+     * 
+     * @param affiliations
+     * @return <code>null</code> or a PubSub stanza with additional information on success.
+     * @throws NoResponseException
+     * @throws XMPPErrorException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @see <a href="http://www.xmpp.org/extensions/xep-0060.html#owner-affiliations-modify">XEP-60 § 8.9.2 Modify Affiliation</a>
+     * @since 4.2
+     */
+    public PubSub modifyAffiliationAsOwner(List<Affiliation> affiliations) throws NoResponseException,
+                    XMPPErrorException, NotConnectedException, InterruptedException {
+        for (Affiliation affiliation : affiliations) {
+            if (affiliation.getPubSubNamespace() != PubSubNamespace.OWNER) {
+                throw new IllegalArgumentException("Must use Affiliation(BareJid, Type) affiliations");
+            }
+        }
+
+        PubSub pubSub = createPubsubPacket(Type.set, new AffiliationsExtension(affiliations, getId()),
+                        PubSubNamespace.OWNER);
+        return sendPubsubPacket(pubSub);
     }
 
 	/**
@@ -289,14 +362,17 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public Subscription subscribe(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public Subscription subscribe(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
+// CHECKSTYLE:OFF
 	    PubSub pubSub = createPubsubPacket(Type.set, new SubscribeExtension(jid, getId()));
+// CHECKSTYLE:ON
 		PubSub reply = sendPubsubPacket(pubSub);
 		return reply.getExtension(PubSubElementType.SUBSCRIPTION);
 	}
-	
+
 	/**
 	 * The user subscribes to the node using the supplied jid and subscription
 	 * options.  The bare jid portion of this one must match the jid for the 
@@ -314,12 +390,15 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public Subscription subscribe(String jid, SubscribeForm subForm) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public Subscription subscribe(String jid, SubscribeForm subForm) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
+// CHECKSTYLE:OFF
 	    PubSub request = createPubsubPacket(Type.set, new SubscribeExtension(jid, getId()));
+// CHECKSTYLE:ON
 		request.addExtension(new FormNode(FormNodeType.OPTIONS, subForm));
-		PubSub reply = PubSubManager.sendPubsubPacket(con, request);
+		PubSub reply = sendPubsubPacket(request);
 		return reply.getExtension(PubSubElementType.SUBSCRIPTION);
 	}
 
@@ -332,13 +411,14 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 * 
 	 */
-	public void unsubscribe(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public void unsubscribe(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
 		unsubscribe(jid, null);
 	}
-	
+
 	/**
 	 * Remove the specific subscription related to the specified JID.
 	 * 
@@ -347,8 +427,9 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public void unsubscribe(String jid, String subscriptionId) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public void unsubscribe(String jid, String subscriptionId) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
 		sendPubsubPacket(createPubsubPacket(Type.set, new UnsubscribeExtension(jid, getId(), subscriptionId)));
 	}
@@ -361,8 +442,9 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 */
-	public SubscribeForm getSubscriptionOptions(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public SubscribeForm getSubscriptionOptions(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
 		return getSubscriptionOptions(jid, null);
 	}
@@ -378,9 +460,10 @@ abstract public class Node
 	 * @throws XMPPErrorException 
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
+	 * @throws InterruptedException 
 	 * 
 	 */
-	public SubscribeForm getSubscriptionOptions(String jid, String subscriptionId) throws NoResponseException, XMPPErrorException, NotConnectedException
+	public SubscribeForm getSubscriptionOptions(String jid, String subscriptionId) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
 		PubSub packet = sendPubsubPacket(createPubsubPacket(Type.get, new OptionsExtension(jid, getId(), subscriptionId)));
 		FormNode ext = packet.getExtension(PubSubElementType.OPTIONS);
@@ -397,9 +480,9 @@ abstract public class Node
 	@SuppressWarnings("unchecked")
     public void addItemEventListener(@SuppressWarnings("rawtypes") ItemEventListener listener)
 	{
-		PacketListener conListener = new ItemEventTranslator(listener); 
+		StanzaListener conListener = new ItemEventTranslator(listener); 
 		itemEventToListenerMap.put(listener, conListener);
-		con.addSyncPacketListener(conListener, new EventContentFilter(EventElementType.items.toString(), "item"));
+		pubSubManager.getConnection().addSyncStanzaListener(conListener, new EventContentFilter(EventElementType.items.toString(), "item"));
 	}
 
 	/**
@@ -409,10 +492,10 @@ abstract public class Node
 	 */
 	public void removeItemEventListener(@SuppressWarnings("rawtypes") ItemEventListener listener)
 	{
-		PacketListener conListener = itemEventToListenerMap.remove(listener);
-		
+		StanzaListener conListener = itemEventToListenerMap.remove(listener);
+
 		if (conListener != null)
-			con.removeSyncPacketListener(conListener);
+			pubSubManager.getConnection().removeSyncStanzaListener(conListener);
 	}
 
 	/**
@@ -423,9 +506,9 @@ abstract public class Node
 	 */
 	public void addConfigurationListener(NodeConfigListener listener)
 	{
-		PacketListener conListener = new NodeConfigTranslator(listener); 
+		StanzaListener conListener = new NodeConfigTranslator(listener); 
 		configEventToListenerMap.put(listener, conListener);
-		con.addSyncPacketListener(conListener, new EventContentFilter(EventElementType.configuration.toString()));
+		pubSubManager.getConnection().addSyncStanzaListener(conListener, new EventContentFilter(EventElementType.configuration.toString()));
 	}
 
 	/**
@@ -435,12 +518,12 @@ abstract public class Node
 	 */
 	public void removeConfigurationListener(NodeConfigListener listener)
 	{
-		PacketListener conListener = configEventToListenerMap .remove(listener);
-		
+		StanzaListener conListener = configEventToListenerMap .remove(listener);
+
 		if (conListener != null)
-			con.removeSyncPacketListener(conListener);
+			pubSubManager.getConnection().removeSyncStanzaListener(conListener);
 	}
-	
+
 	/**
 	 * Register an listener for item delete events.  This listener
 	 * gets called whenever an item is deleted from the node.
@@ -449,12 +532,12 @@ abstract public class Node
 	 */
 	public void addItemDeleteListener(ItemDeleteListener listener)
 	{
-		PacketListener delListener = new ItemDeleteTranslator(listener); 
+		StanzaListener delListener = new ItemDeleteTranslator(listener); 
 		itemDeleteToListenerMap.put(listener, delListener);
 		EventContentFilter deleteItem = new EventContentFilter(EventElementType.items.toString(), "retract");
 		EventContentFilter purge = new EventContentFilter(EventElementType.purge.toString());
-		
-		con.addSyncPacketListener(delListener, new OrFilter(deleteItem, purge));
+
+		pubSubManager.getConnection().addSyncStanzaListener(delListener, new OrFilter(deleteItem, purge));
 	}
 
 	/**
@@ -464,10 +547,10 @@ abstract public class Node
 	 */
 	public void removeItemDeleteListener(ItemDeleteListener listener)
 	{
-		PacketListener conListener = itemDeleteToListenerMap .remove(listener);
-		
+		StanzaListener conListener = itemDeleteToListenerMap .remove(listener);
+
 		if (conListener != null)
-			con.removeSyncPacketListener(conListener);
+			pubSubManager.getConnection().removeSyncStanzaListener(conListener);
 	}
 
 	@Override
@@ -475,32 +558,32 @@ abstract public class Node
 	{
 		return super.toString() + " " + getClass().getName() + " id: " + id;
 	}
-	
-	protected PubSub createPubsubPacket(Type type, PacketExtension ext)
+
+	protected PubSub createPubsubPacket(Type type, ExtensionElement ext)
 	{
 		return createPubsubPacket(type, ext, null);
 	}
-	
-	protected PubSub createPubsubPacket(Type type, PacketExtension ext, PubSubNamespace ns)
+
+	protected PubSub createPubsubPacket(Type type, ExtensionElement ext, PubSubNamespace ns)
 	{
-		return PubSub.createPubsubPacket(to, type, ext, ns);
+        return PubSub.createPubsubPacket(pubSubManager.getServiceJid(), type, ext, ns);
 	}
 
-	protected PubSub sendPubsubPacket(PubSub packet) throws NoResponseException, XMPPErrorException, NotConnectedException
+	protected PubSub sendPubsubPacket(PubSub packet) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
 	{
-		return PubSubManager.sendPubsubPacket(con, packet);
+		return pubSubManager.sendPubsubPacket(packet);
 	}
 
 
-	private static List<String> getSubscriptionIds(Packet packet)
+	private static List<String> getSubscriptionIds(Stanza packet)
 	{
 		HeadersExtension headers = (HeadersExtension)packet.getExtension("headers", "http://jabber.org/protocol/shim");
 		List<String> values = null;
-		
+
 		if (headers != null)
 		{
 			values = new ArrayList<String>(headers.getHeaders().size());
-			
+
 			for (Header header : headers.getHeaders())
 			{
 				values.add(header.getValue());
@@ -515,7 +598,7 @@ abstract public class Node
 	 * 
 	 * @author Robin Collier
 	 */
-	public class ItemEventTranslator implements PacketListener
+	public class ItemEventTranslator implements StanzaListener
 	{
 		@SuppressWarnings("rawtypes")
         private ItemEventListener listener;
@@ -524,13 +607,15 @@ abstract public class Node
 		{
 			listener = eventListener;
 		}
-		
+
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-        public void processPacket(Packet packet)
+        public void processPacket(Stanza packet)
 		{
+// CHECKSTYLE:OFF
 	        EventElement event = (EventElement)packet.getExtension("event", PubSubNamespace.EVENT.getXmlns());
+// CHECKSTYLE:ON
 			ItemsExtension itemsElem = (ItemsExtension)event.getEvent();
-            ItemPublishEvent eventItems = new ItemPublishEvent(itemsElem.getNode(), (List<Item>)itemsElem.getItems(), getSubscriptionIds(packet), DelayInformationManager.getDelayTimestamp(packet));
+            ItemPublishEvent eventItems = new ItemPublishEvent(itemsElem.getNode(), itemsElem.getItems(), getSubscriptionIds(packet), DelayInformationManager.getDelayTimestamp(packet));
 			listener.handlePublishedItems(eventItems);
 		}
 	}
@@ -541,7 +626,7 @@ abstract public class Node
 	 * 
 	 * @author Robin Collier
 	 */
-	public class ItemDeleteTranslator implements PacketListener
+	public class ItemDeleteTranslator implements StanzaListener
 	{
 		private ItemDeleteListener listener;
 
@@ -549,13 +634,14 @@ abstract public class Node
 		{
 			listener = eventListener;
 		}
-		
-		public void processPacket(Packet packet)
+
+		public void processPacket(Stanza packet)
 		{
+// CHECKSTYLE:OFF
 	        EventElement event = (EventElement)packet.getExtension("event", PubSubNamespace.EVENT.getXmlns());
-	        
-	        List<PacketExtension> extList = event.getExtensions();
-	        
+
+	        List<ExtensionElement> extList = event.getExtensions();
+
 	        if (extList.get(0).getElementName().equals(PubSubElementType.PURGE_EVENT.getElementName()))
 	        {
 	        	listener.handlePurge();
@@ -575,16 +661,17 @@ abstract public class Node
 				ItemDeleteEvent eventItems = new ItemDeleteEvent(itemsElem.getNode(), items, getSubscriptionIds(packet));
 				listener.handleDeletedItems(eventItems);
 	        }
+// CHECKSTYLE:ON
 		}
 	}
-	
+
 	/**
 	 * This class translates low level node configuration events into api level objects for 
 	 * user consumption.
 	 * 
 	 * @author Robin Collier
 	 */
-	public class NodeConfigTranslator implements PacketListener
+	public class NodeConfigTranslator implements StanzaListener
 	{
 		private NodeConfigListener listener;
 
@@ -592,65 +679,73 @@ abstract public class Node
 		{
 			listener = eventListener;
 		}
-		
-		public void processPacket(Packet packet)
+
+		public void processPacket(Stanza packet)
 		{
+// CHECKSTYLE:OFF
 	        EventElement event = (EventElement)packet.getExtension("event", PubSubNamespace.EVENT.getXmlns());
-			ConfigurationEvent config = (ConfigurationEvent)event.getEvent();
+	        ConfigurationEvent config = (ConfigurationEvent)event.getEvent();
+// CHECKSTYLE:ON
 
 			listener.handleNodeConfiguration(config);
 		}
 	}
 
 	/**
-	 * Filter for {@link PacketListener} to filter out events not specific to the 
+	 * Filter for {@link StanzaListener} to filter out events not specific to the 
 	 * event type expected for this node.
 	 * 
 	 * @author Robin Collier
 	 */
-	class EventContentFilter implements PacketFilter
+	class EventContentFilter extends FlexibleStanzaTypeFilter<Message>
 	{
-		private String firstElement;
-		private String secondElement;
-		
+        private final String firstElement;
+        private final String secondElement;
+        private final boolean allowEmpty;
+
 		EventContentFilter(String elementName)
 		{
-			firstElement = elementName;
+            this(elementName, null);
 		}
 
 		EventContentFilter(String firstLevelEelement, String secondLevelElement)
 		{
 			firstElement = firstLevelEelement;
 			secondElement = secondLevelElement;
+            allowEmpty = firstElement.equals(EventElementType.items.toString())
+                            && "item".equals(secondLevelElement);
 		}
 
-		public boolean accept(Packet packet)
-		{
-			if (!(packet instanceof Message))
-				return false;
+        public boolean acceptSpecific(Message message) {
+            EventElement event = EventElement.from(message);
 
-			EventElement event = (EventElement)packet.getExtension("event", PubSubNamespace.EVENT.getXmlns());
-			
 			if (event == null)
 				return false;
 
 			NodeExtension embedEvent = event.getEvent();
-			
+
 			if (embedEvent == null)
 				return false;
-			
+
 			if (embedEvent.getElementName().equals(firstElement))
 			{
 				if (!embedEvent.getNode().equals(getId()))
 					return false;
-				
+
 				if (secondElement == null)
 					return true;
-				
+
 				if (embedEvent instanceof EmbeddedPacketExtension)
 				{
-					List<PacketExtension> secondLevelList = ((EmbeddedPacketExtension)embedEvent).getExtensions();
-					
+					List<ExtensionElement> secondLevelList = ((EmbeddedPacketExtension)embedEvent).getExtensions();
+
+                    // XEP-0060 allows no elements on second level for notifications. See schema or
+                    // for example § 4.3:
+                    // "although event notifications MUST include an empty <items/> element;"
+                    if (allowEmpty && secondLevelList.isEmpty()) {
+                        return true;
+                    }
+
 					if (secondLevelList.size() > 0 && secondLevelList.get(0).getElementName().equals(secondElement))
 						return true;
 				}

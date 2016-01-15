@@ -83,6 +83,11 @@ public class SASLDigestMD5Mechanism extends SASLMechanism {
         return new SASLDigestMD5Mechanism();
     }
 
+    @Override
+    public boolean authzidSupported() {
+      return true;
+    }
+
 
     @Override
     public void checkIfSuccessfulOrThrow() throws SmackException {
@@ -104,6 +109,13 @@ public class SASLDigestMD5Mechanism extends SASLMechanism {
                 String[] keyValue = part.split("=");
                 assert (keyValue.length == 2);
                 String key = keyValue[0];
+                // RFC 2831 § 7.1 about the formating of the digest-challenge:
+                // "The full form is "<n>#<m>element" indicating at least <n> and
+                // at most <m> elements, each separated by one or more commas
+                // (",") and OPTIONAL linear white space (LWS)."
+                // Which means the key value may be preceded by whitespace,
+                // which is what we remove: *Only the preceding whitespace*.
+                key = key.replaceFirst("^\\s+", "");
                 String value = keyValue[1];
                 if ("nonce".equals(key)) {
                     if (nonce != null) {
@@ -134,7 +146,14 @@ public class SASLDigestMD5Mechanism extends SASLMechanism {
             String responseValue = calcResponse(DigestType.ClientResponse);
             // @formatter:off
             // See RFC 2831 2.1.2 digest-response
+            String authzid;
+            if (authorizationId == null) {
+              authzid = "";
+            } else {
+              authzid = ",authzid=\"" + authorizationId + '"';
+            }
             String saslString = "username=\"" + authenticationId + '"'
+                               + authzid
                                + ",realm=\"" + serviceName + '"'
                                + ",nonce=\"" + nonce + '"'
                                + ",cnonce=\"" + cnonce + '"'

@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smackx.gcm.packet;
 
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.json.packet.AbstractJsonPacketExtension;
 
 /**
@@ -48,12 +48,12 @@ public class GcmPacketExtension extends AbstractJsonPacketExtension {
     }
 
     /**
-     * Retrieve the GCM packet extension from the packet.
+     * Retrieve the GCM stanza(/packet) extension from the packet.
      *
      * @param packet
-     * @return the GCM packet extension or null.
+     * @return the GCM stanza(/packet) extension or null.
      */
-    public static GcmPacketExtension from(Packet packet) {
+    public static GcmPacketExtension from(Stanza packet) {
         return packet.getExtension(ELEMENT, NAMESPACE);
     }
 }

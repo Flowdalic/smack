@@ -53,8 +53,12 @@ public abstract class SASLJavaXMechanism extends SASLMechanism {
                     throws SmackException {
         String[] mechanisms = { getName() };
         Map<String, String> props = getSaslProps();
+        String authzid = null;
+        if (authorizationId != null) {
+            authzid = authorizationId.toString();
+        }
         try {
-            sc = Sasl.createSaslClient(mechanisms, null, "xmpp", getServerName(), props,
+            sc = Sasl.createSaslClient(mechanisms, authzid, "xmpp", getServerName().toString(), props,
                             new CallbackHandler() {
                                 @Override
                                 public void handle(Callback[] callbacks) throws IOException,
@@ -146,6 +150,6 @@ public abstract class SASLJavaXMechanism extends SASLMechanism {
     }
 
     protected String getServerName() {
-        return serviceName;
+        return serviceName.toString();
     }
 }

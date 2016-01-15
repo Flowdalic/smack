@@ -19,58 +19,58 @@ package org.jivesoftware.smack;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.packet.Stanza;
 import org.junit.Test;
 
 public class PacketCollectorTest
 {
 
 	@Test
-	public void verifyRollover()
+	public void verifyRollover() throws InterruptedException
 	{
 		TestPacketCollector collector = new TestPacketCollector(null, new OKEverything(), 5);
-		
+
 		for (int i=0; i<6; i++)
 		{
-			Packet testPacket = new TestPacket(i);
+			Stanza testPacket = new TestPacket(i);
 			collector.processPacket(testPacket);
 		}
-		
+
 		// Assert that '0' has rolled off
-		assertEquals("1", collector.nextResultBlockForever().getPacketID());
-		assertEquals("2", collector.nextResultBlockForever().getPacketID());
-		assertEquals("3", collector.nextResultBlockForever().getPacketID());
-		assertEquals("4", collector.nextResultBlockForever().getPacketID());
-		assertEquals("5", collector.pollResult().getPacketID());
+		assertEquals("1", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("2", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("3", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("4", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("5", collector.pollResult().getStanzaId());
 		assertNull(collector.pollResult());
-		
+
 		for (int i=10; i<15; i++)
 		{
-			Packet testPacket = new TestPacket(i);
+			Stanza testPacket = new TestPacket(i);
 			collector.processPacket(testPacket);
 		}
-		
-		assertEquals("10", collector.nextResultBlockForever().getPacketID());
-		assertEquals("11", collector.nextResultBlockForever().getPacketID());
-		assertEquals("12", collector.nextResultBlockForever().getPacketID());
-		assertEquals("13", collector.nextResultBlockForever().getPacketID());
-		assertEquals("14", collector.pollResult().getPacketID());
+
+		assertEquals("10", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("11", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("12", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("13", collector.nextResultBlockForever().getStanzaId());
+		assertEquals("14", collector.pollResult().getStanzaId());
 		assertNull(collector.pollResult());
-		
+
 		assertNull(collector.nextResult(1000));
 	}
 
-	/**
-	 * Although this doesn't guarentee anything due to the nature of threading, it can 
-	 * potentially catch problems.
-	 */
+    /**
+     * Although this doesn't guarentee anything due to the nature of threading, it can potentially
+     * catch problems.
+     */
 	@Test
 	public void verifyThreadSafety()
 	{
 		int insertCount = 500;
 		final TestPacketCollector collector = new TestPacketCollector(null, new OKEverything(), insertCount);
-		
+
 		Thread consumer1 = new Thread(new Runnable()
 		{
 			@Override
@@ -88,17 +88,13 @@ public class PacketCollectorTest
 						{
 						}
 						@SuppressWarnings("unused")
-						Packet packet = collector.nextResultBlockForever();
+						Stanza packet = collector.nextResultBlockForever();
 //						System.out.println(Thread.currentThread().getName() + "  packet: " + packet);
 					}
 				}
-				catch (RuntimeException re)
-				{
-					if (re.getCause() instanceof InterruptedException)
-					{
-//						System.out.println(Thread.currentThread().getName() + " has been interupted");
-					}
-				}
+                catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 			}
 		});
 		consumer1.setName("consumer 1");
@@ -108,8 +104,8 @@ public class PacketCollectorTest
 			@Override
 			public void run()
 			{
-				Packet p = null;
-				
+				Stanza p = null;
+
 				do
 				{
 					try
@@ -119,7 +115,12 @@ public class PacketCollectorTest
 					catch (InterruptedException e)
 					{
 					}
-					p = collector.nextResult(1);
+					try {
+                        p = collector.nextResult(1);
+                    }
+                    catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
 //					System.out.println(Thread.currentThread().getName() + "  packet: " + p);
 				}
 				while (p != null);
@@ -132,8 +133,8 @@ public class PacketCollectorTest
 			@Override
 			public void run()
 			{
-				Packet p = null;
-				
+				Stanza p = null;
+
 				do
 				{
 					try
@@ -154,7 +155,7 @@ public class PacketCollectorTest
 		consumer1.start();
 		consumer2.start();
 		consumer3.start();
-		
+
 		for(int i=0; i<insertCount; i++)
 		{
 			collector.processPacket(new TestPacket(i));
@@ -175,35 +176,35 @@ public class PacketCollectorTest
 		assertNull(collector.pollResult());
 	}
 
-	class OKEverything implements PacketFilter
+	class OKEverything implements StanzaFilter
 	{
 		@Override
-		public boolean accept(Packet packet)
+		public boolean accept(Stanza packet)
 		{
 			return true;
 		}
-		
+
 	}
-	
+
 	class TestPacketCollector extends PacketCollector 
 	{
-		protected TestPacketCollector(XMPPConnection conection, PacketFilter packetFilter, int size)
+		protected TestPacketCollector(XMPPConnection conection, StanzaFilter packetFilter, int size)
 		{
-			super(conection, PacketCollector.newConfiguration().setPacketFilter(packetFilter).setSize(size));
+			super(conection, PacketCollector.newConfiguration().setStanzaFilter(packetFilter).setSize(size));
 		}
 	}
 
-	class TestPacket extends Packet
+	class TestPacket extends Stanza
 	{
 		public TestPacket(int i)
 		{
-			setPacketID(String.valueOf(i));
+			setStanzaId(String.valueOf(i));
 		}
 
 		@Override
 		public String toXML()
 		{
-			return "<packetId>" + getPacketID() + "</packetId>";
+			return "<packetId>" + getStanzaId() + "</packetId>";
 		}
 	}
 }

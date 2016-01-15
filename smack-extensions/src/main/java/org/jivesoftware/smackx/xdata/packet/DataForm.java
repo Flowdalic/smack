@@ -18,15 +18,17 @@
 package org.jivesoftware.smackx.xdata.packet;
 
 import org.jivesoftware.smack.packet.Element;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.xdata.FormField;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Represents a form that could be use for gathering data as well as for reporting data
@@ -34,14 +36,14 @@ import java.util.Locale;
  *
  * @author Gaston Dombiak
  */
-public class DataForm implements PacketExtension {
+public class DataForm implements ExtensionElement {
 
     public static final String NAMESPACE = "jabber:x:data";
     public static final String ELEMENT = "x";
 
     public enum Type {
         /**
-         * This packet contains a form to fill out. Display it to the user (if your program can).
+         * This stanza(/packet) contains a form to fill out. Display it to the user (if your program can).
          */
         form,
 
@@ -68,16 +70,16 @@ public class DataForm implements PacketExtension {
 
     private Type type;
     private String title;
-    private List<String> instructions = new ArrayList<String>();
+    private final List<String> instructions = new ArrayList<>();
     private ReportedData reportedData;
     private final List<Item> items = new ArrayList<Item>();
-    private final List<FormField> fields = new ArrayList<FormField>();
+    private final Map<String, FormField> fields = new LinkedHashMap<>();
     private final List<Element> extensionElements = new ArrayList<Element>();
-    
+
     public DataForm(Type type) {
         this.type = type;
     }
-    
+
     /**
      * Returns the meaning of the data within the context. The data could be part of a form
      * to fill out, a form submission or data results.
@@ -87,7 +89,7 @@ public class DataForm implements PacketExtension {
     public Type getType() {
         return type; 
     }
-    
+
     /**
      * Returns the description of the data. It is similar to the title on a web page or an X 
      * window.  You can put a <title/> on either a form to fill out, or a set of data results.
@@ -139,7 +141,7 @@ public class DataForm implements PacketExtension {
      */
     public List<FormField> getFields() {
         synchronized (fields) {
-            return Collections.unmodifiableList(new ArrayList<FormField>(fields));
+            return new ArrayList<>(fields.values());
         }
     }
 
@@ -152,13 +154,21 @@ public class DataForm implements PacketExtension {
      */
     public FormField getField(String variableName) {
         synchronized (fields) {
-            for (FormField field : fields) {
-                if (variableName.equals(field.getVariable())) {
-                    return field;
-                }
-            }
+            return fields.get(variableName);
         }
-        return null;
+    }
+
+    /**
+     * Check if a form field with the given variable name exists.
+     *
+     * @param variableName
+     * @return true if a form field with the variable name exists, false otherwise.
+     * @since 4.2
+     */
+    public boolean hasField(String variableName) {
+        synchronized (fields) {
+            return fields.containsKey(variableName);
+        }
     }
 
     public String getElementName() {
@@ -187,7 +197,10 @@ public class DataForm implements PacketExtension {
      * @param instructions list of instructions that explain how to fill out the form.
      */
     public void setInstructions(List<String> instructions) {
-        this.instructions = instructions;
+        synchronized (this.instructions) {
+            this.instructions.clear();
+            this.instructions.addAll(instructions);
+        }
     }
 
     /**
@@ -206,15 +219,18 @@ public class DataForm implements PacketExtension {
      */
     public void addField(FormField field) {
         String fieldVariableName = field.getVariable();
-        if (fieldVariableName != null && getField(fieldVariableName) != null) {
+        // Form field values must be unique unless they are of type 'fixed', in
+        // which case their variable name may be 'null', and therefore could
+        // appear multiple times within the same form.
+        if (fieldVariableName != null && hasField(fieldVariableName)) {
             throw new IllegalArgumentException("This data form already contains a form field with the variable name '"
                             + fieldVariableName + "'");
         }
         synchronized (fields) {
-            fields.add(field);
+            fields.put(fieldVariableName, field);
         }
     }
-    
+
     /**
      * Adds a new instruction to the list of instructions that explain how to fill out the form 
      * and what the form is about. The dataform could include multiple instructions since each 
@@ -301,11 +317,11 @@ public class DataForm implements PacketExtension {
     }
 
     /**
-     * 
+     * Get data form from stanza.
      * @param packet
      * @return the DataForm or null
      */
-    public static DataForm from(Packet packet) {
+    public static DataForm from(Stanza packet) {
         return (DataForm) packet.getExtension(ELEMENT, NAMESPACE);
     }
 
@@ -320,7 +336,7 @@ public class DataForm implements PacketExtension {
         public static final String ELEMENT = "reported";
 
         private List<FormField> fields = new ArrayList<FormField>();
-        
+
         public ReportedData(List<FormField> fields) {
             this.fields = fields;
         }
@@ -345,7 +361,7 @@ public class DataForm implements PacketExtension {
             return buf;
         }
     }
-    
+
     /**
      * 
      * Represents items of reported data.
@@ -356,11 +372,11 @@ public class DataForm implements PacketExtension {
         public static final String ELEMENT = "item";
 
         private List<FormField> fields = new ArrayList<FormField>();
-        
+
         public Item(List<FormField> fields) {
             this.fields = fields;
         }
-        
+
         /**
          * Returns the fields that define the data that goes with the item.
          * 
@@ -369,7 +385,7 @@ public class DataForm implements PacketExtension {
         public List<FormField> getFields() {
             return Collections.unmodifiableList(new ArrayList<FormField>(fields));
         }
-        
+
         public CharSequence toXML() {
             XmlStringBuilder buf = new XmlStringBuilder();
             buf.openElement(ELEMENT);

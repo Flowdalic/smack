@@ -16,19 +16,17 @@
  */
 package org.jivesoftware.smackx.bytestreams.ibb;
 
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
+import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
 
 /**
  * DataListener handles all In-Band Bytestream IQ stanzas containing a data
- * packet extension that don't belong to an existing session.
+ * stanza(/packet) extension that don't belong to an existing session.
  * <p>
- * If a data packet is received it looks if a stored In-Band Bytestream session
+ * If a data stanza(/packet) is received it looks if a stored In-Band Bytestream session
  * exists. If no session with the given session ID exists an
  * &lt;item-not-found/&gt; error is returned to the sender.
  * <p>
@@ -38,14 +36,10 @@ import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
  * 
  * @author Henning Staib
  */
-class DataListener implements PacketListener {
+class DataListener extends AbstractIqRequestHandler {
 
     /* manager containing the listeners and the XMPP connection */
     private final InBandBytestreamManager manager;
-
-    /* packet filter for all In-Band Bytestream data packets */
-    private final PacketFilter dataFilter = new AndFilter(
-                    new PacketTypeFilter(Data.class));
 
     /**
      * Constructor.
@@ -53,25 +47,27 @@ class DataListener implements PacketListener {
      * @param manager the In-Band Bytestream manager
      */
     public DataListener(InBandBytestreamManager manager) {
+      super(DataPacketExtension.ELEMENT, DataPacketExtension.NAMESPACE, IQ.Type.set, Mode.async);
         this.manager = manager;
     }
 
-    public void processPacket(Packet packet) throws NotConnectedException {
-        Data data = (Data) packet;
+    @Override
+    public IQ handleIQRequest(IQ iqRequest) {
+        Data data = (Data) iqRequest;
         InBandBytestreamSession ibbSession = this.manager.getSessions().get(
                         data.getDataPacketExtension().getSessionID());
-        if (ibbSession == null) {
-            this.manager.replyItemNotFoundPacket(data);
+        try {
+            if (ibbSession == null) {
+                this.manager.replyItemNotFoundPacket(data);
+            }
+            else {
+                ibbSession.processIQPacket(data);
+            }
         }
-    }
-
-    /**
-     * Returns the packet filter for In-Band Bytestream data packets.
-     * 
-     * @return the packet filter for In-Band Bytestream data packets
-     */
-    protected PacketFilter getFilter() {
-        return this.dataFilter;
+        catch (NotConnectedException|InterruptedException e) {
+            return null;
+        }
+        return null;
     }
 
 }

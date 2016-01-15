@@ -17,13 +17,13 @@
 
 package org.jivesoftware.smackx.debugger.slf4j;
 
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.debugger.SmackDebugger;
 import org.jivesoftware.smack.util.ObservableReader;
 import org.jivesoftware.smack.util.ObservableWriter;
-import org.jxmpp.util.XmppStringUtils;
+import org.jxmpp.jid.EntityFullJid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,22 +47,22 @@ public class SLF4JSmackDebugger implements SmackDebugger  {
 
     private final XMPPConnection connection;
 
-    private final PacketListener receivedListener = new SLF4JLoggingPacketListener(logger, RECEIVED_TAG);
-    private final PacketListener sentListener = new SLF4JLoggingPacketListener(logger, SENT_TAG);
+    private final StanzaListener receivedListener = new SLF4JLoggingPacketListener(logger, RECEIVED_TAG);
+    private final StanzaListener sentListener = new SLF4JLoggingPacketListener(logger, SENT_TAG);
     private final SLF4JRawXmlListener slf4JRawXmlListener = new SLF4JRawXmlListener(logger);
 
     private ObservableWriter writer;
     private ObservableReader reader;
 
     /**
-     * Makes Smack use this Debugger
+     * Makes Smack use this Debugger.
      */
     public static void enable() {
         SmackConfiguration.setDebuggerFactory(new SLF4JDebuggerFactory());
     }
 
     /**
-     * Create new SLF4J Smack Debugger instance
+     * Create new SLF4J Smack Debugger instance.
      * @param connection Smack connection to debug
      * @param writer connection data writer to observe
      * @param reader connection data reader to observe
@@ -93,18 +93,9 @@ public class SLF4JSmackDebugger implements SmackDebugger  {
     }
 
     @Override
-    public void userHasLogged(String user) {
+    public void userHasLogged(EntityFullJid user) {
         if (logger.isDebugEnabled()) {
-            String userTitle = getUserTitle(user);
-            logger.debug("({}) User logged in {}", connection.hashCode(), userTitle);
-        }
-    }
-
-    private String getUserTitle(String user) {
-        if (("@" + connection.getServiceName()).equals(XmppStringUtils.parseBareJid(user))) {
-            return "<Anonymous>@" + connection.getServiceName();
-        } else {
-            return user;
+            logger.debug("({}) User logged in {}", connection.hashCode(), user.toString());
         }
     }
 
@@ -119,12 +110,12 @@ public class SLF4JSmackDebugger implements SmackDebugger  {
     }
 
     @Override
-    public PacketListener getReaderListener() {
+    public StanzaListener getReaderListener() {
         return receivedListener;
     }
 
     @Override
-    public PacketListener getWriterListener() {
+    public StanzaListener getWriterListener() {
         return sentListener;
     }
 }

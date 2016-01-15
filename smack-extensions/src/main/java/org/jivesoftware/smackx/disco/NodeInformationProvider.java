@@ -17,7 +17,7 @@
 
 package org.jivesoftware.smackx.disco;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 
@@ -64,9 +64,9 @@ public interface NodeInformationProvider {
     List<DiscoverInfo.Identity> getNodeIdentities();
 
     /**
-     * Returns a list of the packet extensions defined in the node.
+     * Returns a list of the stanza(/packet) extensions defined in the node.
      *
-     * @return a list of the packet extensions defined in the node.
+     * @return a list of the stanza(/packet) extensions defined in the node.
      */
-    List<PacketExtension> getNodePacketExtensions();
+    List<ExtensionElement> getNodePacketExtensions();
 }

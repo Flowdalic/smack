@@ -17,8 +17,10 @@
 
 package org.jivesoftware.smackx.ping.android;
 
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
@@ -59,7 +61,7 @@ import android.os.SystemClock;
  * functionality.
  * </p>
  */
-public class ServerPingWithAlarmManager extends Manager {
+public final class ServerPingWithAlarmManager extends Manager {
 
 	private static final Logger LOGGER = Logger.getLogger(ServerPingWithAlarmManager.class
 			.getName());
@@ -92,13 +94,12 @@ public class ServerPingWithAlarmManager extends Manager {
 		super(connection);
 	}
 
-	/**
-	 * If enabled, ServerPingWithAlarmManager will call
-	 * {@link PingManager#pingServerIfNecessary()} for the connection of this
-	 * instance every half hour.
-	 * 
-	 * @param enabled
-	 */
+    /**
+     * If enabled, ServerPingWithAlarmManager will call {@link PingManager#pingServerIfNecessary()}
+     * for the connection of this instance every half hour.
+     * 
+     * @param enabled
+     */
 	public void setEnabled(boolean enabled) {
 		mEnabled = enabled;
 	}
@@ -111,12 +112,18 @@ public class ServerPingWithAlarmManager extends Manager {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			LOGGER.fine("Ping Alarm broadcast received");
-			Iterator<XMPPConnection> it = INSTANCES.keySet().iterator();
-			while (it.hasNext()) {
-				XMPPConnection connection = it.next();
-				if (ServerPingWithAlarmManager.getInstanceFor(connection).isEnabled()) {
+			Set<Entry<XMPPConnection, ServerPingWithAlarmManager>> managers;
+			synchronized (ServerPingWithAlarmManager.class) {
+				// Make a copy to avoid ConcurrentModificationException when
+				// iterating directly over INSTANCES and the Set is modified
+				// concurrently by creating a new ServerPingWithAlarmManager.
+				managers = new HashSet<>(INSTANCES.entrySet());
+			}
+			for (Entry<XMPPConnection, ServerPingWithAlarmManager> entry : managers) {
+				XMPPConnection connection = entry.getKey();
+				if (entry.getValue().isEnabled()) {
 					LOGGER.fine("Calling pingServerIfNecessary for connection "
-							+ connection.getConnectionCounter());
+							+ connection);
 					final PingManager pingManager = PingManager.getInstanceFor(connection);
 					// Android BroadcastReceivers have a timeout of 60 seconds.
 					// The connections reply timeout may be higher, which causes
@@ -144,14 +151,13 @@ public class ServerPingWithAlarmManager extends Manager {
 	private static PendingIntent sPendingIntent;
 	private static AlarmManager sAlarmManager;
 
-	/**
-	 * Register a pending intent with the AlarmManager to be broadcasted every
-	 * half hour and register the alarm broadcast receiver to receive this
-	 * intent. The receiver will check all known questions if a ping is
-	 * Necessary when invoked by the alarm intent.
-	 * 
-	 * @param context
-	 */
+    /**
+     * Register a pending intent with the AlarmManager to be broadcasted every half hour and
+     * register the alarm broadcast receiver to receive this intent. The receiver will check all
+     * known questions if a ping is Necessary when invoked by the alarm intent.
+     * 
+     * @param context
+     */
 	public static void onCreate(Context context) {
 		sContext = context;
 		context.registerReceiver(ALARM_BROADCAST_RECEIVER, new IntentFilter(PING_ALARM_ACTION));
@@ -162,9 +168,9 @@ public class ServerPingWithAlarmManager extends Manager {
 				AlarmManager.INTERVAL_HALF_HOUR, sPendingIntent);
 	}
 
-	/**
-	 * Unregister the alarm broadcast receiver and cancel the alarm. 
-	 */
+    /**
+     * Unregister the alarm broadcast receiver and cancel the alarm.
+     */
 	public static void onDestroy() {
 		sContext.unregisterReceiver(ALARM_BROADCAST_RECEIVER);
 		sAlarmManager.cancel(sPendingIntent);

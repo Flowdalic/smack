@@ -1,7 +1,7 @@
 Messaging using Chats
 =====================
 
-[Back](index.html)
+[Back](index.md)
 
 Sending messages back and forth is at the core of instant messaging. Although
 individual messages can be sent and received as packets, it's generally easier
@@ -16,8 +16,8 @@ The following code snippet demonstrates how to create a new Chat with a user
 and then send them a text message:
 
 ```
-// Assume we've created a XMPPConnection name "connection"._
-ChatManager chatmanager = connection.getChatManager();
+// Assume we've created an XMPPConnection name "connection"._
+ChatManager chatmanager = ChatManager.getInstanceFor(connection);
 Chat newChat = chatmanager.createChat("jsmith@jivesoftware.com", new MessageListener() {
 	public void processMessage(Chat chat, Message message) {
 		System.out.println("Received message: " + message);
@@ -72,8 +72,9 @@ when it happens. You can register a message listener to receive all future
 messages as part of this handler.
 
 ```
-_// Assume we've created a XMPPConnection name "connection"._
-ChatManager chatmanager = connection.getChatManager().addChatListener(
+// Assume we've created an XMPPConnection name "connection"._
+ChatManager chatManager = ChatManager.getInstanceFor(connection);
+chatManager.addChatListener(
 	new ChatManagerListener() {
 		@Override
 		public void chatCreated(Chat chat, boolean createdLocally)

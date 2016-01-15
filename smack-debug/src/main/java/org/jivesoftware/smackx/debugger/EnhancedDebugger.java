@@ -19,19 +19,21 @@ package org.jivesoftware.smackx.debugger;
 
 import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.debugger.SmackDebugger;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.util.ObservableReader;
 import org.jivesoftware.smack.util.ObservableWriter;
 import org.jivesoftware.smack.util.ReaderListener;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.WriterListener;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.Jid;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -97,7 +99,7 @@ import java.util.logging.Logger;
 public class EnhancedDebugger implements SmackDebugger {
 
     private static final Logger LOGGER = Logger.getLogger(EnhancedDebugger.class.getName());
-    
+
     private static final String NEWLINE = "\n";
 
     private static ImageIcon packetReceivedIcon;
@@ -148,8 +150,8 @@ public class EnhancedDebugger implements SmackDebugger {
 
     private XMPPConnection connection = null;
 
-    private PacketListener packetReaderListener = null;
-    private PacketListener packetWriterListener = null;
+    private StanzaListener packetReaderListener = null;
+    private StanzaListener packetWriterListener = null;
     private ConnectionListener connListener = null;
 
     private Writer writer;
@@ -203,10 +205,10 @@ public class EnhancedDebugger implements SmackDebugger {
         // Create a thread that will listen for all incoming packets and write them to
         // the GUI. This is what we call "interpreted" packet data, since it's the packet
         // data as Smack sees it and not as it's coming in as raw XML.
-        packetReaderListener = new PacketListener() {
+        packetReaderListener = new StanzaListener() {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("hh:mm:ss:SS aaa");
 
-            public void processPacket(final Packet packet) {
+            public void processPacket(final Stanza packet) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         addReadPacketToTable(dateFormatter, packet);
@@ -218,10 +220,10 @@ public class EnhancedDebugger implements SmackDebugger {
 
         // Create a thread that will listen for all outgoing packets and write them to
         // the GUI.
-        packetWriterListener = new PacketListener() {
+        packetWriterListener = new StanzaListener() {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("hh:mm:ss:SS aaa");
 
-            public void processPacket(final Packet packet) {
+            public void processPacket(final Stanza packet) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         addSentPacketToTable(dateFormatter, packet);
@@ -287,8 +289,10 @@ public class EnhancedDebugger implements SmackDebugger {
                 new DefaultTableModel(
                         new Object[]{"Hide", "Timestamp", "", "", "Message", "Id", "Type", "To", "From"},
                         0) {
+                    // CHECKSTYLE:OFF
         			private static final long serialVersionUID = 8136121224474217264L;
 					public boolean isCellEditable(int rowIndex, int mColIndex) {
+                    // CHECKSTYLE:ON
                         return false;
                     }
 
@@ -350,24 +354,25 @@ public class EnhancedDebugger implements SmackDebugger {
         menu.add(menuItem1);
         // Add listener to the text area so the popup menu can come up.
         messageTextArea.addMouseListener(new PopupListener(menu));
+        // CHECKSTYLE:OFF
 	JPanel sublayout = new JPanel(new BorderLayout());
         sublayout.add(new JScrollPane(messageTextArea), BorderLayout.CENTER);
-       
+
         JButton clearb = new JButton("Clear All Packets");
-        
+
         clearb.addActionListener(new AbstractAction() {    
 	    private static final long serialVersionUID = -8576045822764763613L;
 
 	    @Override
 	    public void actionPerformed(ActionEvent e) {
             messagesTable.setRowCount(0);
-		
 	    }
 	});
+         // CHECKSTYLE:ON
 
         sublayout.add(clearb, BorderLayout.NORTH);
         allPane.setBottomComponent(sublayout);
-       
+
         allPane.setDividerLocation(150);
 
         tabbedPane.add("All Packets", allPane);
@@ -578,10 +583,10 @@ public class EnhancedDebugger implements SmackDebugger {
                 if (!"".equals(adhocMessages.getText())) {
                     AdHocPacket packetToSend = new AdHocPacket(adhocMessages.getText());
                     try {
-                        connection.sendPacket(packetToSend);
+                        connection.sendStanza(packetToSend);
                     }
-                    catch (NotConnectedException e1) {
-                        e1.printStackTrace();
+                    catch (InterruptedException | NotConnectedException e1) {
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
                 }
             }
@@ -616,7 +621,7 @@ public class EnhancedDebugger implements SmackDebugger {
         connPanel.add(
                 label,
                 new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 21, 0, new Insets(0, 0, 0, 0), 0, 0));
-        JFormattedTextField field = new JFormattedTextField(connection.getServiceName());
+        JFormattedTextField field = new JFormattedTextField(connection.getXMPPServiceDomain());
         field.setMinimumSize(new java.awt.Dimension(150, 20));
         field.setMaximumSize(new java.awt.Dimension(150, 20));
         field.setEditable(false);
@@ -702,8 +707,10 @@ public class EnhancedDebugger implements SmackDebugger {
                 new DefaultTableModel(new Object[][]{{"IQ", 0, 0}, {"Message", 0, 0},
                         {"Presence", 0, 0}, {"Other", 0, 0}, {"Total", 0, 0}},
                         new Object[]{"Type", "Received", "Sent"}) {
+                    // CHECKSTYLE:OFF
         			private static final long serialVersionUID = -6793886085109589269L;
 					public boolean isCellEditable(int rowIndex, int mColIndex) {
+                    // CHECKSTYLE:ON
                         return false;
                     }
                 };
@@ -735,12 +742,13 @@ public class EnhancedDebugger implements SmackDebugger {
         return writer;
     }
 
-    public void userHasLogged(final String user) {
+    @Override
+    public void userHasLogged(final EntityFullJid user) {
         final EnhancedDebugger debugger = this;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                userField.setText(user);
-                EnhancedDebuggerWindow.userHasLogged(debugger, user);
+                userField.setText(user.toString());
+                EnhancedDebuggerWindow.userHasLogged(debugger, user.toString());
                 // Add the connection listener to the connection so that the debugger can be notified
                 // whenever the connection is closed.
                 connection.addConnectionListener(connListener);
@@ -757,11 +765,11 @@ public class EnhancedDebugger implements SmackDebugger {
         return writer;
     }
 
-    public PacketListener getReaderListener() {
+    public StanzaListener getReaderListener() {
         return packetReaderListener;
     }
 
-    public PacketListener getWriterListener() {
+    public StanzaListener getWriterListener() {
         return packetWriterListener;
     }
 
@@ -786,16 +794,16 @@ public class EnhancedDebugger implements SmackDebugger {
     }
 
     /**
-     * Adds the received packet detail to the messages table.
+     * Adds the received stanza(/packet) detail to the messages table.
      *
      * @param dateFormatter the SimpleDateFormat to use to format Dates
-     * @param packet        the read packet to add to the table
+     * @param packet        the read stanza(/packet) to add to the table
      */
-    private void addReadPacketToTable(final SimpleDateFormat dateFormatter, final Packet packet) {
+    private void addReadPacketToTable(final SimpleDateFormat dateFormatter, final Stanza packet) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 String messageType;
-                String from = packet.getFrom();
+                Jid from = packet.getFrom();
                 String type = "";
                 Icon packetTypeIcon;
                 receivedPackets++;
@@ -836,7 +844,7 @@ public class EnhancedDebugger implements SmackDebugger {
                                 packetReceivedIcon,
                                 packetTypeIcon,
                                 messageType,
-                                packet.getPacketID(),
+                                packet.getStanzaId(),
                                 type,
                                 "",
                                 from});
@@ -847,16 +855,16 @@ public class EnhancedDebugger implements SmackDebugger {
     }
 
     /**
-     * Adds the sent packet detail to the messages table.
+     * Adds the sent stanza(/packet) detail to the messages table.
      *
      * @param dateFormatter the SimpleDateFormat to use to format Dates
-     * @param packet        the sent packet to add to the table
+     * @param packet        the sent stanza(/packet) to add to the table
      */
-    private void addSentPacketToTable(final SimpleDateFormat dateFormatter, final Packet packet) {
+    private void addSentPacketToTable(final SimpleDateFormat dateFormatter, final Stanza packet) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 String messageType;
-                String to = packet.getTo();
+                Jid to = packet.getTo();
                 String type = "";
                 Icon packetTypeIcon;
                 sentPackets++;
@@ -897,7 +905,7 @@ public class EnhancedDebugger implements SmackDebugger {
                                 packetSentIcon,
                                 packetTypeIcon,
                                 messageType,
-                                packet.getPacketID(),
+                                packet.getStanzaId(),
                                 type,
                                 to,
                                 ""});
@@ -956,7 +964,7 @@ public class EnhancedDebugger implements SmackDebugger {
      */
     void cancel() {
         connection.removeConnectionListener(connListener);
-        connection.removeAsyncPacketListener(packetReaderListener);
+        connection.removeAsyncStanzaListener(packetReaderListener);
         connection.removePacketSendingListener(packetWriterListener);
         ((ObservableReader) reader).removeReaderListener(readerListener);
         ((ObservableWriter) writer).removeWriterListener(writerListener);
@@ -964,13 +972,13 @@ public class EnhancedDebugger implements SmackDebugger {
     }
 
     /**
-     * An ad-hoc packet is like any regular packet but with the exception that it's intention is
+     * An ad-hoc stanza(/packet) is like any regular stanza(/packet) but with the exception that it's intention is
      * to be used only <b>to send packets</b>.<p>
      * <p/>
      * The whole text to send must be passed to the constructor. This implies that the client of
      * this class is responsible for sending a valid text to the constructor.
      */
-    private class AdHocPacket extends Packet {
+    private class AdHocPacket extends Stanza {
 
         private String text;
 
@@ -978,7 +986,7 @@ public class EnhancedDebugger implements SmackDebugger {
          * Create a new AdHocPacket with the text to send. The passed text must be a valid text to
          * send to the server, no validation will be done on the passed text.
          *
-         * @param text the whole text of the packet to send
+         * @param text the whole text of the stanza(/packet) to send
          */
         public AdHocPacket(String text) {
             this.text = text;

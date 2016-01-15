@@ -17,7 +17,8 @@
 package org.jivesoftware.smackx.xdatavalidation.packet;
 
 import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.util.NumberUtil;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.xdata.FormField;
@@ -32,7 +33,7 @@ import org.jivesoftware.smackx.xdatavalidation.ValidationConsistencyException;
  *
  * @author Anno van Vliet
  */
-public abstract class ValidateElement implements PacketExtension {
+public abstract class ValidateElement implements ExtensionElement {
 
     public static final String DATATYPE_XS_STRING = "xs:string";
     public static final String ELEMENT = "validate";
@@ -97,6 +98,7 @@ public abstract class ValidateElement implements PacketExtension {
     protected abstract void appendXML(XmlStringBuilder buf);
 
     /**
+     * Set list range.
      * @param listRange the listRange to set
      */
     public void setListRange(ListRange listRange) {
@@ -104,6 +106,7 @@ public abstract class ValidateElement implements PacketExtension {
     }
 
     /**
+     * Get list range.
      * @return the listRange
      */
     public ListRange getListRange() {
@@ -111,7 +114,7 @@ public abstract class ValidateElement implements PacketExtension {
     }
 
     /**
-     * Check if this element is consistent according to the business rules in XEP=0122
+     * Check if this element is consistent according to the business rules in XEP=0122.
      * 
      * @param formField
      */
@@ -128,6 +131,7 @@ public abstract class ValidateElement implements PacketExtension {
         public static final String METHOD = "basic";
 
         /**
+         * Basic validate element constructor.
          * @param dataType
          * @see #getDatatype()
          */
@@ -169,6 +173,7 @@ public abstract class ValidateElement implements PacketExtension {
         public static final String METHOD = "open";
 
         /**
+         * Open validate element constructor.
          * @param dataType
          * @see #getDatatype()
          */
@@ -209,6 +214,7 @@ public abstract class ValidateElement implements PacketExtension {
         private final String max;
 
         /**
+         * Range validate element constructor.
          * @param dataType
          * @param min the minimum allowable value. This attribute is OPTIONAL. The value depends on the datatype in use.
          * @param max the maximum allowable value. This attribute is OPTIONAL. The value depends on the datatype in use.
@@ -272,6 +278,7 @@ public abstract class ValidateElement implements PacketExtension {
         private final String regex;
 
         /**
+         * Regex validate element.
          * @param dataType
          * @param regex
          * @see #getDatatype()
@@ -313,18 +320,18 @@ public abstract class ValidateElement implements PacketExtension {
 
         /**
          * The 'max' attribute specifies the maximum allowable number of selected/entered values. The 'min' attribute
-         * specifies the minimum allowable number of selected/entered values. Both attributes are optional and must be a
-         * positive integer.
+         * specifies the minimum allowable number of selected/entered values. Both attributes are optional, but at
+         * least one must bet set, and the value must be within the range of a unsigned 32-bit integer.
          * 
          * @param min
          * @param max
          */
         public ListRange(Long min, Long max) {
-            if (min != null && min < 0) {
-                throw new IllegalArgumentException("min must not be negative");
+            if (min != null) {
+                NumberUtil.checkIfInUInt32Range(min);
             }
-            if (max != null && max < 0) {
-                throw new IllegalArgumentException("max must not be negative");
+            if (max != null) {
+                NumberUtil.checkIfInUInt32Range(max);
             }
             if (max == null && min == null) {
                 throw new IllegalArgumentException("Either min or max must be given");

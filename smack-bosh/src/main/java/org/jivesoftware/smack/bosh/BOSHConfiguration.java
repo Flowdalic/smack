@@ -30,13 +30,19 @@ import org.jivesoftware.smack.proxy.ProxyInfo;
  * @see XMPPBOSHConnection
  * @author Guenther Niess
  */
-public class BOSHConfiguration extends ConnectionConfiguration {
+public final class BOSHConfiguration extends ConnectionConfiguration {
 
     private final boolean https;
     private final String file;
 
     private BOSHConfiguration(Builder builder) {
         super(builder);
+        if (proxy != null) {
+            if (proxy.getProxyType() != ProxyInfo.ProxyType.HTTP) {
+                throw new IllegalArgumentException(
+                                "Only HTTP proxies are support with BOSH connections");
+            }
+        }
         https = builder.https;
         if (builder.file.charAt(0) != '/') {
             file = '/' + builder.file;
@@ -46,7 +52,7 @@ public class BOSHConfiguration extends ConnectionConfiguration {
     }
 
     public boolean isProxyEnabled() {
-        return (proxy != null && proxy.getProxyType() != ProxyInfo.ProxyType.NONE);
+        return proxy != null;
     }
 
     public ProxyInfo getProxyInfo() {
@@ -73,7 +79,7 @@ public class BOSHConfiguration extends ConnectionConfiguration {
         return new Builder();
     }
 
-    public static class Builder extends ConnectionConfiguration.Builder<Builder, BOSHConfiguration> {
+    public static final class Builder extends ConnectionConfiguration.Builder<Builder, BOSHConfiguration> {
         private boolean https;
         private String file;
 

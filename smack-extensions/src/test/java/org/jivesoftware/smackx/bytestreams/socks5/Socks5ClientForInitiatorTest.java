@@ -42,6 +42,9 @@ import org.jivesoftware.util.Verification;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.JidTestUtil;
 
 /**
  * Test for Socks5ClientForInitiator class.
@@ -51,10 +54,10 @@ import org.junit.Test;
 public class Socks5ClientForInitiatorTest {
 
     // settings
-    String initiatorJID = "initiator@xmpp-server/Smack";
-    String targetJID = "target@xmpp-server/Smack";
-    String xmppServer = "xmpp-server";
-    String proxyJID = "proxy.xmpp-server";
+    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
+    static final DomainBareJid proxyJID = JidTestUtil.MUC_EXAMPLE_ORG;
     String proxyAddress = "127.0.0.1";
     int proxyPort = 7890;
     String sessionID = "session_id";
@@ -69,9 +72,10 @@ public class Socks5ClientForInitiatorTest {
      * Initialize fields used in the tests.
      * @throws XMPPException 
      * @throws SmackException 
+     * @throws InterruptedException 
      */
     @Before
-    public void setup() throws XMPPException, SmackException {
+    public void setup() throws XMPPException, SmackException, InterruptedException {
 
         // build protocol verifier
         protocol = new Protocol();
@@ -197,8 +201,7 @@ public class Socks5ClientForInitiatorTest {
     public void shouldFailIfActivateSocks5ProxyFails() throws Exception {
 
         // build error response as reply to the stream activation
-        XMPPError xmppError = new XMPPError(XMPPError.Condition.internal_server_error);
-        IQ error = new ErrorIQ(xmppError);
+        IQ error = new ErrorIQ(XMPPError.getBuilder(XMPPError.Condition.internal_server_error));
         error.setFrom(proxyJID);
         error.setTo(initiatorJID);
 
@@ -210,7 +213,7 @@ public class Socks5ClientForInitiatorTest {
         socks5Proxy.start();
 
         StreamHost streamHost = new StreamHost(proxyJID,
-                        socks5Proxy.getAddress(), socks5Proxy.getPort());
+                        Socks5TestProxy.getAddress(), socks5Proxy.getPort());
 
         // create digest to get the socket opened by target
         String digest = Socks5Utils.createDigest(sessionID, initiatorJID, targetJID);
@@ -263,7 +266,7 @@ public class Socks5ClientForInitiatorTest {
         socks5Proxy.start();
 
         StreamHost streamHost = new StreamHost(proxyJID,
-                        socks5Proxy.getAddress(), socks5Proxy.getPort());
+                        Socks5TestProxy.getAddress(), socks5Proxy.getPort());
 
         // create digest to get the socket opened by target
         String digest = Socks5Utils.createDigest(sessionID, initiatorJID, targetJID);

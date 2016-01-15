@@ -19,7 +19,9 @@ package org.jivesoftware.smackx.pubsub;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 /**
@@ -32,23 +34,33 @@ import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
  */
 public class EventElement implements EmbeddedPacketExtension
 {
+    /**
+     * The constant String "event".
+     */
+    public static final String ELEMENT = "event";
+
+    /**
+     * The constant String "http://jabber.org/protocol/pubsub#event".
+     */
+    public static final String NAMESPACE = PubSubNamespace.EVENT.getXmlns();
+
 	private EventElementType type;
 	private NodeExtension ext;
-	
+
 	public EventElement(EventElementType eventType, NodeExtension eventExt)
 	{
 		type = eventType;
 		ext = eventExt;
 	}
-	
+
 	public EventElementType getEventType()
 	{
 		return type;
 	}
 
-	public List<PacketExtension> getExtensions()
+	public List<ExtensionElement> getExtensions()
 	{
-		return Arrays.asList(new PacketExtension[]{getEvent()});
+		return Arrays.asList(new ExtensionElement[]{getEvent()});
 	}
 
 	public NodeExtension getEvent()
@@ -66,12 +78,16 @@ public class EventElement implements EmbeddedPacketExtension
 		return PubSubNamespace.EVENT.getXmlns();
 	}
 
-	public String toXML()
-	{
-		StringBuilder builder = new StringBuilder("<event xmlns='" + PubSubNamespace.EVENT.getXmlns() + "'>");
+    @Override
+    public XmlStringBuilder toXML() {
+        XmlStringBuilder xml = new XmlStringBuilder(this);
+        xml.rightAngleBracket();
+        xml.append(ext.toXML());
+        xml.closeElement(this);
+        return xml;
+    }
 
-		builder.append(ext.toXML());
-		builder.append("</event>");
-		return builder.toString();
-	}
+    public static EventElement from(Stanza stanza) {
+        return stanza.getExtension(ELEMENT, NAMESPACE);
+    }
 }

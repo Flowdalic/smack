@@ -20,11 +20,11 @@ package org.jivesoftware.smack.filter;
 import org.jivesoftware.smack.packet.Message;
 
 /**
- * Filters message stanzas which have at least one body
+ * Filters message stanzas which have at least one body.
  */
-public class MessageWithSubjectFilter extends FlexiblePacketTypeFilter<Message> {
+public final class MessageWithSubjectFilter extends FlexibleStanzaTypeFilter<Message> {
 
-    public static final PacketFilter INSTANCE = new MessageWithSubjectFilter();
+    public static final StanzaFilter INSTANCE = new MessageWithSubjectFilter();
 
     private MessageWithSubjectFilter() {
         super(Message.class);
@@ -36,4 +36,8 @@ public class MessageWithSubjectFilter extends FlexiblePacketTypeFilter<Message> 
         return message.getSubject() != null;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }

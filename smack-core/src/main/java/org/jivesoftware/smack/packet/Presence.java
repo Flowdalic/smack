@@ -19,10 +19,13 @@ package org.jivesoftware.smack.packet;
 
 import java.util.Locale;
 
+import org.jivesoftware.smack.packet.id.StanzaIdUtil;
+import org.jivesoftware.smack.util.Objects;
+import org.jivesoftware.smack.util.TypedCloneable;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
- * Represents XMPP presence packets. Every presence packet has a type, which is one of
+ * Represents XMPP presence packets. Every presence stanza(/packet) has a type, which is one of
  * the following values:
  * <ul>
  *      <li>{@link Presence.Type#available available} -- (Default) indicates the user is available to
@@ -34,7 +37,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  *          sender's presence.
  *      <li>{@link Presence.Type#unsubscribed unsubscribed} -- grant removal of subscription to
  *          sender's presence.
- *      <li>{@link Presence.Type#error error} -- the presence packet contains an error message.
+ *      <li>{@link Presence.Type#error error} -- the presence stanza(/packet) contains an error message.
  * </ul><p>
  *
  * A number of attributes are optional:
@@ -52,10 +55,9 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  * the user's current presence status. Second, they are used to subscribe and
  * unsubscribe users from the roster.
  *
- * @see RosterPacket
  * @author Matt Tucker
  */
-public final class Presence extends Packet {
+public final class Presence extends Stanza implements TypedCloneable<Presence> {
 
     public static final String ELEMENT = "presence";
 
@@ -86,6 +88,23 @@ public final class Presence extends Packet {
         setStatus(status);
         setPriority(priority);
         setMode(mode);
+    }
+
+    /**
+     * Copy constructor.
+     * <p>
+     * This does not perform a deep clone, as extension elements are shared between the new and old
+     * instance.
+     * </p>
+     *
+     * @param other
+     */
+    public Presence(Presence other) {
+        super(other);
+        this.type = other.type;
+        this.status = other.status;
+        this.priority = other.priority;
+        this.mode = other.mode;
     }
 
     /**
@@ -132,10 +151,7 @@ public final class Presence extends Packet {
      * @param type the type of the presence packet.
      */
     public void setType(Type type) {
-        if(type == null) {
-            throw new NullPointerException("Type cannot be null");
-        }
-        this.type = type;
+        this.type = Objects.requireNonNull(type, "Type cannot be null");
     }
 
     /**
@@ -183,13 +199,14 @@ public final class Presence extends Packet {
     }
 
     /**
-     * Returns the mode of the presence update, or <tt>null</tt> if the mode is not set.
-     * A null presence mode value is interpreted to be the same thing as
-     * {@link Presence.Mode#available}.
+     * Returns the mode of the presence update.
      *
      * @return the mode.
      */
     public Mode getMode() {
+        if (mode == null) {
+            return Mode.available;
+        }
         return mode;
     }
 
@@ -228,6 +245,31 @@ public final class Presence extends Packet {
         buf.closeElement(ELEMENT);
 
         return buf;
+    }
+
+    /**
+     * Creates and returns a copy of this presence stanza.
+     * <p>
+     * This does not perform a deep clone, as extension elements are shared between the new and old
+     * instance.
+     * </p>
+     * @return a clone of this presence.
+     */
+    @Override
+    public Presence clone() {
+        return new Presence(this);
+    }
+
+    /**
+     * Clone this presence and set a newly generated stanza ID as the clone's ID.
+     *
+     * @return a "clone" of this presence  with a different stanza ID.
+     * @since 4.1.2
+     */
+    public Presence cloneWithNewId() {
+        Presence clone = clone();
+        clone.setStanzaId(StanzaIdUtil.newStanzaId());
+        return clone;
     }
 
     /**
@@ -270,12 +312,12 @@ public final class Presence extends Packet {
         unsubscribed,
 
         /**
-         * The presence packet contains an error message.
+         * The presence stanza(/packet) contains an error message.
          */
         error,
 
         /**
-         * A presence probe as defined in section 4.3 of RFC 6121
+         * A presence probe as defined in section 4.3 of RFC 6121.
          */
         probe,
         ;

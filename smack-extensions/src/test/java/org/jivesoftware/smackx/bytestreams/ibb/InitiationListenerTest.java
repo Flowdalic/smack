@@ -24,10 +24,14 @@ import static org.mockito.Mockito.verify;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.BytestreamRequest;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.JidTestUtil;
+import org.jxmpp.jid.impl.JidCreate;
 import org.mockito.ArgumentCaptor;
 import org.powermock.reflect.Whitebox;
 
@@ -36,10 +40,10 @@ import org.powermock.reflect.Whitebox;
  * 
  * @author Henning Staib
  */
-public class InitiationListenerTest {
+public class InitiationListenerTest extends InitExtensions {
 
-    String initiatorJID = "initiator@xmpp-server/Smack";
-    String targetJID = "target@xmpp-server/Smack";
+    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
     String sessionID = "session_id";
 
     XMPPConnection connection;
@@ -86,7 +90,7 @@ public class InitiationListenerTest {
 
         // capture reply to the In-Band Bytestream open request
         ArgumentCaptor<IQ> argument = ArgumentCaptor.forClass(IQ.class);
-        verify(connection).sendPacket(argument.capture());
+        verify(connection).sendStanza(argument.capture());
 
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
@@ -114,7 +118,7 @@ public class InitiationListenerTest {
 
         // capture reply to the In-Band Bytestream open request
         ArgumentCaptor<IQ> argument = ArgumentCaptor.forClass(IQ.class);
-        verify(connection).sendPacket(argument.capture());
+        verify(connection).sendStanza(argument.capture());
 
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
@@ -190,7 +194,7 @@ public class InitiationListenerTest {
 
         // add listener for request of user "other_initiator"
         InBandBytestreamListener listener = mock(InBandBytestreamListener.class);
-        byteStreamManager.addIncomingBytestreamListener(listener, "other_" + initiatorJID);
+        byteStreamManager.addIncomingBytestreamListener(listener, JidCreate.from("other_" + initiatorJID));
 
         // run the listener with the initiation packet
         initiationListener.handleIQRequest(initBytestream);
@@ -204,7 +208,7 @@ public class InitiationListenerTest {
 
         // capture reply to the In-Band Bytestream open request
         ArgumentCaptor<IQ> argument = ArgumentCaptor.forClass(IQ.class);
-        verify(connection).sendPacket(argument.capture());
+        verify(connection).sendStanza(argument.capture());
 
         // assert that reply is the correct error packet
         assertEquals(initiatorJID, argument.getValue().getTo());
@@ -261,8 +265,8 @@ public class InitiationListenerTest {
 
         // add listener for request of user "other_initiator"
         InBandBytestreamListener userRequestsListener = mock(InBandBytestreamListener.class);
-        byteStreamManager.addIncomingBytestreamListener(userRequestsListener, "other_"
-                        + initiatorJID);
+        byteStreamManager.addIncomingBytestreamListener(userRequestsListener, JidCreate.from("other_"
+                        + initiatorJID));
 
         // run the listener with the initiation packet
         initiationListener.handleIQRequest(initBytestream);

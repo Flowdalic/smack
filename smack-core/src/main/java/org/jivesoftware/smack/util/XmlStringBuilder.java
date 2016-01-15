@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2015 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
  */
 package org.jivesoftware.smack.util;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Collection;
+import java.util.Date;
 
 import org.jivesoftware.smack.packet.Element;
 import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jxmpp.util.XmppDateTime;
 
 public class XmlStringBuilder implements Appendable, CharSequence {
     public static final String RIGHT_ANGLE_BRACKET = Character.toString('>');
@@ -31,7 +35,7 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         sb = new LazyStringBuilder();
     }
 
-    public XmlStringBuilder(PacketExtension pe) {
+    public XmlStringBuilder(ExtensionElement pe) {
         this();
         prelude(pe);
     }
@@ -39,6 +43,16 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     public XmlStringBuilder(NamedElement e) {
         this();
         halfOpenElement(e.getElementName());
+    }
+
+    public XmlStringBuilder(ExtensionElement ee, String enclosingNamespace) {
+        this();
+        String namespace = ee.getNamespace();
+        if (namespace.equals(enclosingNamespace)) {
+            halfOpenElement(ee.getElementName());
+        } else {
+            prelude(ee);
+        }
     }
 
     public XmlStringBuilder escapedElement(String name, String escapedContent) {
@@ -50,6 +64,7 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     }
 
     /**
+     * Add a new element to this builder.
      *
      * @param name
      * @param content
@@ -62,6 +77,30 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         closeElement(name);
         return this;
     }
+
+    /**
+     * Add a new element to this builder, with the {@link java.util.Date} instance as its content,
+     * which will get formated with {@link XmppDateTime#formatXEP0082Date(Date)}.
+     *
+     * @param name element name
+     * @param content content of element
+     * @return this XmlStringBuilder
+     */
+    public XmlStringBuilder element(String name, Date content) {
+        assert content != null;
+        return element(name, XmppDateTime.formatXEP0082Date(content));
+    }
+
+   /**
+    * Add a new element to this builder.
+    *
+    * @param name
+    * @param content
+    * @return the XmlStringBuilder
+    */
+   public XmlStringBuilder element(String name, CharSequence content) {
+       return element(name, content.toString());
+   }
 
     public XmlStringBuilder element(String name, Enum<?> content) {
         assert content != null;
@@ -81,6 +120,29 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
+    /**
+     * Add a new element to this builder, with the {@link java.util.Date} instance as its content,
+     * which will get formated with {@link XmppDateTime#formatXEP0082Date(Date)}
+     * if {@link java.util.Date} instance is not <code>null</code>.
+     *
+     * @param name element name
+     * @param content content of element
+     * @return this XmlStringBuilder
+     */
+    public XmlStringBuilder optElement(String name, Date content) {
+        if (content != null) {
+            element(name, content);
+        }
+        return this;
+    }
+
+    public XmlStringBuilder optElement(String name, CharSequence content) {
+        if (content != null) {
+            element(name, content.toString());
+        }
+        return this;
+    }
+
     public XmlStringBuilder optElement(Element element) {
         if (element != null) {
             append(element.toXML());
@@ -91,6 +153,13 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     public XmlStringBuilder optElement(String name, Enum<?> content) {
         if (content != null) {
             element(name, content);
+        }
+        return this;
+    }
+
+    public XmlStringBuilder optElement(String name, Object object) {
+        if (object != null) {
+            element(name, object.toString());
         }
         return this;
     }
@@ -134,7 +203,7 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Add a right angle bracket '>'
+     * Add a right angle bracket '&gt;'.
      * 
      * @return a reference to this object.
      */
@@ -144,7 +213,8 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * 
+     * Add a right angle bracket '&gt;'.
+     *
      * @return a reference to this object
      * @deprecated use {@link #rightAngleBracket()} instead
      */
@@ -168,6 +238,23 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
+    /**
+     * Add a new attribute to this builder, with the {@link java.util.Date} instance as its value,
+     * which will get formated with {@link XmppDateTime#formatXEP0082Date(Date)}.
+     *
+     * @param name name of attribute
+     * @param value value of attribute
+     * @return this XmlStringBuilder
+     */
+    public XmlStringBuilder attribute(String name, Date value) {
+        assert value != null;
+        return attribute(name, XmppDateTime.formatXEP0082Date(value));
+    }
+
+    public XmlStringBuilder attribute(String name, CharSequence value) {
+        return attribute(name, value.toString());
+    }
+
     public XmlStringBuilder attribute(String name, Enum<?> value) {
         assert value != null;
         attribute(name, value.name());
@@ -186,6 +273,29 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
+    /**
+     * Add a new attribute to this builder, with the {@link java.util.Date} instance as its value,
+     * which will get formated with {@link XmppDateTime#formatXEP0082Date(Date)}
+     * if {@link java.util.Date} instance is not <code>null</code>.
+     *
+     * @param name attribute name
+     * @param value value of this attribute
+     * @return this XmlStringBuilder
+     */
+    public XmlStringBuilder optAttribute(String name, Date value) {
+        if (value != null) {
+            attribute(name, value);
+        }
+        return this;
+    }
+
+    public XmlStringBuilder optAttribute(String name, CharSequence value) {
+        if (value != null) {
+            attribute(name, value.toString());
+        }
+        return this;
+    }
+
     public XmlStringBuilder optAttribute(String name, Enum<?> value) {
         if (value != null) {
             attribute(name, value.toString());
@@ -194,7 +304,7 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Add the given attribute if value => 0
+     * Add the given attribute if {@code value => 0}.
      *
      * @param name
      * @param value
@@ -208,7 +318,7 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Add the given attribute if value not null and value => 0.
+     * Add the given attribute if value not null and {@code value => 0}.
      *
      * @param name
      * @param value
@@ -228,6 +338,13 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
+    public XmlStringBuilder optBooleanAttributeDefaultTrue(String name, boolean bool) {
+        if (!bool) {
+            sb.append(' ').append(name).append("='false'");
+        }
+        return this;
+    }
+
     public XmlStringBuilder xmlnsAttribute(String value) {
         optAttribute("xmlns", value);
         return this;
@@ -237,14 +354,25 @@ public class XmlStringBuilder implements Appendable, CharSequence {
         optAttribute("xml:lang", value);
         return this;
     }
- 
+
     public XmlStringBuilder escape(String text) {
         assert text != null;
         sb.append(StringUtils.escapeForXML(text));
         return this;
     }
 
-    public XmlStringBuilder prelude(PacketExtension pe) {
+    public XmlStringBuilder optEscape(CharSequence text) {
+        if (text == null) {
+            return this;
+        }
+        return escape(text);
+    }
+
+    public XmlStringBuilder escape(CharSequence text) {
+        return escape(text.toString());
+    }
+
+    public XmlStringBuilder prelude(ExtensionElement pe) {
         return prelude(pe.getElementName(), pe.getNamespace());
     }
 
@@ -356,5 +484,24 @@ public class XmlStringBuilder implements Appendable, CharSequence {
     @Override
     public int hashCode() {
         return toString().hashCode();
+    }
+
+    /**
+     * Write the contents of this <code>XmlStringBuilder</code> to a {@link Writer}. This will write
+     * the single parts one-by-one, avoiding allocation of a big continuous memory block holding the
+     * XmlStringBuilder contents.
+     *
+     * @param writer
+     * @throws IOException
+     */
+    public void write(Writer writer) throws IOException {
+        for (CharSequence csq : sb.getAsList()) {
+            if (csq instanceof XmlStringBuilder) {
+                ((XmlStringBuilder) csq).write(writer);
+            }
+            else {
+                writer.write(csq.toString());
+            }
+        }
     }
 }

@@ -20,25 +20,25 @@ package org.jivesoftware.smackx.chatstates;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.jivesoftware.smack.Chat;
-import org.jivesoftware.smack.ChatManager;
-import org.jivesoftware.smack.ChatManagerListener;
-import org.jivesoftware.smack.ChatMessageListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManager;
+import org.jivesoftware.smack.chat.ChatManagerListener;
+import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.NotFilter;
-import org.jivesoftware.smack.filter.PacketExtensionFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.filter.StanzaExtensionFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.chatstates.packet.ChatStateExtension;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 
 /**
  * Handles chat state for all chats on a particular XMPPConnection. This class manages both the
- * packet extensions and the disco response necessary for compliance with
+ * stanza(/packet) extensions and the disco response necessary for compliance with
  * <a href="http://www.xmpp.org/extensions/xep-0085.html">XEP-0085</a>.
  *
  * NOTE: {@link org.jivesoftware.smackx.chatstates.ChatStateManager#getInstance(org.jivesoftware.smack.XMPPConnection)}
@@ -49,13 +49,13 @@ import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
  * @see org.jivesoftware.smackx.chatstates.ChatState
  * @see org.jivesoftware.smackx.chatstates.packet.ChatStateExtension
  */
-public class ChatStateManager extends Manager {
+public final class ChatStateManager extends Manager {
     public static final String NAMESPACE = "http://jabber.org/protocol/chatstates";
 
     private static final Map<XMPPConnection, ChatStateManager> INSTANCES =
             new WeakHashMap<XMPPConnection, ChatStateManager>();
 
-    private static final PacketFilter filter = new NotFilter(new PacketExtensionFilter(NAMESPACE));
+    private static final StanzaFilter filter = new NotFilter(new StanzaExtensionFilter(NAMESPACE));
 
     /**
      * Returns the ChatStateManager related to the XMPPConnection and it will create one if it does
@@ -96,14 +96,15 @@ public class ChatStateManager extends Manager {
 
     /**
      * Sets the current state of the provided chat. This method will send an empty bodied Message
-     * packet with the state attached as a {@link org.jivesoftware.smack.packet.PacketExtension}, if
+     * stanza(/packet) with the state attached as a {@link org.jivesoftware.smack.packet.ExtensionElement}, if
      * and only if the new chat state is different than the last state.
      *
      * @param newState the new state of the chat
      * @param chat the chat.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void setCurrentState(ChatState newState, Chat chat) throws NotConnectedException {
+    public void setCurrentState(ChatState newState, Chat chat) throws NotConnectedException, InterruptedException {
         if(chat == null || newState == null) {
             throw new IllegalArgumentException("Arguments cannot be null.");
         }
@@ -141,7 +142,7 @@ public class ChatStateManager extends Manager {
         return false;
     }
 
-    private void fireNewChatState(Chat chat, ChatState state) {
+    private static void fireNewChatState(Chat chat, ChatState state) {
         for (ChatMessageListener listener : chat.getListeners()) {
             if (listener instanceof ChatStateListener) {
                 ((ChatStateListener) listener).stateChanged(chat, state);
@@ -170,7 +171,7 @@ public class ChatStateManager extends Manager {
         }
 
         public void processMessage(Chat chat, Message message) {
-            PacketExtension extension = message.getExtension(NAMESPACE);
+            ExtensionElement extension = message.getExtension(NAMESPACE);
             if (extension == null) {
                 return;
             }

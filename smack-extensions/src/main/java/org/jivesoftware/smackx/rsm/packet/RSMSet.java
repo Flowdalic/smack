@@ -16,11 +16,11 @@
  */
 package org.jivesoftware.smackx.rsm.packet;
 
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
-public class RSMSet implements PacketExtension {
+public class RSMSet implements ExtensionElement {
 
     public static final String ELEMENT = "set";
     public static final String NAMESPACE = "http://jabber.org/protocol/rsm";
@@ -147,7 +147,7 @@ public class RSMSet implements PacketExtension {
         return xml;
     }
 
-    public static RSMSet from(Packet packet) {
+    public static RSMSet from(Stanza packet) {
         return (RSMSet) packet.getExtension(ELEMENT, NAMESPACE);
     }
 

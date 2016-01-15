@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.jingleold.packet;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.jingleold.JingleActionEnum;
+import org.jxmpp.jid.Jid;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,12 +52,12 @@ public class Jingle extends IQ {
 
     private JingleActionEnum action; // The action associated to the Jingle
 
-    private String initiator; // The initiator as a "user@host/resource"
+    private Jid initiator; // The initiator as a "user@host/resource"
 
-    private String responder; // The responder
+    private Jid responder; // The responder
 
     // Sub-elements of a Jingle object.
-    
+
     private final List<JingleContent> contents = new ArrayList<JingleContent>();
 
     private JingleContentInfo contentInfo;
@@ -143,7 +144,7 @@ public class Jingle extends IQ {
     }
 
     /**
-     * The default constructor
+     * The default constructor.
      */
     public Jingle() {
         super(NODENAME, NAMESPACE);
@@ -179,7 +180,7 @@ public class Jingle extends IQ {
      * Returns the XML element name of the extension sub-packet root element.
      * Always returns "jingle"
      *
-     * @return the XML element name of the packet extension.
+     * @return the XML element name of the stanza(/packet) extension.
      */
     public static String getElementName() {
         return NODENAME;
@@ -188,28 +189,32 @@ public class Jingle extends IQ {
     /**
      * Returns the XML namespace of the extension sub-packet root element.
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     public static String getNamespace() {
         return NAMESPACE;
     }
 
     /**
-     * @return the audioInfo
+     * Jingle content info.
+     *
+     * @return the audioInfo.
      */
     public JingleContentInfo getContentInfo() {
         return contentInfo;
     }
 
     /**
-     * @param contentInfo the audioInfo to set
+     * Set content info.
+     *
+     * @param contentInfo the audioInfo to set.
      */
     public void setContentInfo(final JingleContentInfo contentInfo) {
         this.contentInfo = contentInfo;
     }
 
     /**
-     * Get an iterator for the contents
+     * Get an iterator for the contents.
      *
      * @return the contents
      */
@@ -220,7 +225,7 @@ public class Jingle extends IQ {
     }
 
     /**
-     * Get an iterator for the content
+     * Get an iterator for the content.
      *
      * @return the contents
      */
@@ -244,7 +249,7 @@ public class Jingle extends IQ {
     }
 
     /**
-     * Add a list of JingleContent elements
+     * Add a list of JingleContent elements.
      *
      * @param contentList the list of contents to add
      */
@@ -257,7 +262,7 @@ public class Jingle extends IQ {
     }
 
      /**
-     * Get the action specified in the packet
+     * Get the action specified in the packet.
      *
      * @return the action
      */
@@ -266,7 +271,7 @@ public class Jingle extends IQ {
     }
 
     /**
-     * Set the action in the packet
+     * Set the action in the packet.
      *
      * @param action the action to set
      */
@@ -281,7 +286,7 @@ public class Jingle extends IQ {
      *
      * @return the initiator
      */
-    public String getInitiator() {
+    public Jid getInitiator() {
         return initiator;
     }
 
@@ -292,7 +297,7 @@ public class Jingle extends IQ {
      *
      * @param initiator the initiator to set
      */
-    public void setInitiator(final String initiator) {
+    public void setInitiator(final Jid initiator) {
         this.initiator = initiator;
     }
 
@@ -303,7 +308,7 @@ public class Jingle extends IQ {
      *
      * @return the responder
      */
-    public String getResponder() {
+    public Jid getResponder() {
         return responder;
     }
 
@@ -314,18 +319,18 @@ public class Jingle extends IQ {
      *
      * @param resp the responder to set
      */
-    public void setResponder(final String resp) {
+    public void setResponder(final Jid resp) {
         responder = resp;
     }
 
     /**
-     * Get a hash key for the session this packet belongs to.
+     * Get a hash key for the session this stanza(/packet) belongs to.
      *
      * @param sid       The session id
      * @param initiator The initiator
      * @return A hash key
      */
-    public static int getSessionHash(final String sid, final String initiator) {
+    public static int getSessionHash(final String sid, final Jid initiator) {
         final int PRIME = 31;
         int result = 1;
         result = PRIME * result + (initiator == null ? 0 : initiator.hashCode());
@@ -340,19 +345,19 @@ public class Jingle extends IQ {
      */
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder buf) {
         if (getInitiator() != null) {
-            buf.append(" initiator=\"").append(getInitiator()).append("\"");
+            buf.append(" initiator=\"").append(getInitiator()).append('"');
         }
         if (getResponder() != null) {
-            buf.append(" responder=\"").append(getResponder()).append("\"");
+            buf.append(" responder=\"").append(getResponder()).append('"');
         }
         if (getAction() != null) {
-            buf.append(" action=\"").append(getAction().name()).append("\"");
+            buf.append(" action=\"").append(getAction().name()).append('"');
         }
         if (getSid() != null) {
-            buf.append(" sid=\"").append(getSid()).append("\"");
+            buf.append(" sid=\"").append(getSid()).append('"');
         }
-        buf.append(">");
- 
+        buf.append('>');
+
         synchronized (contents) {
             for (JingleContent content : contents) {
                 buf.append(content.toXML());

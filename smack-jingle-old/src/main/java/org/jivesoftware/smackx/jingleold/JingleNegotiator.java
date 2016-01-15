@@ -53,9 +53,9 @@ public abstract class JingleNegotiator {
     private String expectedAckId;
 
     private JingleNegotiatorState state;
-    
+
     private boolean isStarted;
-    
+
     /**
      * Default constructor.
      */
@@ -64,7 +64,7 @@ public abstract class JingleNegotiator {
     }
 
     /**
-     * Default constructor with a Connection
+     * Default constructor with a Connection.
      *
      * @param session the jingle session
      */
@@ -78,9 +78,9 @@ public abstract class JingleNegotiator {
     }
 
     public void setNegotiatorState(JingleNegotiatorState stateIs) {
-        
+
         JingleNegotiatorState stateWas = state;
-        
+
         LOGGER.fine("Negotiator state change: " + stateWas + "->" + stateIs  + "(" + this.getClass().getSimpleName() + ")");
 
         switch (stateIs) {
@@ -129,7 +129,7 @@ public abstract class JingleNegotiator {
     // Acks management
 
     /**
-     * Add expected ID
+     * Add expected ID.
      *
      * @param id
      */
@@ -138,7 +138,7 @@ public abstract class JingleNegotiator {
     }
 
     /**
-     * Check if the passed ID is the expected ID
+     * Check if the passed ID is the expected ID.
      *
      * @param id
      * @return true if is expected id
@@ -152,7 +152,7 @@ public abstract class JingleNegotiator {
     }
 
     /**
-     * Remove and expected ID
+     * Remove and expected ID.
      *
      * @param id
      */
@@ -204,7 +204,7 @@ public abstract class JingleNegotiator {
     /**
      * Dispatch an incoming packet.
      * 
-     * The negotiators form a tree relationship that roughly matches the Jingle packet format:
+     * The negotiators form a tree relationship that roughly matches the Jingle stanza(/packet) format:
      * 
      * JingleSession
      *      Content Negotiator
@@ -222,34 +222,36 @@ public abstract class JingleNegotiator {
      *          <description>
      *          <transport>
      *          
-     * This way, each segment of a Jingle packet has a corresponding negotiator that know how to deal with that
+     * This way, each segment of a Jingle stanza(/packet) has a corresponding negotiator that know how to deal with that
      * part of the Jingle packet.  It also allows us to support Jingle packets of arbitraty complexity.
      * 
      * Each parent calls dispatchIncomingPacket for each of its children.  The children then pass back a List<> of
      * results that will get sent when we reach the top level negotiator (JingleSession).
      *
-     * @param iq the packet received
+     * @param iq the stanza(/packet) received
      * @param id the ID of the response that will be sent
-     * @return the new packet to send (either a Jingle or an IQ error).
+     * @return the new stanza(/packet) to send (either a Jingle or an IQ error).
      * @throws XMPPException
+     * @throws InterruptedException 
      */
-    public abstract List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, SmackException;
+    public abstract List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, SmackException, InterruptedException;
 
-    
+    // CHECKSTYLE:OFF
     public void start() {
     	isStarted = true;
     	doStart();
     }
-    
+
     public boolean isStarted() {
     	return isStarted;
     }
-    
+    // CHECKSTYLE:ON
+
     /**
      * Each of the negotiators has their individual behavior when they start.
      */
     protected abstract void doStart();
-    
+
     /**
      * Close the negotiation.
      */

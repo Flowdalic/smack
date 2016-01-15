@@ -19,20 +19,20 @@ package org.jivesoftware.smackx.workgroup.packet;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-public class SessionID implements PacketExtension {
+public class SessionID implements ExtensionElement {
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "session";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -57,14 +57,14 @@ public class SessionID implements PacketExtension {
     public String toXML() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append("<").append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\" ");
+        buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\" ");
         buf.append("id=\"").append(this.getSessionID());
         buf.append("\"/>");
 
         return buf.toString();
     }
 
-    public static class Provider extends PacketExtensionProvider<SessionID> {
+    public static class Provider extends ExtensionElementProvider<SessionID> {
 
         @Override
         public SessionID parse(XmlPullParser parser, int initialDepth)

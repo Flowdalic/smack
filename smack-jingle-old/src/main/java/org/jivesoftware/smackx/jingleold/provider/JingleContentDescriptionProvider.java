@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.jingleold.provider;
 import java.io.IOException;
 
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smackx.jingleold.media.PayloadType;
 import org.jivesoftware.smackx.jingleold.packet.JingleContentDescription;
 import org.jivesoftware.smackx.jingleold.packet.JingleContentDescription.JinglePayloadType;
@@ -27,11 +27,11 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Parser for a Jingle description
+ * Parser for a Jingle description.
  *
  * @author Alvaro Saurin <alvaro.saurin@gmail.com>
  */
-public abstract class JingleContentDescriptionProvider extends PacketExtensionProvider<JingleContentDescription> {
+public abstract class JingleContentDescriptionProvider extends ExtensionElementProvider<JingleContentDescription> {
 
     /**
      * Parse a iq/jingle/description/payload-type element.
@@ -101,7 +101,7 @@ public abstract class JingleContentDescriptionProvider extends PacketExtensionPr
     protected abstract JingleContentDescription getInstance();
 
     /**
-     * Jingle audio
+     * Jingle audio.
      */
     public static class Audio extends JingleContentDescriptionProvider {
 

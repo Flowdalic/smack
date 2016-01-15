@@ -19,16 +19,16 @@ package org.jivesoftware.smack.test.util;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 
-public class WaitForPacketListener implements PacketListener {
+public class WaitForPacketListener implements StanzaListener {
 
     private CountDownLatch latch = new CountDownLatch(1);
 
     @Override
-    public void processPacket(Packet packet) throws NotConnectedException {
+    public void processPacket(Stanza packet) throws NotConnectedException {
         reportInvoked();
     }
 
@@ -43,7 +43,7 @@ public class WaitForPacketListener implements PacketListener {
 
     public void waitUntilInvocationOrTimeout() {
         try {
-            boolean res = latch.await(30, TimeUnit.SECONDS);
+            boolean res = latch.await(300, TimeUnit.SECONDS);
             if (!res) {
                 throw new IllegalStateException("Latch timed out before it reached zero");
             }

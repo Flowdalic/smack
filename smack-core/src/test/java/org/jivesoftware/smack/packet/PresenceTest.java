@@ -27,14 +27,9 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-/**
- *
- */
 public class PresenceTest {
     @Test
-    public void setPresenceTypeTest() throws IOException, SAXException, ParserConfigurationException {
+    public void setPresenceTypeTest() throws IOException, SAXException {
         Presence.Type type = Presence.Type.unavailable;
         Presence.Type type2 = Presence.Type.subscribe;
 
@@ -47,7 +42,7 @@ public class PresenceTest {
         String control = controlBuilder.toString();
 
         Presence presenceTypeInConstructor = new Presence(type);
-        presenceTypeInConstructor.setPacketID(null);
+        presenceTypeInConstructor.setStanzaId(null);
         assertEquals(type, presenceTypeInConstructor.getType());
         assertXMLEqual(control, presenceTypeInConstructor.toXML().toString());
 
@@ -81,7 +76,7 @@ public class PresenceTest {
     }
 
     @Test
-    public void setPresenceStatusTest() throws IOException, SAXException, ParserConfigurationException {
+    public void setPresenceStatusTest() throws IOException, SAXException {
         final String status = "This is a test of the emergency broadcast system.";
 
         StringBuilder controlBuilder = new StringBuilder();
@@ -100,7 +95,7 @@ public class PresenceTest {
     }
 
     @Test
-    public void setPresencePriorityTest() throws IOException, SAXException, ParserConfigurationException {
+    public void setPresencePriorityTest() throws IOException, SAXException {
         final int priority = 10;
 
         StringBuilder controlBuilder = new StringBuilder();
@@ -124,7 +119,7 @@ public class PresenceTest {
     }
 
     @Test
-    public void setPresenceModeTest() throws IOException, SAXException, ParserConfigurationException {
+    public void setPresenceModeTest() throws IOException, SAXException {
         Presence.Mode mode1 = Presence.Mode.dnd;
                 final int priority = 10;
         final String status = "This is a test of the emergency broadcast system.";
@@ -146,7 +141,7 @@ public class PresenceTest {
 
         Presence presenceModeInConstructor = new Presence(Presence.Type.available, status, priority,
                 mode1);
-        presenceModeInConstructor.setPacketID(null);
+        presenceModeInConstructor.setStanzaId(null);
         assertEquals(mode1, presenceModeInConstructor.getMode());
         assertXMLEqual(control, presenceModeInConstructor.toXML().toString());
 
@@ -175,7 +170,7 @@ public class PresenceTest {
     }
 
     @Test
-    public void presenceXmlLangTest() throws IOException, SAXException, ParserConfigurationException {
+    public void presenceXmlLangTest() throws IOException, SAXException {
         final String lang = "sp";
 
         StringBuilder controlBuilder = new StringBuilder();
@@ -194,7 +189,7 @@ public class PresenceTest {
 
     private static Presence getNewPresence() {
         Presence presence = new Presence(Presence.Type.available);
-        presence.setPacketID(null);
+        presence.setStanzaId(null);
         return presence;
     }
 }

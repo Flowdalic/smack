@@ -18,9 +18,10 @@
 package org.jivesoftware.smackx.workgroup.packet;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jxmpp.jid.Jid;
 
 /**
- * A IQ packet used to depart a workgroup queue. There are two cases for issuing a depart
+ * A IQ stanza(/packet) used to depart a workgroup queue. There are two cases for issuing a depart
  * queue request:<ul>
  *     <li>The user wants to leave the queue. In this case, an instance of this class
  *         should be created without passing in a user address.
@@ -32,18 +33,18 @@ import org.jivesoftware.smack.packet.IQ;
  */
 public class DepartQueuePacket extends IQ {
 
-    private String user;
+    private Jid user;
 
     private DepartQueuePacket() {
         super("depart-queue", "http://jabber.org/protocol/workgroup");
     }
 
     /**
-     * Creates a depart queue request packet to the specified workgroup.
+     * Creates a depart queue request stanza(/packet) to the specified workgroup.
      *
      * @param workgroup the workgroup to depart.
      */
-    public DepartQueuePacket(String workgroup) {
+    public DepartQueuePacket(Jid workgroup) {
         this(workgroup, null);
     }
 
@@ -54,7 +55,7 @@ public class DepartQueuePacket extends IQ {
      * @param workgroup the workgroup to depart.
      * @param user the user to make depart from the queue.
      */
-    public DepartQueuePacket(String workgroup, String user) {
+    public DepartQueuePacket(Jid workgroup, Jid user) {
         this();
         this.user = user;
 

@@ -17,15 +17,15 @@
 package org.jivesoftware.smackx.shim.packet;
 
 import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
- * Represents a <b>Header</b> entry as specified by the <a href="http://xmpp.org/extensions/xep-031.html">Stanza Headers and Internet Metadata (SHIM)</a>
+ * Represents a <b>Header</b> entry as specified by the <a href="http://xmpp.org/extensions/xep-031.html">Stanza Headers and Internet Metadata (SHIM)</a>.
 
  * @author Robin Collier
  */
-public class Header implements PacketExtension {
+public class Header implements ExtensionElement {
     public static final String ELEMENT = "header";
 
     private final String name;

@@ -71,7 +71,7 @@ public class MultiMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Returns a new JingleMediaSession
+     * Returns a new JingleMediaSession.
      *
      * @param payloadType payloadType
      * @param remote      remote Candidate
@@ -95,7 +95,7 @@ public class MultiMediaManager extends JingleMediaManager {
     public void setPreferredPayloadType(PayloadType preferredPayloadType) {
         this.preferredPayloadType = preferredPayloadType;
     }
-    
+
     public  String getName() {
         return MEDIA_NAME;
     }

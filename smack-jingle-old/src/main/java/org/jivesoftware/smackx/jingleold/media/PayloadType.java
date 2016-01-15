@@ -24,7 +24,7 @@ package org.jivesoftware.smackx.jingleold.media;
 public class PayloadType {
 
     public static final String NODENAME = "payload-type";
-    
+
     public static int MAX_FIXED_PT = 95;
 
     public static int INVALID_PT = 65535;
@@ -36,7 +36,7 @@ public class PayloadType {
     private int channels;
 
     /**
-     * Constructor with Id, name and number of channels
+     * Constructor with Id, name and number of channels.
      *
      * @param id       The identifier
      * @param name     A name
@@ -57,7 +57,7 @@ public class PayloadType {
     }
 
     /**
-     * Constructor with Id and name
+     * Constructor with Id and name.
      *
      * @param id   The identification
      * @param name A name
@@ -67,7 +67,7 @@ public class PayloadType {
     }
 
     /**
-     * Copy constructor
+     * Copy constructor.
      *
      * @param pt The other payload type.
      */
@@ -130,7 +130,7 @@ public class PayloadType {
     }
 
     /**
-     * Return true if the Payload type is not valid
+     * Return true if the Payload type is not valid.
      *
      * @return true if the payload type is invalid
      */
@@ -195,7 +195,7 @@ public class PayloadType {
 
         return true;
     }
-    
+
     /**
      * Returns the XML element name of the element.
      *
@@ -204,30 +204,30 @@ public class PayloadType {
     public static String getElementName() {
         return NODENAME;
     }
-    
+
     public String toXML() {
         StringBuilder buf = new StringBuilder();
 
-            buf.append("<").append(getElementName()).append(" ");
+            buf.append('<').append(getElementName()).append(' ');
 
             // We covert here the payload type to XML
             if (this.getId() != PayloadType.INVALID_PT) {
-                buf.append(" id=\"").append(this.getId()).append("\"");
+                buf.append(" id=\"").append(this.getId()).append('"');
             }
             if (this.getName() != null) {
-                buf.append(" name=\"").append(this.getName()).append("\"");
+                buf.append(" name=\"").append(this.getName()).append('"');
             }
             if (this.getChannels() != 0) {
-                buf.append(" channels=\"").append(this.getChannels()).append("\"");
+                buf.append(" channels=\"").append(this.getChannels()).append('"');
             }
             if (getChildAttributes() != null) {
                 buf.append(getChildAttributes());
             }
             buf.append("/>");
-        
+
         return buf.toString();
     }
-    
+
     protected String getChildAttributes() {
         StringBuilder buf = new StringBuilder();
         if (this instanceof PayloadType.Audio) {
@@ -235,7 +235,7 @@ public class PayloadType {
 
             buf.append(" clockrate=\"").append(pta.getClockRate()).append("\" ");
         }
-        
+
         return buf.toString();
     }
 
@@ -247,7 +247,7 @@ public class PayloadType {
         private int clockRate;
 
         /**
-         * Constructor with all the attributes of an Audio payload type
+         * Constructor with all the attributes of an Audio payload type.
          *
          * @param id       The identifier
          * @param name     The name assigned to this payload type
@@ -260,7 +260,7 @@ public class PayloadType {
         }
 
         /**
-         * Constructor with all the attributes of an Audio payload type
+         * Constructor with all the attributes of an Audio payload type.
          *
          * @param id       The identifier
          * @param name     The name assigned to this payload type
@@ -280,7 +280,7 @@ public class PayloadType {
         }
 
         /**
-         * Constructor with Id and name
+         * Constructor with Id and name.
          *
          * @param id   the Id for the payload type
          * @param name the name of the payload type
@@ -291,7 +291,7 @@ public class PayloadType {
         }
 
         /**
-         * Copy constructor
+         * Copy constructor.
          *
          * @param pt the other payload type
          */
@@ -301,7 +301,7 @@ public class PayloadType {
         }
 
         /**
-         * Copy constructor
+         * Copy constructor.
          *
          * @param pt the other payload type
          */
@@ -311,7 +311,7 @@ public class PayloadType {
         }
 
         /**
-         * Get the sampling clockRate for a payload type
+         * Get the sampling clockRate for a payload type.
          *
          * @return The sampling clockRate
          */

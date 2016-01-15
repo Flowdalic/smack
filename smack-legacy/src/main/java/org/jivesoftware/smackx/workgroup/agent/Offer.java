@@ -20,7 +20,8 @@ package org.jivesoftware.smackx.workgroup.agent;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jxmpp.jid.Jid;
 
 import java.util.Date;
 import java.util.List;
@@ -40,9 +41,9 @@ public class Offer {
     private AgentSession session;
 
     private String sessionID;
-    private String userJID;
-    private String userID;
-    private String workgroupName;
+    private Jid userJID;
+    private Jid userID;
+    private Jid workgroupName;
     private Date expiresDate;
     private Map<String, List<String>> metaData;
     private OfferContent content;
@@ -63,8 +64,8 @@ public class Offer {
      * @param content content of the offer. The content explains the reason for the offer
      *        (e.g. user request, transfer)
      */
-    Offer(XMPPConnection conn, AgentSession agentSession, String userID,
-            String userJID, String workgroupName, Date expiresDate,
+    Offer(XMPPConnection conn, AgentSession agentSession, Jid userID,
+            Jid userJID, Jid workgroupName, Date expiresDate,
             String sessionID, Map<String, List<String>> metaData, OfferContent content)
     {
         this.connection = conn;
@@ -81,10 +82,11 @@ public class Offer {
     /**
      * Accepts the offer.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void accept() throws NotConnectedException {
-        Packet acceptPacket = new AcceptPacket(this.session.getWorkgroupJID());
-        connection.sendPacket(acceptPacket);
+    public void accept() throws NotConnectedException, InterruptedException {
+        Stanza acceptPacket = new AcceptPacket(this.session.getWorkgroupJID());
+        connection.sendStanza(acceptPacket);
         // TODO: listen for a reply.
         accepted = true;
     }
@@ -92,10 +94,11 @@ public class Offer {
     /**
      * Rejects the offer.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void reject() throws NotConnectedException {
+    public void reject() throws NotConnectedException, InterruptedException {
         RejectPacket rejectPacket = new RejectPacket(this.session.getWorkgroupJID());
-        connection.sendPacket(rejectPacket);
+        connection.sendStanza(rejectPacket);
         // TODO: listen for a reply.
         rejected = true;
     }
@@ -108,7 +111,7 @@ public class Offer {
      *
      * @return the userID of the user from which the offer originates.
      */
-    public String getUserID() {
+    public Jid getUserID() {
         return userID;
     }
 
@@ -117,7 +120,7 @@ public class Offer {
      *
      * @return the user's JID.
      */
-    public String getUserJID() {
+    public Jid getUserJID() {
         return userJID;
     }
 
@@ -126,7 +129,7 @@ public class Offer {
      *
      * @return the name of the workgroup.
      */
-    public String getWorkgroupName() {
+    public Jid getWorkgroupName() {
         return this.workgroupName;
     }
 
@@ -189,11 +192,11 @@ public class Offer {
     }
 
     /**
-     * Packet for rejecting offers.
+     * Stanza(/Packet) for rejecting offers.
      */
     private class RejectPacket extends IQ {
 
-        RejectPacket(String workgroup) {
+        RejectPacket(Jid workgroup) {
             super("offer-reject", "http://jabber.org/protocol/workgroup");
             this.setTo(workgroup);
             this.setType(IQ.Type.set);
@@ -208,11 +211,11 @@ public class Offer {
     }
 
     /**
-     * Packet for accepting an offer.
+     * Stanza(/Packet) for accepting an offer.
      */
     private class AcceptPacket extends IQ {
 
-        AcceptPacket(String workgroup) {
+        AcceptPacket(Jid workgroup) {
             super("offer-accept", "http://jabber.org/protocol/workgroup");
             this.setTo(workgroup);
             this.setType(IQ.Type.set);

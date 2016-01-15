@@ -50,12 +50,12 @@ public class ChatSettings extends IQ {
     private int type = -1;
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "chat-settings";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -101,7 +101,7 @@ public class ChatSettings extends IQ {
 
     public ChatSetting getFirstEntry() {
         if (settings.size() > 0) {
-            return (ChatSetting)settings.get(0);
+            return settings.get(0);
         }
         return null;
     }
@@ -120,7 +120,7 @@ public class ChatSettings extends IQ {
     }
 
     /**
-     * Packet extension provider for AgentStatusRequest packets.
+     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
      */
     public static class InternalProvider extends IQProvider<ChatSettings> {
 
@@ -146,7 +146,7 @@ public class ChatSettings extends IQ {
             return chatSettings;
         }
 
-        private ChatSetting parseChatSetting(XmlPullParser parser) throws XmlPullParserException, IOException {
+        private static ChatSetting parseChatSetting(XmlPullParser parser) throws XmlPullParserException, IOException {
 
             boolean done = false;
             String key = null;

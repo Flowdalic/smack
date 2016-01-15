@@ -27,11 +27,12 @@ import java.util.Random;
 
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Data;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
@@ -40,6 +41,9 @@ import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.JidTestUtil;
 import org.powermock.reflect.Whitebox;
 
 /**
@@ -50,12 +54,12 @@ import org.powermock.reflect.Whitebox;
  * 
  * @author Henning Staib
  */
-public class InBandBytestreamSessionTest {
+public class InBandBytestreamSessionTest extends InitExtensions {
 
     // settings
-    String initiatorJID = "initiator@xmpp-server/Smack";
-    String targetJID = "target@xmpp-server/Smack";
-    String xmppServer = "xmpp-server";
+    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
     String sessionID = "session_id";
 
     int blockSize = 10;
@@ -76,9 +80,10 @@ public class InBandBytestreamSessionTest {
      * Initialize fields used in the tests.
      * @throws XMPPException 
      * @throws SmackException 
+     * @throws InterruptedException 
      */
     @Before
-    public void setup() throws XMPPException, SmackException {
+    public void setup() throws XMPPException, SmackException, InterruptedException {
 
         // build protocol verifier
         protocol = new Protocol();
@@ -307,7 +312,7 @@ public class InBandBytestreamSessionTest {
 
         // insert data to read
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
         String base64Data = Base64.encode("Data");
         DataPacketExtension dpe = new DataPacketExtension(sessionID, 0, base64Data);
         Data data = new Data(dpe);
@@ -341,7 +346,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         String base64Data = Base64.encode("Data");
         DataPacketExtension dpe = new DataPacketExtension(sessionID, 0, base64Data);
@@ -354,7 +359,7 @@ public class InBandBytestreamSessionTest {
     }
 
     /**
-     * If the data packet has a sequence that is already used an 'unexpected-request' error should
+     * If the data stanza(/packet) has a sequence that is already used an 'unexpected-request' error should
      * be returned. See XEP-0047 Section 2.2.
      * 
      * @throws Exception should not happen
@@ -378,7 +383,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build data packets
         String base64Data = Base64.encode("Data");
@@ -395,7 +400,7 @@ public class InBandBytestreamSessionTest {
     }
 
     /**
-     * If the data packet contains invalid Base64 encoding an 'bad-request' error should be
+     * If the data stanza(/packet) contains invalid Base64 encoding an 'bad-request' error should be
      * returned. See XEP-0047 Section 2.2.
      * 
      * @throws Exception should not happen
@@ -416,7 +421,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build data packets
         DataPacketExtension dpe = new DataPacketExtension(sessionID, 0, "AA=BB");
@@ -430,7 +435,7 @@ public class InBandBytestreamSessionTest {
     }
 
     /**
-     * If a data packet is received out of order the session should be closed. See XEP-0047 Section
+     * If a data stanza(/packet) is received out of order the session should be closed. See XEP-0047 Section
      * 2.2.
      * 
      * @throws Exception should not happen
@@ -450,7 +455,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build invalid packet with out of order sequence
         String base64Data = Base64.encode("Data");
@@ -491,7 +496,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // set data packet acknowledgment and notify listener
         for (int i = 0; i < controlData.length / blockSize; i++) {
@@ -538,7 +543,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // set data packet acknowledgment and notify listener
         for (int i = 0; i < controlData.length / blockSize; i++) {
@@ -579,7 +584,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build data packet
         String base64Data = Base64.encode("Data");
@@ -622,7 +627,7 @@ public class InBandBytestreamSessionTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         final InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build data packet
         String base64Data = Base64.encode("Data");
@@ -661,5 +666,5 @@ public class InBandBytestreamSessionTest {
         protocol.verifyAll();
 
     }
-    
+
 }

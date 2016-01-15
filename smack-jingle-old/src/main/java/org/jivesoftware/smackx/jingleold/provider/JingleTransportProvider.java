@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.jingleold.provider;
 import java.io.IOException;
 
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smackx.jingleold.nat.ICECandidate;
 import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 import org.jivesoftware.smackx.jingleold.packet.JingleTransport;
@@ -28,11 +28,11 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Provider for a Jingle transport element
+ * Provider for a Jingle transport element.
  *
  * @author Alvaro Saurin <alvaro.saurin@gmail.com>
  */
-public abstract class JingleTransportProvider extends PacketExtensionProvider<JingleTransport> {
+public abstract class JingleTransportProvider extends ExtensionElementProvider<JingleTransport> {
 
     /**
      * Obtain the corresponding TransportNegotiator instance.
@@ -83,7 +83,7 @@ public abstract class JingleTransportProvider extends PacketExtensionProvider<Ji
     protected abstract JingleTransportCandidate parseCandidate(final XmlPullParser parser);
 
     /**
-     * RTP-ICE profile
+     * RTP-ICE profile.
      */
     public static class Ice extends JingleTransportProvider {
 
@@ -192,7 +192,7 @@ public abstract class JingleTransportProvider extends PacketExtensionProvider<Ji
     }
 
     /**
-     * Raw UDP profile
+     * Raw UDP profile.
      */
     public static class RawUdp extends JingleTransportProvider {
 

@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.test.util.SmackTestSuite;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.stringencoder.Base32;
 import org.jivesoftware.smack.util.stringencoder.StringEncoder;
@@ -36,23 +35,20 @@ import org.jivesoftware.smackx.caps.cache.SimpleDirectoryPersistentCache;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
-import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.stringprep.XmppStringprepException;
 
 
 public class EntityCapsManagerTest extends InitExtensions {
 
-    @Before
-    public void initSmackTestSuite() {
-        SmackTestSuite.init();
-    }
-
     /**
      * <a href="http://xmpp.org/extensions/xep-0115.html#ver-gen-complex">XEP-
-     * 0115 Complex Generation Example</a>
+     * 0115 Complex Generation Example</a>.
+     * @throws XmppStringprepException 
      */
     @Test
-    public void testComplexGenerationExample() {
+    public void testComplexGenerationExample() throws XmppStringprepException {
         DiscoverInfo di = createComplexSamplePacket();
 
         CapsVersionAndHash versionAndHash = EntityCapsManager.generateVerificationString(di, StringUtils.SHA1);
@@ -66,18 +62,18 @@ public class EntityCapsManagerTest extends InitExtensions {
     }
 
     @Test
-    public void testVerificationDuplicateFeatures() {
+    public void testVerificationDuplicateFeatures() throws XmppStringprepException {
         DiscoverInfo di = createMalformedDiscoverInfo();
         assertTrue(di.containsDuplicateFeatures());
     }
 
     @Test
-    public void testVerificationDuplicateIdentities() {
+    public void testVerificationDuplicateIdentities() throws XmppStringprepException {
         DiscoverInfo di = createMalformedDiscoverInfo();
         assertTrue(di.containsDuplicateIdentities());
     }
 
-    private void testSimpleDirectoryCache(StringEncoder stringEncoder) throws IOException {
+    private static void testSimpleDirectoryCache(StringEncoder stringEncoder) throws IOException {
 
         EntityCapsPersistentCache cache = new SimpleDirectoryPersistentCache(createTempDirectory());
         EntityCapsManager.setPersistentCache(cache);
@@ -97,11 +93,11 @@ public class EntityCapsManagerTest extends InitExtensions {
         assertEquals(di.toXML().toString(), restored_di.toXML().toString());
     }
 
-    private static DiscoverInfo createComplexSamplePacket() {
+    private static DiscoverInfo createComplexSamplePacket() throws XmppStringprepException {
         DiscoverInfo di = new DiscoverInfo();
-        di.setFrom("benvolio@capulet.lit/230193");
-        di.setPacketID("disco1");
-        di.setTo("juliet@capulet.lit/chamber");
+        di.setFrom(JidCreate.from("benvolio@capulet.lit/230193"));
+        di.setStanzaId("disco1");
+        di.setTo(JidCreate.from("juliet@capulet.lit/chamber"));
         di.setType(IQ.Type.result);
 
         Collection<DiscoverInfo.Identity> identities = new LinkedList<DiscoverInfo.Identity>();
@@ -148,11 +144,11 @@ public class EntityCapsManagerTest extends InitExtensions {
         return di;
     }
 
-    private static DiscoverInfo createMalformedDiscoverInfo() {
+    private static DiscoverInfo createMalformedDiscoverInfo() throws XmppStringprepException {
         DiscoverInfo di = new DiscoverInfo();
-        di.setFrom("benvolio@capulet.lit/230193");
-        di.setPacketID("disco1");
-        di.setTo(")juliet@capulet.lit/chamber");
+        di.setFrom(JidCreate.from("benvolio@capulet.lit/230193"));
+        di.setStanzaId("disco1");
+        di.setTo(JidCreate.from(")juliet@capulet.lit/chamber"));
         di.setType(IQ.Type.result);
 
         Collection<DiscoverInfo.Identity> identities = new LinkedList<DiscoverInfo.Identity>();

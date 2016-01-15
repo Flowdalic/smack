@@ -32,12 +32,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 
 /**
  * This class can be used in conjunction with a mocked XMPP connection (
- * {@link ConnectionUtils#createMockedConnection(Protocol, String, String)}) to
- * verify a XMPP protocol. This can be accomplished in the following was:
+ * {@link ConnectionUtils#createMockedConnection(Protocol, org.jxmpp.jid.EntityFullJid, org.jxmpp.jid.DomainBareJid)}) to
+ * verify an XMPP protocol. This can be accomplished in the following was:
  * <ul>
  * <li>add responses to packets sent over the mocked XMPP connection by the
  * method to test in the order the tested method awaits them</li>
@@ -50,10 +50,10 @@ import org.jivesoftware.smack.packet.Packet;
  * <pre>
  * <code>
  * public void methodToTest() {
- *   Packet packet = new Packet(); // create an XMPP packet
- *   PacketCollector collector = connection.createPacketCollector(new PacketIDFilter());
- *   connection.sendPacket(packet);
- *   Packet reply = collector.nextResult();
+ *   Stanza(/Packet) stanza(/packet) = new Packet(); // create an XMPP packet
+ *   PacketCollector collector = connection.createPacketCollector(new StanzaIdFilter());
+ *   connection.sendStanza(packet);
+ *   Stanza(/Packet) reply = collector.nextResult();
  * }
  * 
  * public void testMethod() {
@@ -62,8 +62,8 @@ import org.jivesoftware.smack.packet.Packet;
  *   // create mocked connection
  *   XMPPConnection connection = ConnectionUtils.createMockedConnection(protocol, "user@xmpp-server", "xmpp-server");
  *   
- *   // add reply packet to protocol
- *   Packet reply = new Packet();
+ *   // add reply stanza(/packet) to protocol
+ *   Stanza(/Packet) reply = new Packet();
  *   protocol.add(reply);
  *   
  *   // call method to test
@@ -94,16 +94,16 @@ public class Protocol {
     public boolean printProtocol = false;
 
     // responses to requests are taken form this queue
-    Queue<Packet> responses = new LinkedList<Packet>();
+    Queue<Stanza> responses = new LinkedList<Stanza>();
 
     // list of verifications
     List<Verification<?, ?>[]> verificationList = new ArrayList<Verification<?, ?>[]>();
 
     // list of requests
-    List<Packet> requests = new ArrayList<Packet>();
+    List<Stanza> requests = new ArrayList<Stanza>();
 
     // list of all responses
-    List<Packet> responsesList = new ArrayList<Packet>();
+    List<Stanza> responsesList = new ArrayList<Stanza>();
 
     /**
      * Adds a responses and all verifications for the request/response pair to
@@ -112,7 +112,7 @@ public class Protocol {
      * @param response the response for a request
      * @param verifications verifications for request/response pair
      */
-    public void addResponse(Packet response, Verification<?, ?>... verifications) {
+    public void addResponse(Stanza response, Verification<?, ?>... verifications) {
         responses.offer(response);
         verificationList.add(verifications);
         responsesList.add(response);
@@ -124,14 +124,15 @@ public class Protocol {
      */
     @SuppressWarnings("unchecked")
     public void verifyAll() {
+        // CHECKSTYLE:OFF
         assertEquals(requests.size(), responsesList.size());
 
         if (printProtocol)
             System.out.println("=================== Start ===============\n");
 
         for (int i = 0; i < requests.size(); i++) {
-            Packet request = requests.get(i);
-            Packet response = responsesList.get(i);
+            Stanza request = requests.get(i);
+            Stanza response = responsesList.get(i);
 
             if (printProtocol) {
                 System.out.println("------------------- Request -------------\n");
@@ -145,15 +146,16 @@ public class Protocol {
                 }
             }
 
-            Verification<Packet, Packet>[] verifications = (Verification<Packet, Packet>[]) verificationList.get(i);
+            Verification<Stanza, Stanza>[] verifications = (Verification<Stanza, Stanza>[]) verificationList.get(i);
             if (verifications != null) {
-                for (Verification<Packet, Packet> verification : verifications) {
+                for (Verification<Stanza, Stanza> verification : verifications) {
                     verification.verify(request, response);
                 }
             }
         }
         if (printProtocol)
             System.out.println("=================== End =================\n");
+        // CHECKSTYLE:ON
     }
 
     /**
@@ -161,7 +163,7 @@ public class Protocol {
      * 
      * @return the responses queue
      */
-    protected Queue<Packet> getResponses() {
+    protected Queue<Stanza> getResponses() {
         return responses;
     }
 
@@ -170,11 +172,11 @@ public class Protocol {
      * 
      * @return list of requests
      */
-    public List<Packet> getRequests() {
+    public List<Stanza> getRequests() {
         return requests;
     }
 
-    private String prettyFormat(String input, int indent) {
+    private static String prettyFormat(String input, int indent) {
         try {
             Source xmlInput = new StreamSource(new StringReader(input));
             StringWriter stringWriter = new StringWriter();
@@ -191,7 +193,7 @@ public class Protocol {
         }
     }
 
-    private String prettyFormat(String input) {
+    private static String prettyFormat(String input) {
         return prettyFormat(input, 2);
     }
 

@@ -24,6 +24,8 @@ import org.jivesoftware.smack.sasl.packet.SaslStreamElements.Response;
 import org.jivesoftware.smack.util.StringTransformer;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -33,9 +35,9 @@ import javax.security.auth.callback.CallbackHandler;
  *  <li>{@link #getName()} -- returns the common name of the SASL mechanism.</li>
  * </ul>
  * Subclasses will likely want to implement their own versions of these methods:
- *  <li>{@link #authenticate(String, String, String, String)} -- Initiate authentication stanza using the
+ *  <li>{@link #authenticate(String, String, DomainBareJid, String, EntityBareJid)} -- Initiate authentication stanza using the
  *  deprecated method.</li>
- *  <li>{@link #authenticate(String, String, CallbackHandler)} -- Initiate authentication stanza
+ *  <li>{@link #authenticate(String, DomainBareJid, CallbackHandler, EntityBareJid)} -- Initiate authentication stanza
  *  using the CallbackHandler method.</li>
  *  <li>{@link #challengeReceived(String, boolean)} -- Handle a challenge from the server.</li>
  * </ul>
@@ -91,17 +93,26 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
     protected XMPPConnection connection;
 
     /**
-     * authcid, i.e. the username (localpart) of the XMPP connection trying to authenticated.
+     * Then authentication identity (authcid). RFC 6120 § 6.3.7 informs us that some SASL mechanisms use this as a
+     * "simple user name". But the exact form is a matter of the mechanism and that it does not necessarily map to an
+     * localpart. But it usually is the localpart of the client JID, although sometimes other formats are used (e.g. the
+     * full JID).
      * <p>
-     * Not to be confused with the authzid.
+     * Not to be confused with the authzid (see RFC 6120 § 6.3.8).
      * </p>
      */
     protected String authenticationId;
 
     /**
+     * The authorization identifier (authzid).
+     * This is always a bare Jid, but can be null.
+     */
+    protected EntityBareJid authorizationId;
+
+    /**
      * The name of the XMPP service
      */
-    protected String serviceName;
+    protected DomainBareJid serviceName;
 
     /**
      * The users password
@@ -112,7 +123,7 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
     /**
      * Builds and sends the <tt>auth</tt> stanza to the server. Note that this method of
      * authentication is not recommended, since it is very inflexible. Use
-     * {@link #authenticate(String, String, CallbackHandler)} whenever possible.
+     * {@link #authenticate(String, DomainBareJid, CallbackHandler, EntityBareJid)} whenever possible.
      * 
      * Explanation of auth stanza:
      * 
@@ -145,27 +156,34 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * called "mail3.example.com"; it's "serv-name" would be "example.com", it's "host" would be
      * "mail3.example.com". If the service is not replicated, or the serv-name is identical to
      * the host, then the serv-name component MUST be omitted
-     * 
-     * digest-uri verification is needed for ejabberd 2.0.3 and higher   
-     * 
+     *
+     * digest-uri verification is needed for ejabberd 2.0.3 and higher
+     *
      * @param username the username of the user being authenticated.
      * @param host the hostname where the user account resides.
      * @param serviceName the xmpp service location - used by the SASL client in digest-uri creation
      * serviceName format is: host [ "/" serv-name ] as per RFC-2831
      * @param password the password for this account.
+     * @param authzid the optional authorization identity.
      * @throws SmackException If a network error occurs while authenticating.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public final void authenticate(String username, String host, String serviceName, String password)
-                    throws SmackException, NotConnectedException {
+    public final void authenticate(String username, String host, DomainBareJid serviceName, String password, EntityBareJid authzid)
+                    throws SmackException, NotConnectedException, InterruptedException {
         this.authenticationId = username;
         this.host = host;
         this.serviceName = serviceName;
         this.password = password;
+        this.authorizationId = authzid;
+        assert(authorizationId == null || authzidSupported());
         authenticateInternal();
         authenticate();
     }
 
+    /**
+     * @throws SmackException
+     */
     protected void authenticateInternal() throws SmackException {
     }
 
@@ -176,23 +194,30 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * @param host     the hostname where the user account resides.
      * @param serviceName the xmpp service location
      * @param cbh      the CallbackHandler to obtain user information.
+     * @param authzid the optional authorization identity.
      * @throws SmackException
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void authenticate(String host,String serviceName, CallbackHandler cbh)
-                    throws SmackException, NotConnectedException {
+    public void authenticate(String host, DomainBareJid serviceName, CallbackHandler cbh, EntityBareJid authzid)
+                    throws SmackException, NotConnectedException, InterruptedException {
         this.host = host;
         this.serviceName = serviceName;
+        this.authorizationId = authzid;
+        assert(authorizationId == null || authzidSupported());
         authenticateInternal(cbh);
         authenticate();
     }
 
     protected abstract void authenticateInternal(CallbackHandler cbh) throws SmackException;
 
-    private final void authenticate() throws SmackException, NotConnectedException {
+    private final void authenticate() throws SmackException, NotConnectedException, InterruptedException {
         byte[] authenticationBytes = getAuthenticationText();
         String authenticationText;
-        if (authenticationBytes != null) {
+        // Some SASL mechanisms do return an empty array (e.g. EXTERNAL from javax), so check that
+        // the array is not-empty. Mechanisms are allowed to return either 'null' or an empty array
+        // if there is no authentication text.
+        if (authenticationBytes != null && authenticationBytes.length > 0) {
             authenticationText = Base64.encodeToString(authenticationBytes);
         } else {
             // RFC6120 6.4.2 "If the initiating entity needs to send a zero-length initial response,
@@ -201,12 +226,13 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
             authenticationText = "=";
         }
         // Send the authentication to the server
-        connection.send(new AuthMechanism(getName(), authenticationText));
+        connection.sendNonza(new AuthMechanism(getName(), authenticationText));
     }
 
     /**
      * Should return the initial response of the SASL mechanism. The returned byte array will be
-     * send base64 encoded to the server. SASL mechanism are free to return <code>null</code> here.
+     * send base64 encoded to the server. SASL mechanism are free to return <code>null</code> or an
+     * empty array here.
      * 
      * @return the initial response or null
      * @throws SmackException
@@ -221,8 +247,9 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
      * @param finalChallenge true if this is the last challenge send by the server within the success stanza
      * @throws NotConnectedException
      * @throws SmackException
+     * @throws InterruptedException 
      */
-    public final void challengeReceived(String challengeString, boolean finalChallenge) throws SmackException, NotConnectedException {
+    public final void challengeReceived(String challengeString, boolean finalChallenge) throws SmackException, NotConnectedException, InterruptedException {
         byte[] challenge = Base64.decode(challengeString);
         byte[] response = evaluateChallenge(challenge);
         if (finalChallenge) {
@@ -238,9 +265,12 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
         }
 
         // Send the authentication to the server
-        connection.send(responseStanza);
+        connection.sendNonza(responseStanza);
     }
 
+    /**
+     * @throws SmackException
+     */
     protected byte[] evaluateChallenge(byte[] challenge) throws SmackException {
         return null;
     }
@@ -264,6 +294,10 @@ public abstract class SASLMechanism implements Comparable<SASLMechanism> {
         SASLMechanism saslMechansim = newInstance();
         saslMechansim.connection = connection;
         return saslMechansim;
+    }
+
+    public boolean authzidSupported() {
+        return false;
     }
 
     protected abstract SASLMechanism newInstance();

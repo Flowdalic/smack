@@ -16,16 +16,16 @@
  */
 package org.jivesoftware.smackx.jingleold.provider;
 
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smackx.jingleold.packet.JingleContent;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
- * Jingle <content> provider
+ * Jingle <content> provider.
  * 
  * @author Jeff Williams
  */
-public class JingleContentProvider extends PacketExtensionProvider<JingleContent> {
+public class JingleContentProvider extends ExtensionElementProvider<JingleContent> {
 
     /**
      * Parse a JingleContent extension.

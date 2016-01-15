@@ -16,15 +16,15 @@
  */
 package org.jivesoftware.smackx.jingleold.packet;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.jingleold.media.ContentInfo;
 
 /**
- * Jingle content info
+ * Jingle content info.
  *
  * @author Alvaro Saurin <alvaro.saurin@gmail.com>
  */
-public class JingleContentInfo implements PacketExtension {
+public class JingleContentInfo implements ExtensionElement {
 
     protected ContentInfo mediaInfoElement;
 
@@ -38,7 +38,7 @@ public class JingleContentInfo implements PacketExtension {
     }
 
     /**
-     * Constructor with a jmf info
+     * Constructor with a jmf info.
      *
      * @param mediaInfoElement MediaInfo element
      */
@@ -57,7 +57,7 @@ public class JingleContentInfo implements PacketExtension {
     }
 
     /**
-     * Get the element name
+     * Get the element name.
      */
     public String getElementName() {
         // Media info is supposed to be just a single-word command...
@@ -74,7 +74,7 @@ public class JingleContentInfo implements PacketExtension {
     }
 
     /**
-     * Get the publilc namespace
+     * Get the publilc namespace.
      */
     public String getNamespace() {
         return namespace;
@@ -82,7 +82,7 @@ public class JingleContentInfo implements PacketExtension {
 
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(getElementName()).append(" xmlns=\"");
+        buf.append('<').append(getElementName()).append(" xmlns=\"");
         buf.append(getNamespace()).append("\" ");
         buf.append("/>");
         return buf.toString();

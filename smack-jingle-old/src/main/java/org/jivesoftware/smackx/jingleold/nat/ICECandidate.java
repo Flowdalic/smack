@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.jingleold.nat;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -85,7 +86,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the ID
+     * Get the ID.
      *
      * @return the id
      */
@@ -94,7 +95,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the ID
+     * Set the ID.
      *
      * @param id the id to set
      */
@@ -103,7 +104,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the protocol used for the transmission
+     * Get the protocol used for the transmission.
      *
      * @return the protocol used for transmission
      */
@@ -112,7 +113,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the protocol for the transmission
+     * Set the protocol for the transmission.
      *
      * @param proto the protocol to use
      */
@@ -121,7 +122,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the network interface used for this connection
+     * Get the network interface used for this connection.
      *
      * @return the interface number
      */
@@ -130,7 +131,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the interface for this connection
+     * Set the interface for this connection.
      *
      * @param network the interface number
      */
@@ -139,7 +140,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the username for this transportElement in ICE
+     * Get the username for this transportElement in ICE.
      *
      * @return a username string
      */
@@ -148,7 +149,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the channel
+     * Get the channel.
      *
      * @return the channel associated
      */
@@ -157,7 +158,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the channel for this transportElement
+     * Set the channel for this transportElement.
      *
      * @param channel the new channel
      */
@@ -166,7 +167,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the username for this transportElement in ICE
+     * Set the username for this transportElement in ICE.
      *
      * @param username the username used in ICE
      */
@@ -175,7 +176,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the preference number for this transportElement
+     * Get the preference number for this transportElement.
      *
      * @return the preference for this transportElement
      */
@@ -184,7 +185,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the preference order for this transportElement
+     * Set the preference order for this transportElement.
      *
      * @param preference a number identifying the preference (as defined in
      *                   ICE)
@@ -194,7 +195,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Get the Candidate Type
+     * Get the Candidate Type.
      *
      * @return candidate Type
      */
@@ -203,7 +204,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
     }
 
     /**
-     * Set the Candidate Type
+     * Set the Candidate Type.
      *
      * @param type candidate type.
      */
@@ -258,7 +259,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
                                     echo.testASync(checkingCandidate, getPassword());
                                 }
                                 catch (UnknownHostException e) {
-                                    e.printStackTrace();
+                                    LOGGER.log(Level.WARNING, "exception", e);
                                 }
                             }
                         }
@@ -271,7 +272,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
                         Thread.sleep(400);
                     }
                     catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
 
                 for (TransportCandidate candidate : localCandidates) {
@@ -292,11 +293,7 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
         checkThread.start();
     }
 
-    /*
-    * (non-Javadoc)
-    *
-    * @see java.lang.Object#equals(java.lang.Object)
-    */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -379,6 +376,22 @@ public class ICECandidate extends TransportCandidate implements Comparable<ICECa
         }
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int res = 37;
+        res = 37 * res + (getChannel() == null ? 0 : getChannel().hashCode());
+        res = 37 * res + (getId() == null ? 0 : getId().hashCode());
+        res = 37 * res + getNetwork();
+        res = 37 * res + (getPassword() == null ? 0 : getPassword().hashCode());
+        res = 37 * res + getPreference();
+        res = 37 * res + (getProto() == null ? 0 : getProto().hashCode());
+        res = 37 * res + (getUsername() == null ? 0 : getUsername().hashCode());
+        res = 37 * res + (getIp() == null ? 0 : getIp().hashCode());
+        res = 37 * res + getPort();
+        res = 37 * res + (getType() == null ? 0 : getType().hashCode());
+        return res;
     }
 
     public boolean isNull() {

@@ -17,7 +17,7 @@
 package org.jivesoftware.smack.sasl.javax;
 
 /**
- * Implementation of the SASL PLAIN mechanism
+ * Implementation of the SASL PLAIN mechanism.
  *
  * @author Jay Kline
  */
@@ -27,6 +27,11 @@ public class SASLPlainMechanism extends SASLJavaXMechanism {
 
     public String getName() {
         return NAME;
+    }
+
+    @Override
+    public boolean authzidSupported() {
+      return true;
     }
 
     @Override

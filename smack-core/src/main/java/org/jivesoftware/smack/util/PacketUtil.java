@@ -18,15 +18,38 @@ package org.jivesoftware.smack.util;
 
 import java.util.Collection;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 
 public class PacketUtil {
 
-    @SuppressWarnings("unchecked")
-    public static <PE extends PacketExtension> PE packetExtensionfromCollection(
-                    Collection<PacketExtension> collection, String element,
+    /**
+     * Get a extension element from a collection.
+     *
+     * @param collection
+     * @param element
+     * @param namespace
+     * @return the extension element
+     * @deprecated use {@link #extensionElementFrom(Collection, String, String)} instead
+     */
+    @Deprecated
+    public static <PE extends ExtensionElement> PE packetExtensionfromCollection(
+                    Collection<ExtensionElement> collection, String element,
                     String namespace) {
-        for (PacketExtension packetExtension : collection) {
+        return extensionElementFrom(collection, element, namespace);
+    }
+
+    /**
+     * Get a extension element from a collection.
+     *
+     * @param collection
+     * @param element
+     * @param namespace
+     * @return the extension element
+     */
+    @SuppressWarnings("unchecked")
+    public static <PE extends ExtensionElement> PE extensionElementFrom(Collection<ExtensionElement> collection,
+                    String element, String namespace) {
+        for (ExtensionElement packetExtension : collection) {
             if ((element == null || packetExtension.getElementName().equals(
                             element))
                             && packetExtension.getNamespace().equals(namespace)) {

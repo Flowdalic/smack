@@ -111,19 +111,19 @@ public class DNSUtilTest {
     }
 
     private void xmppClientDomainTest() {
-        List<HostAddress> hostAddresses = DNSUtil.resolveXMPPDomain(igniterealtimeDomain);
+        List<HostAddress> hostAddresses = DNSUtil.resolveXMPPServiceDomain(igniterealtimeDomain);
         HostAddress ha = hostAddresses.get(0);
         assertEquals(ha.getFQDN(), igniterealtimeXMPPServer);
         assertEquals(ha.getPort(), igniterealtimeClientPort);
     }
-    
+
     private void xmppServerDomainTest() {
         List<HostAddress> hostAddresses = DNSUtil.resolveXMPPServerDomain(igniterealtimeDomain);
         HostAddress ha = hostAddresses.get(0);
         assertEquals(ha.getFQDN(), igniterealtimeXMPPServer);
         assertEquals(ha.getPort(), igniterealtimeServerPort);
     }
-    
+
     private static List<SRVRecord> createSRVRecords() {
         List<SRVRecord> records = new ArrayList<SRVRecord>();
         // We create one record with priority 0 that should also be tried first

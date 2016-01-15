@@ -74,42 +74,44 @@ public class AMPManager {
      * @return a boolean indicating if the AMP support is enabled for the given connection
      */
     public static boolean isServiceEnabled(XMPPConnection connection) {
-        connection.getServiceName();
+        connection.getXMPPServiceDomain();
         return ServiceDiscoveryManager.getInstanceFor(connection).includesFeature(AMPExtension.NAMESPACE);
     }
 
     /**
-     * Check if server supports specified action
+     * Check if server supports specified action.
      * @param connection active xmpp connection
      * @param action action to check
      * @return true if this action is supported.
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static boolean isActionSupported(XMPPConnection connection, AMPExtension.Action action) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public static boolean isActionSupported(XMPPConnection connection, AMPExtension.Action action) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         String featureName = AMPExtension.NAMESPACE + "?action=" + action.toString();
-        return isFeatureSupportedByServer(connection, featureName, AMPExtension.NAMESPACE);
+        return isFeatureSupportedByServer(connection, featureName);
     }
 
     /**
-     * Check if server supports specified condition
+     * Check if server supports specified condition.
      * @param connection active xmpp connection
      * @param conditionName name of condition to check
      * @return true if this condition is supported.
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      * @see AMPDeliverCondition
      * @see AMPExpireAtCondition
      * @see AMPMatchResourceCondition
      */
-    public static boolean isConditionSupported(XMPPConnection connection, String conditionName) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public static boolean isConditionSupported(XMPPConnection connection, String conditionName) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         String featureName = AMPExtension.NAMESPACE + "?condition=" + conditionName;
-        return isFeatureSupportedByServer(connection, featureName, AMPExtension.NAMESPACE);
+        return isFeatureSupportedByServer(connection, featureName);
     }
 
-    private static boolean isFeatureSupportedByServer(XMPPConnection connection, String featureName, String node) throws NoResponseException, XMPPErrorException, NotConnectedException {
-        return ServiceDiscoveryManager.getInstanceFor(connection).supportsFeature(node, featureName);
+    private static boolean isFeatureSupportedByServer(XMPPConnection connection, String featureName) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        return ServiceDiscoveryManager.getInstanceFor(connection).serverSupportsFeature(featureName);
     }
 }

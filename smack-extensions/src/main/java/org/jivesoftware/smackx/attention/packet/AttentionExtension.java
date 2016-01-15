@@ -16,8 +16,8 @@
  */
 package org.jivesoftware.smackx.attention.packet;
 
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -30,7 +30,7 @@ import org.xmlpull.v1.XmlPullParser;
  * @see <a
  *      href="http://xmpp.org/extensions/xep-0224.html">XEP-0224:&nbsp;Attention</a>
  */
-public class AttentionExtension implements PacketExtension {
+public class AttentionExtension implements ExtensionElement {
 
     /**
      * The XML element name of an 'attention' extension.
@@ -67,20 +67,20 @@ public class AttentionExtension implements PacketExtension {
      */
     public String toXML() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("<").append(getElementName()).append(" xmlns=\"").append(
+        sb.append('<').append(getElementName()).append(" xmlns=\"").append(
                 getNamespace()).append("\"/>");
         return sb.toString();
     }
 
     /**
-     * A {@link PacketExtensionProvider} for the {@link AttentionExtension}. As
+     * A {@link ExtensionElementProvider} for the {@link AttentionExtension}. As
      * Attention elements have no state/information other than the element name
      * and namespace, this implementation simply returns new instances of
      * {@link AttentionExtension}.
      * 
      * @author Guus der Kinderen, guus.der.kinderen@gmail.com
 s     */
-    public static class Provider extends PacketExtensionProvider<AttentionExtension> {
+    public static class Provider extends ExtensionElementProvider<AttentionExtension> {
 
         @Override
         public AttentionExtension parse(XmlPullParser parser, int initialDepth) {

@@ -17,22 +17,22 @@
 package org.jivesoftware.smackx.carbons.packet;
 
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.forward.packet.Forwarded;
 
 /**
- * Packet extension for XEP-0280: Message Carbons. The extension
+ * Stanza(/Packet) extension for XEP-0280: Message Carbons. The extension
  * <a href="http://xmpp.org/extensions/xep-0280.html">XEP-0280</a> is
  * meant to synchronize a message flow to multiple presences of a user.
  * 
  * <p>
- * It accomplishes this by wrapping a {@link Forwarded} packet in a <b>sent</b>
+ * It accomplishes this by wrapping a {@link Forwarded} stanza(/packet) in a <b>sent</b>
  * or <b>received</b> element
  *
  * @author Georg Lukas
  */
-public class CarbonExtension implements PacketExtension {
+public class CarbonExtension implements ExtensionElement {
     public static final String NAMESPACE = Carbon.NAMESPACE;
 
     private final Direction dir;
@@ -128,10 +128,10 @@ public class CarbonExtension implements PacketExtension {
     }
 
     /**
-     * Packet extension indicating that a message may not be carbon-copied.  Adding this
+     * Stanza(/Packet) extension indicating that a message may not be carbon-copied.  Adding this
      * extension to any message will disallow that message from being copied. 
      */
-    public static class Private implements PacketExtension {
+    public static final class Private implements ExtensionElement {
         public static final Private INSTANCE = new Private();
         public static final String ELEMENT = "private";
 

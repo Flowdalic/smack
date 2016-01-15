@@ -77,7 +77,7 @@ public final class SmackConfiguration {
      * property <tt>smack.debugEnabled</tt> to true. The system property can be set on the
      * command line such as "java SomeApp -Dsmack.debugEnabled=true".
      */
-    public static boolean DEBUG_ENABLED = false;
+    public static boolean DEBUG = false;
 
     /**
      * The default parsing exception callback is {@link ExceptionThrowingCallback} which will
@@ -124,7 +124,7 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Gets the default max size of a packet collector before it will delete 
+     * Gets the default max size of a stanza(/packet) collector before it will delete 
      * the older packets.
      * 
      * @return The number of packets to queue before deleting older packets.
@@ -134,7 +134,7 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Sets the default max size of a packet collector before it will delete 
+     * Sets the default max size of a stanza(/packet) collector before it will delete 
      * the older packets.
      * 
      * @param collectorSize the number of packets to queue before deleting older packets.
@@ -142,7 +142,7 @@ public final class SmackConfiguration {
     public static void setPacketCollectorSize(int collectorSize) {
         packetCollectorSize = collectorSize;
     }
-    
+
     /**
      * Add a SASL mechanism to the list to be used.
      *
@@ -175,6 +175,8 @@ public final class SmackConfiguration {
     }
 
     /**
+     * Get the debugger factory.
+     *
      * @return a debugger factory or <code>null</code>
      */
     public static SmackDebuggerFactory getDebuggerFactory() {
@@ -230,7 +232,7 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Set the default parsing exception callback for all newly created connections
+     * Set the default parsing exception callback for all newly created connections.
      *
      * @param callback
      * @see ParsingExceptionCallback
@@ -240,7 +242,7 @@ public final class SmackConfiguration {
     }
 
     /**
-     * Returns the default parsing exception callback
+     * Returns the default parsing exception callback.
      * 
      * @return the default parsing exception callback
      * @see ParsingExceptionCallback

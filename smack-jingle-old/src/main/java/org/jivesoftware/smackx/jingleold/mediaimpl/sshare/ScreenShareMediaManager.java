@@ -66,7 +66,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Returns a new JingleMediaSession
+     * Returns a new JingleMediaSession.
      *
      * @param payloadType payloadType
      * @param remote      remote Candidate
@@ -104,7 +104,7 @@ public class ScreenShareMediaManager extends JingleMediaManager {
     public void setEncoder(ImageEncoder encoder) {
         this.encoder = encoder;
     }
-    
+
     public  String getName() {
         return MEDIA_NAME;
     }

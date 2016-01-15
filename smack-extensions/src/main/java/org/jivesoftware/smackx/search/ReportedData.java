@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smackx.search;
 
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdata.packet.DataForm.Item;
@@ -32,18 +32,18 @@ import java.util.List;
  * @author Gaston Dombiak
  */
 public class ReportedData {
-    
+
     private List<Column> columns = new ArrayList<Column>();
     private List<Row> rows = new ArrayList<Row>();
     private String title = "";
-    
+
     /**
-     * Returns a new ReportedData if the packet is used for reporting data and includes an 
+     * Returns a new ReportedData if the stanza(/packet) is used for reporting data and includes an 
      * extension that matches the elementName and namespace "x","jabber:x:data".
      * 
-     * @param packet the packet used for reporting data.
+     * @param packet the stanza(/packet) used for reporting data.
      */
-    public static ReportedData getReportedDataFrom(Packet packet) {
+    public static ReportedData getReportedDataFrom(Stanza packet) {
         // Check if the packet includes the DataForm extension
         DataForm dataForm = DataForm.from(packet);
         if (dataForm != null) {
@@ -99,7 +99,7 @@ public class ReportedData {
     }
 
     /**
-     * Adds a new <code>Column</code>
+     * Adds a new <code>Column</code>.
      * @param column the column to add.
      */
     public void addColumn(Column column){

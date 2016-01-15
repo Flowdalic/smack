@@ -27,7 +27,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 
@@ -38,16 +39,16 @@ import org.jivesoftware.smack.util.stringencoder.Base64;
  * Serializable interface).
  *
  */
-public class JivePropertiesExtension implements PacketExtension {
+public class JivePropertiesExtension implements ExtensionElement {
     /**
-     * Namespace used to store packet properties.
+     * Namespace used to store stanza(/packet) properties.
      */
     public static final String NAMESPACE = "http://www.jivesoftware.com/xmlns/xmpp/properties";
 
     public static final String ELEMENT = "properties";
 
     private static final Logger LOGGER = Logger.getLogger(JivePropertiesExtension.class.getName());
-    
+
     private final Map<String, Object> properties;
 
     public JivePropertiesExtension() {
@@ -59,7 +60,7 @@ public class JivePropertiesExtension implements PacketExtension {
     }
 
     /**
-     * Returns the packet property with the specified name or <tt>null</tt> if the
+     * Returns the stanza(/packet) property with the specified name or <tt>null</tt> if the
      * property doesn't exist. Property values that were originally primitives will
      * be returned as their object equivalent. For example, an int property will be
      * returned as an Integer, a double as a Double, etc.
@@ -219,4 +220,14 @@ public class JivePropertiesExtension implements PacketExtension {
         return xml;
     }
 
+    /**
+     * Return a Jive properties extensions of the given message.
+     *
+     * @param message the message to return the extension from.
+     * @return a Jive properties extension or null.
+     * @since 4.2
+     */
+    public static JivePropertiesExtension from(Message message) {
+        return message.getExtension(ELEMENT, NAMESPACE);
+    }
 }

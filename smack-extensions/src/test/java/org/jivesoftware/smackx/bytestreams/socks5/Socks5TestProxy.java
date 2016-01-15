@@ -26,6 +26,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
 
@@ -35,7 +37,8 @@ import org.jivesoftware.smack.SmackException;
  * 
  * @author Henning Staib
  */
-public class Socks5TestProxy {
+public final class Socks5TestProxy {
+    private static final Logger LOGGER = Logger.getLogger(Socks5TestProxy.class.getName());
 
     /* SOCKS5 proxy singleton */
     private static Socks5TestProxy socks5Server;
@@ -66,7 +69,7 @@ public class Socks5TestProxy {
     }
 
     /**
-     * Returns the local SOCKS5 proxy server
+     * Returns the local SOCKS5 proxy server.
      * 
      * @param port of the test proxy
      * @return the local SOCKS5 proxy server
@@ -80,7 +83,7 @@ public class Socks5TestProxy {
     }
 
     /**
-     * Stops the test proxy
+     * Stops the test proxy.
      */
     public static synchronized void stopProxy() {
         if (socks5Server != null) {
@@ -102,7 +105,7 @@ public class Socks5TestProxy {
             this.serverThread.start();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "exception", e);
             // do nothing
         }
     }
@@ -120,7 +123,7 @@ public class Socks5TestProxy {
         }
         catch (IOException e) {
             // do nothing
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "exception", e);
         }
 
         if (this.serverThread != null && this.serverThread.isAlive()) {
@@ -130,7 +133,7 @@ public class Socks5TestProxy {
             }
             catch (InterruptedException e) {
                 // do nothing
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "exception", e);
             }
         }
         this.serverThread = null;
@@ -143,7 +146,7 @@ public class Socks5TestProxy {
      * 
      * @return the host address of the local SOCKS5 proxy server
      */
-    public String getAddress() {
+    public static String getAddress() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         }
@@ -170,19 +173,19 @@ public class Socks5TestProxy {
      * @param digest identifying the connection
      * @return socket or null if there is no socket for the given digest
      */
+    @SuppressWarnings("WaitNotInLoop")
     public Socket getSocket(String digest) {
         synchronized(this) {
             if (!startupComplete) {
                 try {
                     wait(5000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (!startupComplete) {
-                        throw new IllegalStateException("Startup of Socks5TestProxy failed within 5 seconds");
-                    }
+                    LOGGER.log(Level.SEVERE, "exception", e);
                 }
             }
+        }
+        if (!startupComplete) {
+            throw new IllegalStateException("Startup of Socks5TestProxy failed within 5 seconds");
         }
         return this.connectionMap.get(digest);
     }
@@ -230,7 +233,7 @@ public class Socks5TestProxy {
                 }
                 catch (Exception e) {
                     try {
-                        e.printStackTrace();
+                        LOGGER.log(Level.SEVERE, "exception", e);
                         socket.close();
                     }
                     catch (IOException e1) {

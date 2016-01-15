@@ -17,9 +17,12 @@
 
 package org.jivesoftware.smack.packet;
 
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.parts.Resourcepart;
+
 /**
- * IQ packet used by Smack to bind a resource and to obtain the jid assigned by the server.
- * There are two ways to bind a resource. One is simply sending an empty Bind packet where the
+ * IQ stanza(/packet) used by Smack to bind a resource and to obtain the jid assigned by the server.
+ * There are two ways to bind a resource. One is simply sending an empty Bind stanza(/packet) where the
  * server will assign a new resource for this connection. The other option is to set a desired
  * resource but the server may return a modified version of the sent resource.<p>
  *
@@ -33,30 +36,30 @@ public class Bind extends IQ {
     public static final String ELEMENT = "bind";
     public static final String NAMESPACE = "urn:ietf:params:xml:ns:xmpp-bind";
 
-    private final String resource;
-    private final String jid;
+    private final Resourcepart resource;
+    private final EntityFullJid jid;
 
-    public Bind(String resource, String jid) {
+    public Bind(Resourcepart resource, EntityFullJid jid) {
         super(ELEMENT, NAMESPACE);
         this.resource = resource;
         this.jid = jid;
     }
 
-    public String getResource() {
+    public Resourcepart getResource() {
         return resource;
     }
 
-    public String getJid() {
+    public EntityFullJid getJid() {
         return jid;
     }
 
-    public static Bind newSet(String resource) {
+    public static Bind newSet(Resourcepart resource) {
         Bind bind = new Bind(resource, null);
         bind.setType(IQ.Type.set);
         return bind;
     }
 
-    public static Bind newResult(String jid) {
+    public static Bind newResult(EntityFullJid jid) {
         return new Bind(null, jid);
     }
 
@@ -68,7 +71,7 @@ public class Bind extends IQ {
         return xml;
     }
 
-    public static class Feature implements PacketExtension {
+    public static final class Feature implements ExtensionElement {
 
         public static final Feature INSTANCE = new Feature();
 

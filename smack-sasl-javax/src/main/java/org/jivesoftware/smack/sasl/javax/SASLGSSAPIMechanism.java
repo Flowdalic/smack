@@ -21,7 +21,7 @@ import java.util.Map;
 import javax.security.sasl.Sasl;
 
 /**
- * Implementation of the SASL GSSAPI mechanism
+ * Implementation of the SASL GSSAPI mechanism.
  *
  * @author Jay Kline
  */
@@ -32,6 +32,11 @@ public class SASLGSSAPIMechanism extends SASLJavaXMechanism {
     static {
         System.setProperty("javax.security.auth.useSubjectCredsOnly","false");
         System.setProperty("java.security.auth.login.config","gss.conf");
+    }
+
+    @Override
+    public boolean authzidSupported() {
+      return true;
     }
 
     @Override

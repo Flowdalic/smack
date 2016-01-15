@@ -20,12 +20,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.amp.AMPDeliverCondition;
 import org.jivesoftware.smackx.amp.AMPExpireAtCondition;
 import org.jivesoftware.smackx.amp.AMPMatchResourceCondition;
 
-public class AMPExtension implements PacketExtension {
+public class AMPExtension implements ExtensionElement {
 
     public static final String NAMESPACE = "http://jabber.org/protocol/amp";
     public static final String ELEMENT = "amp";
@@ -59,6 +59,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
+     * Get the JID that triggered this AMP callback.
      * @return jid that triggered this amp callback.
      */
     public String getFrom() {
@@ -66,6 +67,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
+     * Get the receiver of this AMP receipt.
      * @return receiver of this amp receipt.
      */
     public String getTo() {
@@ -73,7 +75,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
-     * Status of this amp notification
+     * Status of this amp notification.
      * @return Status for this amp
      */
     public Status getStatus() {
@@ -129,7 +131,7 @@ public class AMPExtension implements PacketExtension {
      * Returns the XML element name of the extension sub-packet root element.
      * Always returns "amp"
      *
-     * @return the XML element name of the packet extension.
+     * @return the XML element name of the stanza(/packet) extension.
      */
     @Override
     public String getElementName() {
@@ -140,7 +142,7 @@ public class AMPExtension implements PacketExtension {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "http://jabber.org/protocol/xhtml-im"
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     @Override
     public String getNamespace() {
@@ -153,27 +155,27 @@ public class AMPExtension implements PacketExtension {
     @Override
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(getElementName()).append(" xmlns=\"").append(getNamespace()).append("\"");
+        buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append('"');
         if (status != null) {
-            buf.append(" status=\"").append(status.toString()).append("\"");
+            buf.append(" status=\"").append(status.toString()).append('"');
         }
         if (to != null) {
-            buf.append(" to=\"").append(to).append("\"");
+            buf.append(" to=\"").append(to).append('"');
         }
         if (from != null) {
-            buf.append(" from=\"").append(from).append("\"");
+            buf.append(" from=\"").append(from).append('"');
         }
         if (perHop) {
             buf.append(" per-hop=\"true\"");
         }
-        buf.append(">");
+        buf.append('>');
 
         // Loop through all the rules and append them to the string buffer
         for (Rule rule : getRules()) {
             buf.append(rule.toXML());
         }
 
-        buf.append("</").append(getElementName()).append(">");
+        buf.append("</").append(getElementName()).append('>');
         return buf.toString();
     }
 
@@ -217,7 +219,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
-     * Interface for defining XEP-0079 Conditions and their values
+     * Interface for defining XEP-0079 Conditions and their values.
      * @see AMPDeliverCondition
      * @see AMPExpireAtCondition
      * @see AMPMatchResourceCondition
@@ -230,7 +232,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
-     * amp action attribute
+     * amp action attribute.
      * See http://xmpp.org/extensions/xep-0079.html#actions-def
      **/
     public static enum Action {
@@ -267,7 +269,7 @@ public class AMPExtension implements PacketExtension {
     }
 
     /**
-     * amp notification status as defined by XEP-0079
+     * amp notification status as defined by XEP-0079.
      */
     public static enum Status {
         alert,

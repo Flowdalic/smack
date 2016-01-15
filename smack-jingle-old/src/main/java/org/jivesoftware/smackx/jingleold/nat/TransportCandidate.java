@@ -27,11 +27,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smackx.jingleold.JingleSession;
 import org.jivesoftware.smackx.jingleold.nat.TransportResolverListener.Checker;
+import org.jxmpp.jid.Jid;
 
 /**
  * Transport candidate.
@@ -42,6 +44,7 @@ import org.jivesoftware.smackx.jingleold.nat.TransportResolverListener.Checker;
  * @author Thiago Camargo
  * @author Alvaro Saurin
  */
+@SuppressWarnings("EqualsHashCode")
 public abstract class TransportCandidate {
 
 	private static final Logger LOGGER = Logger.getLogger(TransportCandidate.class.getName());
@@ -102,7 +105,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get local IP to bind to this candidate
+     * Get local IP to bind to this candidate.
      *
      * @return the local IP
      */
@@ -111,7 +114,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Set local IP to bind to this candidate
+     * Set local IP to bind to this candidate.
      *
      * @param localIp
      */
@@ -138,7 +141,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the password used by ICE or relayed candidate
+     * Get the password used by ICE or relayed candidate.
      *
      * @return a password
      */
@@ -147,7 +150,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Set the password used by ICE or relayed candidate
+     * Set the password used by ICE or relayed candidate.
      *
      * @param password a password
      */
@@ -156,7 +159,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the XMPPConnection use to send or receive this candidate
+     * Get the XMPPConnection use to send or receive this candidate.
      *
      * @return the connection
      */
@@ -165,7 +168,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Set the XMPPConnection use to send or receive this candidate
+     * Set the XMPPConnection use to send or receive this candidate.
      *
      * @param connection
      */
@@ -174,7 +177,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the jingle's sessionId that is using this candidate
+     * Get the jingle's sessionId that is using this candidate.
      *
      * @return the session ID
      */
@@ -183,7 +186,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Set the jingle's sessionId that is using this candidate
+     * Set the jingle's sessionId that is using this candidate.
      *
      * @param sessionId
      */
@@ -192,14 +195,14 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Empty constructor
+     * Empty constructor.
      */
     public TransportCandidate() {
         this(null, 0, 0);
     }
 
     /**
-     * Constructor with IP address and port
+     * Constructor with IP address and port.
      *
      * @param ip   The IP address.
      * @param port The port number.
@@ -209,7 +212,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Constructor with IP address and port
+     * Constructor with IP address and port.
      *
      * @param ip         The IP address.
      * @param port       The port number.
@@ -248,7 +251,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Set the port, using 0 for any port
+     * Set the port, using 0 for any port.
      *
      * @param port the port
      */
@@ -257,7 +260,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the generation for a transportElement definition
+     * Get the generation for a transportElement definition.
      *
      * @return the generation
      */
@@ -275,7 +278,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the name used for identifying this transportElement method (optional)
+     * Get the name used for identifying this transportElement method (optional).
      *
      * @return a name used for identifying this transportElement (ie,
      *         "myrtpvoice1")
@@ -353,9 +356,11 @@ public abstract class TransportCandidate {
             public void run() {
                 boolean isUsable;
 
-                
+
                 try {
+                    // CHECKSTYLE:OFF
                 	InetAddress candAddress = InetAddress.getByName(getIp());
+                    // CHECKSTYLE:ON
                     isUsable = true;//candAddress.isReachable(TransportResolver.CHECK_TIMEOUT);
                 }
                 catch (Exception e) {
@@ -385,7 +390,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Get the list of listeners
+     * Get the list of listeners.
      *
      * @return the list of listeners
      */
@@ -407,7 +412,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Fixed transport candidate
+     * Fixed transport candidate.
      */
     public static class Fixed extends TransportCandidate {
 
@@ -416,7 +421,7 @@ public abstract class TransportCandidate {
         }
 
         /**
-         * Constructor with IP address and port
+         * Constructor with IP address and port.
          *
          * @param ip   The IP address.
          * @param port The port number.
@@ -426,7 +431,7 @@ public abstract class TransportCandidate {
         }
 
         /**
-         * Constructor with IP address and port
+         * Constructor with IP address and port.
          *
          * @param ip         The IP address.
          * @param port       The port number.
@@ -438,7 +443,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Type-safe enum for the transportElement protocol
+     * Type-safe enum for the transportElement protocol.
      */
     public static class Protocol {
 
@@ -485,11 +490,7 @@ public abstract class TransportCandidate {
             }
         }
 
-        /*
-           * (non-Javadoc)
-           *
-           * @see java.lang.Object#equals(java.lang.Object)
-           */
+        @Override
         public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
@@ -511,6 +512,14 @@ public abstract class TransportCandidate {
             return true;
         }
 
+        @Override
+        public int hashCode() {
+            if (value == null) {
+                return -1;
+            }
+            return value.hashCode();
+        }
+
         /**
          * Return true if the protocol is not valid.
          *
@@ -528,7 +537,7 @@ public abstract class TransportCandidate {
     }
 
     /**
-     * Type-safe enum for the transportElement channel
+     * Type-safe enum for the transportElement channel.
      */
     public static class Channel {
 
@@ -563,11 +572,7 @@ public abstract class TransportCandidate {
             }
         }
 
-        /*
-           * (non-Javadoc)
-           *
-           * @see java.lang.Object#equals(java.lang.Object)
-           */
+        @Override
         public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
@@ -589,6 +594,14 @@ public abstract class TransportCandidate {
             return true;
         }
 
+        @Override
+        public int hashCode() {
+            if (value == null) {
+                return -1;
+            }
+            return value.hashCode();
+        }
+
         /**
          * Return true if the channel is not valid.
          *
@@ -608,12 +621,12 @@ public abstract class TransportCandidate {
     public class CandidateEcho implements Runnable {
 
         DatagramSocket socket = null;
-        String localUser = null;
-        String remoteUser = null;
+        Jid localUser;
+        Jid remoteUser;
         String id = null;
         byte[] send = null;
         byte[] receive = null;
-        DatagramPacket sendPacket = null;
+        DatagramPacket sendStanza = null;
         List<DatagramListener> listeners = new ArrayList<DatagramListener>();
         List<ResultListener> resultListeners = new ArrayList<ResultListener>();
         boolean enabled = true;
@@ -645,7 +658,7 @@ public abstract class TransportCandidate {
                 }
             }
             catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
 
 
@@ -690,7 +703,7 @@ public abstract class TransportCandidate {
                             cont = (password + ";" + candidate.getIp() + ":" + candidate.getPort()).getBytes("UTF-8");
                         }
                         catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
+                            LOGGER.log(Level.WARNING, "exception", e);
                         }
 
                         packet.setData(cont);
@@ -705,7 +718,7 @@ public abstract class TransportCandidate {
                                 Thread.sleep(delay);
                             }
                             catch (InterruptedException e) {
-                                e.printStackTrace();
+                                LOGGER.log(Level.WARNING, "exception", e);
                             }
                         }
                     }
@@ -756,9 +769,11 @@ public abstract class TransportCandidate {
                                 String ip = addr[0];
                                 String pt = addr[1];
 
+                                // CHECKSTYLE:OFF
                                 if (pass.equals(password) 
                                 		&& transportCandidate.getIp().indexOf(ip) != -1 
                                 		&& transportCandidate.getPort() == Integer.parseInt(pt)) {
+                                    // CHECKSTYLE:ON
                                     LOGGER.fine("ECHO OK: " + candidate.getIp() + ":" + candidate.getPort() + " <-> " + transportCandidate.getIp() + ":" + transportCandidate.getPort());
                                     TestResult testResult = new TestResult();
                                     testResult.setResult(true);
@@ -769,7 +784,7 @@ public abstract class TransportCandidate {
 
                             }
                             catch (UnsupportedEncodingException e) {
-                                e.printStackTrace();
+                                LOGGER.log(Level.WARNING, "exception", e);
                             }
 
                             LOGGER.fine("ECHO Wrong Data: " + datagramPacket.getAddress().getHostAddress() + ":" + datagramPacket.getPort());
@@ -784,7 +799,7 @@ public abstract class TransportCandidate {
                         content = new String(password + ";" + getIp() + ":" + getPort()).getBytes("UTF-8");
                     }
                     catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
 
                     DatagramPacket packet = new DatagramPacket(content, content.length);
@@ -793,7 +808,7 @@ public abstract class TransportCandidate {
                         packet.setAddress(InetAddress.getByName(transportCandidate.getIp()));
                     }
                     catch (UnknownHostException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
                     packet.setPort(transportCandidate.getPort());
 
@@ -807,7 +822,7 @@ public abstract class TransportCandidate {
                                 Thread.sleep(delay);
                             }
                             catch (InterruptedException e) {
-                                e.printStackTrace();
+                                LOGGER.log(Level.WARNING, "exception", e);
                             }
                         }
                     }
@@ -819,7 +834,7 @@ public abstract class TransportCandidate {
                         Thread.sleep(2000);
                     }
                     catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
 
                     removeListener(listener);

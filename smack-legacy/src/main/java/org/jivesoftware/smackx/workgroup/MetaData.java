@@ -22,20 +22,20 @@ import java.util.Map;
 
 import org.jivesoftware.smackx.workgroup.util.MetaDataUtils;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 
 /**
- * MetaData packet extension.
+ * MetaData stanza(/packet) extension.
  */
-public class MetaData implements PacketExtension {
+public class MetaData implements ExtensionElement {
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "metadata";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -46,6 +46,7 @@ public class MetaData implements PacketExtension {
     }
 
     /**
+     * Get meta data.
      * @return the Map of metadata contained by this instance
      */
     public Map<String, List<String>> getMetaData() {

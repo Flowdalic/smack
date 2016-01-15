@@ -18,15 +18,15 @@ package org.jivesoftware.smackx.delay.packet;
 
 import java.util.Date;
 
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jxmpp.util.XmppDateTime;
 
 /**
  * Represents timestamp information about data stored for later delivery. A DelayInformation will 
- * always includes the timestamp when the packet was originally sent and may include more 
- * information such as the JID of the entity that originally sent the packet as well as the reason
+ * always includes the timestamp when the stanza(/packet) was originally sent and may include more 
+ * information such as the JID of the entity that originally sent the stanza(/packet) as well as the reason
  * for the delay.<p>
  * 
  * For more information see <a href="http://xmpp.org/extensions/xep-0091.html">XEP-0091</a>
@@ -35,7 +35,7 @@ import org.jxmpp.util.XmppDateTime;
  * @author Gaston Dombiak
  * @author Florian Schmaus
  */
-public class DelayInformation implements PacketExtension {
+public class DelayInformation implements ExtensionElement {
     public static final String ELEMENT = "delay";
     public static final String NAMESPACE = "urn:xmpp:delay";
 
@@ -58,10 +58,10 @@ public class DelayInformation implements PacketExtension {
     }
 
     /**
-     * Returns the JID of the entity that originally sent the packet or that delayed the 
-     * delivery of the packet or <tt>null</tt> if this information is not available.
+     * Returns the JID of the entity that originally sent the stanza(/packet) or that delayed the 
+     * delivery of the stanza(/packet) or <tt>null</tt> if this information is not available.
      * 
-     * @return the JID of the entity that originally sent the packet or that delayed the 
+     * @return the JID of the entity that originally sent the stanza(/packet) or that delayed the 
      *         delivery of the packet.
      */
     public String getFrom() {
@@ -69,10 +69,10 @@ public class DelayInformation implements PacketExtension {
     }
 
     /**
-     * Returns the timestamp when the packet was originally sent. The returned Date is 
+     * Returns the timestamp when the stanza(/packet) was originally sent. The returned Date is 
      * be understood as UTC.
      * 
-     * @return the timestamp when the packet was originally sent.
+     * @return the timestamp when the stanza(/packet) was originally sent.
      */
     public Date getStamp() {
         return stamp;
@@ -108,22 +108,24 @@ public class DelayInformation implements PacketExtension {
     }
 
     /**
-     * 
+     * Return delay information from the given stanza.
+     *
      * @param packet
      * @return the DelayInformation or null
-     * @deprecated use {@link #from(Packet)} instead
+     * @deprecated use {@link #from(Stanza)} instead
      */
     @Deprecated
-    public static DelayInformation getFrom(Packet packet) {
+    public static DelayInformation getFrom(Stanza packet) {
         return from(packet);
     }
 
     /**
-     * 
+     * Return delay information from the given stanza.
+     *
      * @param packet
      * @return the DelayInformation or null
      */
-    public static DelayInformation from(Packet packet) {
+    public static DelayInformation from(Stanza packet) {
         return packet.getExtension(ELEMENT, NAMESPACE);
     }
 }

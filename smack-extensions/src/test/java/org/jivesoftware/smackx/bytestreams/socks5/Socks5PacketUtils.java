@@ -21,6 +21,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.bytestreams.socks5.packet.Bytestream;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
+import org.jxmpp.jid.Jid;
 
 /**
  * A collection of utility methods to create XMPP packets.
@@ -38,7 +39,7 @@ public class Socks5PacketUtils {
      * @param sessionID the session ID
      * @return SOCKS5 Bytestream initialization request packet
      */
-    public static Bytestream createBytestreamInitiation(String from, String to, String sessionID) {
+    public static Bytestream createBytestreamInitiation(Jid from, Jid to, String sessionID) {
         Bytestream bytestream = new Bytestream();
         bytestream.setFrom(from);
         bytestream.setTo(to);
@@ -48,14 +49,14 @@ public class Socks5PacketUtils {
     }
 
     /**
-     * Returns a response to a SOCKS5 Bytestream initialization request. The packet doesn't contain
+     * Returns a response to a SOCKS5 Bytestream initialization request. The stanza(/packet) doesn't contain
      * the uses-host information.
      * 
      * @param from the target
      * @param to the initiator
      * @return response to a SOCKS5 Bytestream initialization request
      */
-    public static Bytestream createBytestreamResponse(String from, String to) {
+    public static Bytestream createBytestreamResponse(Jid from, Jid to) {
         Bytestream streamHostInfo = new Bytestream();
         streamHostInfo.setFrom(from);
         streamHostInfo.setTo(to);
@@ -64,13 +65,13 @@ public class Socks5PacketUtils {
     }
 
     /**
-     * Returns a response to an item discovery request. The packet doesn't contain any items.
+     * Returns a response to an item discovery request. The stanza(/packet) doesn't contain any items.
      * 
      * @param from the XMPP server
      * @param to the XMPP client
      * @return response to an item discovery request
      */
-    public static DiscoverItems createDiscoverItems(String from, String to) {
+    public static DiscoverItems createDiscoverItems(Jid from, Jid to) {
         DiscoverItems discoverItems = new DiscoverItems();
         discoverItems.setFrom(from);
         discoverItems.setTo(to);
@@ -79,13 +80,13 @@ public class Socks5PacketUtils {
     }
 
     /**
-     * Returns a response to an info discovery request. The packet doesn't contain any infos.
+     * Returns a response to an info discovery request. The stanza(/packet) doesn't contain any infos.
      * 
      * @param from the target
      * @param to the initiator
      * @return response to an info discovery request
      */
-    public static DiscoverInfo createDiscoverInfo(String from, String to) {
+    public static DiscoverInfo createDiscoverInfo(Jid from, Jid to) {
         DiscoverInfo discoverInfo = new DiscoverInfo();
         discoverInfo.setFrom(from);
         discoverInfo.setTo(to);
@@ -100,7 +101,7 @@ public class Socks5PacketUtils {
      * @param to JID of the client who wants to activate the SOCKS5 Bytestream
      * @return response IQ for a activation request to the proxy
      */
-    public static IQ createActivationConfirmation(String from, String to) {
+    public static IQ createActivationConfirmation(Jid from, Jid to) {
         IQ response = new EmptyResultIQ();
         response.setFrom(from);
         response.setTo(to);

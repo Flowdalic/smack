@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.disco.packet;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.util.TypedCloneable;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jxmpp.util.XmppStringUtils;
 
@@ -38,7 +39,7 @@ import java.util.Set;
  *
  * @author Gaston Dombiak
  */
-public class DiscoverInfo extends IQ implements Cloneable {
+public class DiscoverInfo extends IQ implements TypedCloneable<DiscoverInfo> {
 
     public static final String ELEMENT = QUERY_ELEMENT;
     public static final String NAMESPACE = "http://jabber.org/protocol/disco#info";
@@ -55,7 +56,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
     }
 
     /**
-     * Copy constructor
+     * Copy constructor.
      * 
      * @param d
      */
@@ -127,7 +128,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
     }
 
     /**
-     * Adds identities to the DiscoverInfo stanza
+     * Adds identities to the DiscoverInfo stanza.
      * 
      * @param identitiesToAdd
      */
@@ -208,7 +209,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
      * @param feature the feature to check
      * @return true if the requestes feature has been discovered
      */
-    public boolean containsFeature(String feature) {
+    public boolean containsFeature(CharSequence feature) {
         return features.contains(new Feature(feature));
     }
 
@@ -266,7 +267,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
      * attributes.
      * 
      */
-    public static class Identity implements Comparable<Identity>, Cloneable {
+    public static class Identity implements Comparable<Identity>, TypedCloneable<Identity> {
 
         private final String category;
         private final String type;
@@ -316,14 +317,8 @@ public class DiscoverInfo extends IQ implements Cloneable {
          * @param lang the entity's lang.
          */
         public Identity(String category, String type, String name, String lang) {
-            if (StringUtils.isNullOrEmpty(category)) {
-                throw new IllegalArgumentException("category cannot be null");
-            }
-            if (StringUtils.isNullOrEmpty(type)) {
-                throw new IllegalArgumentException("type cannot be null");
-            }
-            this.category = category;
-            this.type = type;
+            this.category = StringUtils.requireNotNullOrEmpty(category, "category cannot be null");
+            this.type = StringUtils.requireNotNullOrEmpty(type, "type cannot be null");
             this.key = XmppStringUtils.generateKey(category, type);
             this.name = name;
             this.lang = lang;
@@ -359,7 +354,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
         }
 
         /**
-         * Returns the identities natural language if one is set
+         * Returns the identities natural language if one is set.
          * 
          * @return the value of xml:lang of this Identity
          */
@@ -396,7 +391,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
         /** 
          * Check equality for Identity  for category, type, lang and name
          * in that order as defined by
-         * <a href="http://xmpp.org/extensions/xep-0115.html#ver-proc">XEP-0015 5.4 Processing Method (Step 3.3)</a>
+         * <a href="http://xmpp.org/extensions/xep-0115.html#ver-proc">XEP-0015 5.4 Processing Method (Step 3.3)</a>.
          *  
          */
         public boolean equals(Object obj) {
@@ -445,7 +440,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
         public int compareTo(DiscoverInfo.Identity other) {
             String otherLang = other.lang == null ? "" : other.lang;
             String thisLang = lang == null ? "" : lang;
-            
+
             // This can be removed once the deprecated constructor is removed.
             String otherType = other.type == null ? "" : other.type;
             String thisType = type == null ? "" : type;
@@ -479,12 +474,16 @@ public class DiscoverInfo extends IQ implements Cloneable {
      * as well as specific feature types of interest, if any (e.g., for the purpose of feature 
      * negotiation).
      */
-    public static class Feature implements Cloneable {
+    public static class Feature implements TypedCloneable<Feature> {
 
         private final String variable;
 
         public Feature(Feature feature) {
             this.variable = feature.variable;
+        }
+
+        public Feature(CharSequence variable) {
+            this(variable.toString());
         }
 
         /**
@@ -493,9 +492,7 @@ public class DiscoverInfo extends IQ implements Cloneable {
          * @param variable the feature's variable.
          */
         public Feature(String variable) {
-            if (variable == null)
-                throw new IllegalArgumentException("variable cannot be null");
-            this.variable = variable;
+            this.variable = StringUtils.requireNotNullOrEmpty(variable, "variable cannot be null");
         }
 
         /**

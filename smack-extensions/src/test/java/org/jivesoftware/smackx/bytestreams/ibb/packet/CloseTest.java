@@ -17,13 +17,14 @@
 package org.jivesoftware.smackx.bytestreams.ibb.packet;
 
 import static org.junit.Assert.assertEquals;
-
 import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
 
 import java.util.Properties;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smackx.InitExtensions;
 import org.junit.Test;
+import org.jxmpp.jid.impl.JidCreate;
 
 import com.jamesmurty.utils.XMLBuilder;
 
@@ -32,7 +33,7 @@ import com.jamesmurty.utils.XMLBuilder;
  * 
  * @author Henning Staib
  */
-public class CloseTest {
+public class CloseTest extends InitExtensions {
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotInstantiateWithInvalidArguments1() {
@@ -74,10 +75,10 @@ public class CloseTest {
             .asString(outputProperties);
 
         Close close = new Close("i781hf64");
-        close.setFrom("romeo@montague.lit/orchard");
-        close.setTo("juliet@capulet.lit/balcony");
-        close.setPacketID("us71g45j");
-        
+        close.setFrom(JidCreate.from("romeo@montague.lit/orchard"));
+        close.setTo(JidCreate.from("juliet@capulet.lit/balcony"));
+        close.setStanzaId("us71g45j");
+
         assertXMLEqual(control, close.toXML().toString());
     }
 

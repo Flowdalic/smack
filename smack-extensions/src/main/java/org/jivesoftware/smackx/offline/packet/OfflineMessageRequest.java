@@ -38,7 +38,7 @@ public class OfflineMessageRequest extends IQ {
     public static final String ELEMENT = "offline";
     public static final String NAMESPACE = "http://jabber.org/protocol/offline";
 
-    private List<Item> items = new ArrayList<Item>();
+    private final List<Item> items = new ArrayList<>();
     private boolean purge = false;
     private boolean fetch = false;
 
@@ -182,13 +182,13 @@ public class OfflineMessageRequest extends IQ {
             StringBuilder buf = new StringBuilder();
             buf.append("<item");
             if (getAction() != null) {
-                buf.append(" action=\"").append(getAction()).append("\"");
+                buf.append(" action=\"").append(getAction()).append('"');
             }
             if (getJid() != null) {
-                buf.append(" jid=\"").append(getJid()).append("\"");
+                buf.append(" jid=\"").append(getJid()).append('"');
             }
             if (getNode() != null) {
-                buf.append(" node=\"").append(getNode()).append("\"");
+                buf.append(" node=\"").append(getNode()).append('"');
             }
             buf.append("/>");
             return buf.toString();
@@ -225,7 +225,7 @@ public class OfflineMessageRequest extends IQ {
             return request;
         }
 
-        private Item parseItem(XmlPullParser parser)
+        private static Item parseItem(XmlPullParser parser)
                         throws XmlPullParserException, IOException {
             boolean done = false;
             Item item = new Item(parser.getAttributeValue("", "node"));

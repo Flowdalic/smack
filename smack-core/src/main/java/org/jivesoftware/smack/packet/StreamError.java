@@ -29,6 +29,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  * These is the list of stream errors as defined in the XMPP spec:<p>
  *
  * <table border=1>
+ *      <caption>Stream Errors</caption>
  *      <tr><td><b>Code</b></td><td><b>Description</b></td></tr>
  *      <tr><td> bad-format </td><td> the entity has sent XML that cannot be processed </td></tr>
  *      <tr><td> unsupported-encoding </td><td>  the entity has sent a namespace prefix that is
@@ -96,7 +97,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  *
  * @author Gaston Dombiak
  */
-public class StreamError extends AbstractError implements PlainStreamElement {
+public class StreamError extends AbstractError implements Nonza {
 
     public static final String ELEMENT = "stream:error";
     public static final String NAMESPACE = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -104,7 +105,7 @@ public class StreamError extends AbstractError implements PlainStreamElement {
     private final Condition condition;
     private final String conditionText;
 
-    public StreamError(Condition condition, String conditionText, Map<String, String> descriptiveTexts, List<PacketExtension> extensions) {
+    public StreamError(Condition condition, String conditionText, Map<String, String> descriptiveTexts, List<ExtensionElement> extensions) {
         super(descriptiveTexts, extensions);
         // Some implementations may send the condition as non-empty element containing the empty string, that is
         // <condition xmlns='foo'></condition>, in this case the parser may calls this constructor with the empty string
@@ -149,7 +150,7 @@ public class StreamError extends AbstractError implements PlainStreamElement {
     }
 
     /**
-     * The defined stream error conditions, see RFC 6120 § 4.9.3
+     * The defined stream error conditions, see RFC 6120 § 4.9.3.
      *
      */
     public enum Condition {
@@ -195,5 +196,15 @@ public class StreamError extends AbstractError implements PlainStreamElement {
             }
             return condition;
         }
+    }
+
+    @Override
+    public String getNamespace() {
+        return NAMESPACE;
+    }
+
+    @Override
+    public String getElementName() {
+        return ELEMENT;
     }
 }

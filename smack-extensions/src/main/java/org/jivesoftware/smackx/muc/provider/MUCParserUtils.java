@@ -18,10 +18,14 @@ package org.jivesoftware.smackx.muc.provider;
 
 import java.io.IOException;
 
+import org.jivesoftware.smack.util.ParserUtils;
 import org.jivesoftware.smackx.muc.MUCAffiliation;
 import org.jivesoftware.smackx.muc.MUCRole;
 import org.jivesoftware.smackx.muc.packet.Destroy;
 import org.jivesoftware.smackx.muc.packet.MUCItem;
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.parts.Resourcepart;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -29,10 +33,11 @@ public class MUCParserUtils {
     public static MUCItem parseItem(XmlPullParser parser) throws XmlPullParserException, IOException {
         int initialDepth = parser.getDepth();
         MUCAffiliation affiliation = MUCAffiliation.fromString(parser.getAttributeValue("", "affiliation"));
-        String nick = parser.getAttributeValue("", "nick");
+        Resourcepart nick = ParserUtils.getResourcepartAttribute(parser, "nick");
         MUCRole role = MUCRole.fromString(parser.getAttributeValue("", "role"));
-        String jid = parser.getAttributeValue("", "jid");
-        String actor = null;
+        Jid jid = ParserUtils.getJidAttribute(parser);
+        Jid actor = null;
+        Resourcepart actorNick = null;
         String reason = null;
         outerloop: while (true) {
             int eventType = parser.next();
@@ -41,12 +46,20 @@ public class MUCParserUtils {
                 String name = parser.getName();
                 switch (name) {
                 case "actor":
-                    actor = parser.getAttributeValue("", "jid");
+                    actor = ParserUtils.getJidAttribute(parser);
+                    // TODO change to
+                    // actorNick = Resourcepart.from(parser.getAttributeValue("", "nick"));
+                    // once a newer version of JXMPP is used that supports from(null).
+                    String actorNickString = parser.getAttributeValue("", "nick");
+                    if (actorNickString != null) {
+                        actorNick = Resourcepart.from(actorNickString);
+                    }
                     break;
                 case "reason":
                     reason = parser.nextText();
                     break;
                 }
+                break;
             case XmlPullParser.END_TAG:
                 if (parser.getDepth() == initialDepth) {
                     break outerloop;
@@ -54,26 +67,31 @@ public class MUCParserUtils {
                 break;
             }
         }
-        return new MUCItem(affiliation, role, actor, reason, jid, nick);
+        return new MUCItem(affiliation, role, actor, reason, jid, nick, actorNick);
     }
 
     public static Destroy parseDestroy(XmlPullParser parser) throws XmlPullParserException, IOException {
-        boolean done = false;
-        Destroy destroy = new Destroy();
-        destroy.setJid(parser.getAttributeValue("", "jid"));
-        while (!done) {
+        final int initialDepth = parser.getDepth();
+        final EntityBareJid jid = ParserUtils.getBareJidAttribute(parser);
+        String reason = null;
+        outerloop: while (true) {
             int eventType = parser.next();
-            if (eventType == XmlPullParser.START_TAG) {
-                if (parser.getName().equals("reason")) {
-                    destroy.setReason(parser.nextText());
+            switch (eventType) {
+            case XmlPullParser.START_TAG:
+                final String name = parser.getName();
+                switch (name) {
+                case "reason":
+                    reason = parser.nextText();
+                    break;
                 }
-            }
-            else if (eventType == XmlPullParser.END_TAG) {
-                if (parser.getName().equals("destroy")) {
-                    done = true;
+                break;
+            case XmlPullParser.END_TAG:
+                if (initialDepth == parser.getDepth()) {
+                    break outerloop;
                 }
+                break;
             }
         }
-        return destroy;
+        return new Destroy(jid, reason);
     }
 }

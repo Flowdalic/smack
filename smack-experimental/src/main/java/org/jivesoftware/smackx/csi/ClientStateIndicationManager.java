@@ -21,20 +21,21 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smackx.csi.packet.ClientStateIndication;
 
 /**
- * 
+ * Manager for Client State Indication.
+ *
  * @see <a href="http://xmpp.org/extensions/xep-0352.html">XEP-0352: Client State Indication</a>
  *
  */
 public class ClientStateIndicationManager {
 
-    public static void active(XMPPConnection connection) throws NotConnectedException {
+    public static void active(XMPPConnection connection) throws NotConnectedException, InterruptedException {
         throwIaeIfNotSupported(connection);
-        connection.send(ClientStateIndication.Active.INSTANCE);
+        connection.sendNonza(ClientStateIndication.Active.INSTANCE);
     }
 
-    public static void inactive(XMPPConnection connection) throws NotConnectedException {
+    public static void inactive(XMPPConnection connection) throws NotConnectedException, InterruptedException {
         throwIaeIfNotSupported(connection);
-        connection.send(ClientStateIndication.Inactive.INSTANCE);
+        connection.sendNonza(ClientStateIndication.Inactive.INSTANCE);
     }
 
     public static boolean isSupported(XMPPConnection connection) {

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smackx.jingleold.JingleSession;
@@ -43,12 +44,12 @@ public class JmfMediaManager extends JingleMediaManager {
 
 	public static final String MEDIA_NAME = "JMF";
 
-    
+
     private List<PayloadType> payloads = new ArrayList<PayloadType>();
     private String mediaLocator = null;
 
     /**
-     * Creates a Media Manager instance
+     * Creates a Media Manager instance.
      */
     public JmfMediaManager(JingleTransportManager transportManager) {
         super(transportManager);
@@ -56,7 +57,7 @@ public class JmfMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Creates a Media Manager instance
+     * Creates a Media Manager instance.
      *
      * @param mediaLocator Media Locator
      */
@@ -67,7 +68,7 @@ public class JmfMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Returns a new jingleMediaSession
+     * Returns a new jingleMediaSession.
      *
      * @param payloadType payloadType
      * @param remote      remote Candidate
@@ -88,7 +89,7 @@ public class JmfMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Return all supported Payloads for this Manager
+     * Return all supported Payloads for this Manager.
      *
      * @return The Payload List
      */
@@ -97,7 +98,7 @@ public class JmfMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Return the media locator or null if not defined
+     * Return the media locator or null if not defined.
      *
      * @return media locator
      */
@@ -106,7 +107,7 @@ public class JmfMediaManager extends JingleMediaManager {
     }
 
     /**
-     * Set the media locator
+     * Set the media locator.
      *
      * @param mediaLocator media locator or null to use default
      */
@@ -141,8 +142,7 @@ public class JmfMediaManager extends JingleMediaManager {
                 jmfProperties.createNewFile();
             }
             catch (IOException ex) {
-                LOGGER.fine("Failed to create jmf.properties");
-                ex.printStackTrace();
+                LOGGER.log(Level.FINE, "Failed to create jmf.properties", ex);
             }
         }
 
@@ -159,7 +159,7 @@ public class JmfMediaManager extends JingleMediaManager {
     private static void runLinuxPreInstall() {
         // @TODO Implement Linux Pre-Install
     }
-    
+
     public  String getName() {
         return MEDIA_NAME;
     }

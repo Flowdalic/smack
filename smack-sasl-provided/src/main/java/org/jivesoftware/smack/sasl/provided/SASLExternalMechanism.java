@@ -24,7 +24,7 @@ import org.jivesoftware.smack.util.StringUtils;
 import org.jxmpp.util.XmppStringUtils;
 
 /**
- * Implementation of the SASL-EXTERNAL authentication mechanism
+ * Implementation of the SASL-EXTERNAL authentication mechanism.
  * 
  * @author Daniele Ricci
  */
@@ -40,6 +40,10 @@ public class SASLExternalMechanism extends SASLMechanism {
 
     @Override
     protected byte[] getAuthenticationText() throws SmackException {
+        if (authorizationId != null) {
+          return toBytes(authorizationId.toString());
+        }
+
         if (StringUtils.isNullOrEmpty(authenticationId)) {
             return null;
         }
@@ -65,6 +69,11 @@ public class SASLExternalMechanism extends SASLMechanism {
     @Override
     public void checkIfSuccessfulOrThrow() throws SmackException {
         // No check performed
+    }
+
+    @Override
+    public boolean authzidSupported() {
+      return true;
     }
 
 }

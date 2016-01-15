@@ -28,6 +28,7 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager.StanzaType;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
 import org.jivesoftware.util.ConnectionUtils;
@@ -35,18 +36,21 @@ import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.JidTestUtil;
 
 /**
  * Test for InBandBytestreamManager.
  * 
  * @author Henning Staib
  */
-public class InBandBytestreamManagerTest {
+public class InBandBytestreamManagerTest extends InitExtensions {
 
     // settings
-    String initiatorJID = "initiator@xmpp-server/Smack";
-    String targetJID = "target@xmpp-server/Smack";
-    String xmppServer = "xmpp-server";
+    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
     String sessionID = "session_id";
 
     // protocol verifier
@@ -59,9 +63,10 @@ public class InBandBytestreamManagerTest {
      * Initialize fields used in the tests.
      * @throws XMPPException 
      * @throws SmackException 
+     * @throws InterruptedException 
      */
     @Before
-    public void setup() throws XMPPException, SmackException {
+    public void setup() throws XMPPException, SmackException, InterruptedException {
 
         // build protocol verifier
         protocol = new Protocol();
@@ -75,7 +80,7 @@ public class InBandBytestreamManagerTest {
     /**
      * Test that
      * {@link InBandBytestreamManager#getByteStreamManager(XMPPConnection)} returns
-     * one bytestream manager for every connection
+     * one bytestream manager for every connection.
      */
     @Test
     public void shouldHaveOneManagerForEveryConnection() {
@@ -98,20 +103,20 @@ public class InBandBytestreamManagerTest {
     }
 
     /**
-     * Invoking {@link InBandBytestreamManager#establishSession(String)} should
+     * Invoking {@link InBandBytestreamManager#establishSession(org.jxmpp.jid.Jid)} should
      * throw an exception if the given target does not support in-band
      * bytestream.
      * @throws SmackException 
      * @throws XMPPException 
+     * @throws InterruptedException 
      */
     @Test
-    public void shouldFailIfTargetDoesNotSupportIBB() throws SmackException, XMPPException {
+    public void shouldFailIfTargetDoesNotSupportIBB() throws SmackException, XMPPException, InterruptedException {
         InBandBytestreamManager byteStreamManager = InBandBytestreamManager.getByteStreamManager(connection);
 
         try {
-            XMPPError xmppError = new XMPPError(
+            IQ errorIQ = IBBPacketUtils.createErrorIQ(targetJID, initiatorJID,
                             XMPPError.Condition.feature_not_implemented);
-            IQ errorIQ = IBBPacketUtils.createErrorIQ(targetJID, initiatorJID, xmppError);
             protocol.addResponse(errorIQ);
 
             // start In-Band Bytestream
@@ -153,7 +158,7 @@ public class InBandBytestreamManagerTest {
     }
 
     @Test
-    public void shouldUseConfiguredStanzaType() throws SmackException {
+    public void shouldUseConfiguredStanzaType() throws SmackException, InterruptedException {
         InBandBytestreamManager byteStreamManager = InBandBytestreamManager.getByteStreamManager(connection);
         byteStreamManager.setStanza(StanzaType.MESSAGE);
 

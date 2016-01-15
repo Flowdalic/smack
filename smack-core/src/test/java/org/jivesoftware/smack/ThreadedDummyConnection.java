@@ -20,26 +20,30 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.IQ.Type;
 
 /**
- * 
+ * A threaded dummy connection.
  * @author Robin Collier
  *
  */
 public class ThreadedDummyConnection extends DummyConnection {
+    private static final Logger LOGGER = Logger.getLogger(ThreadedDummyConnection.class.getName());
+
     private BlockingQueue<IQ> replyQ = new ArrayBlockingQueue<IQ>(1);
-    private BlockingQueue<Packet> messageQ = new LinkedBlockingQueue<Packet>(5);
+    private BlockingQueue<Stanza> messageQ = new LinkedBlockingQueue<Stanza>(5);
     private volatile boolean timeout = false;
 
     @Override
-    public void sendPacket(Packet packet) throws NotConnectedException {
-        super.sendPacket(packet);
+    public void sendStanza(Stanza packet) throws NotConnectedException, InterruptedException {
+        super.sendStanza(packet);
 
         if (packet instanceof IQ && !timeout) {
             timeout = false;
@@ -52,7 +56,7 @@ public class ThreadedDummyConnection extends DummyConnection {
                 replyPacket = IQ.createResultIQ((IQ) packet);
                 replyQ.add(replyPacket);
             }
-            replyPacket.setPacketID(packet.getPacketID());
+            replyPacket.setStanzaId(packet.getStanzaId());
             replyPacket.setFrom(packet.getTo());
             replyPacket.setTo(packet.getFrom());
             replyPacket.setType(Type.result);
@@ -62,14 +66,14 @@ public class ThreadedDummyConnection extends DummyConnection {
     }
 
     /**
-     * Calling this method will cause the next sendPacket call with an IQ packet to timeout.
-     * This is accomplished by simply stopping the auto creating of the reply packet 
-     * or processing one that was entered via {@link #processPacket(Packet)}.
+     * Calling this method will cause the next sendStanza call with an IQ stanza(/packet) to timeout.
+     * This is accomplished by simply stopping the auto creating of the reply stanza(/packet) 
+     * or processing one that was entered via {@link #processStanza(Stanza)}.
      */
     public void setTimeout() {
         timeout = true;
     }
-    
+
     public void addMessage(Message msgToProcess) {
         messageQ.add(msgToProcess);
     }
@@ -82,27 +86,27 @@ public class ThreadedDummyConnection extends DummyConnection {
         if (!messageQ.isEmpty())
             new ProcessQueue(messageQ).start();
         else
-            System.out.println("No messages to process");
+            LOGGER.warning("No messages to process");
     }
 
     class ProcessQueue extends Thread {
-        private BlockingQueue<? extends Packet> processQ;
+        private BlockingQueue<? extends Stanza> processQ;
 
-        ProcessQueue(BlockingQueue<? extends Packet> queue) {
+        ProcessQueue(BlockingQueue<? extends Stanza> queue) {
             processQ = queue;
         }
 
         @Override
         public void run() {
             try {
-                processPacket(processQ.take());
+                processStanza(processQ.take());
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
         }
     }
 
-    public static ThreadedDummyConnection newInstance() throws SmackException, IOException, XMPPException {
+    public static ThreadedDummyConnection newInstance() throws SmackException, IOException, XMPPException, InterruptedException {
         ThreadedDummyConnection threadedDummyConnection = new ThreadedDummyConnection();
         threadedDummyConnection.connect();
         return threadedDummyConnection;

@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.workgroup.packet;
 
 import org.jivesoftware.smackx.workgroup.agent.WorkgroupQueue;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -29,15 +29,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class QueueOverview implements PacketExtension {
+public class QueueOverview implements ExtensionElement {
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static String ELEMENT_NAME = "notify-queue";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -98,7 +98,7 @@ public class QueueOverview implements PacketExtension {
 
     public String toXML () {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
+        buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
 
         if (userCount != -1) {
             buf.append("<count>").append(userCount).append("</count>");
@@ -112,12 +112,12 @@ public class QueueOverview implements PacketExtension {
         if (status != null) {
             buf.append("<status>").append(status).append("</status>");
         }
-        buf.append("</").append(ELEMENT_NAME).append(">");
+        buf.append("</").append(ELEMENT_NAME).append('>');
 
         return buf.toString();
     }
 
-    public static class Provider extends PacketExtensionProvider<QueueOverview> {
+    public static class Provider extends ExtensionElementProvider<QueueOverview> {
 
         @Override
         public QueueOverview parse(XmlPullParser parser,

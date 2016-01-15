@@ -40,7 +40,7 @@ import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
  */
 public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache {
     private static final Logger LOGGER = Logger.getLogger(SimpleDirectoryPersistentCache.class.getName());
-    
+
     private File cacheDir;
     private StringEncoder filenameEncoder;
 
@@ -120,7 +120,7 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
     }
 
     /**
-     * Writes the DiscoverInfo packet to an file
+     * Writes the DiscoverInfo stanza(/packet) to an file
      * 
      * @param file
      * @param info
@@ -136,7 +136,7 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
     }
 
     /**
-     * Tries to restore an DiscoverInfo packet from a file.
+     * Tries to restore an DiscoverInfo stanza(/packet) from a file.
      * 
      * @param file
      * @return the restored DiscoverInfo

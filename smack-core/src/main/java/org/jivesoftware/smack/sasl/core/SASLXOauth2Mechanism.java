@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Florian Schmaus
+ * Copyright 2014-2015 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import org.jivesoftware.smack.util.stringencoder.Base64;
  * The given password will be used as OAUTH token.
  * </p>
  * <p>
- * Note that X-OAUTH2 is experimental in Smack. This is because Google defined, besides being a bad practice, custom
- * attributes to the 'auth' stanze, as can be seen here
+ * Note that X-OAUTH2 is experimental in Smack. This is because Google defined, besides being a bad practice (XEP-134),
+ * custom attributes to the 'auth' stanza, as can be seen here
  * </p>
  * 
  * <pre>
@@ -73,7 +73,7 @@ public class SASLXOauth2Mechanism extends SASLMechanism {
     @Override
     protected byte[] getAuthenticationText() throws SmackException {
         // base64("\0" + user_name + "\0" + oauth_token)
-        return Base64.decode('\u0000' + authenticationId + '\u0000' + password);
+        return Base64.encode(toBytes('\u0000' + authenticationId + '\u0000' + password));
     }
 
     @Override

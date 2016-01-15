@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.pubsub;
 import org.jivesoftware.smackx.xdata.Form;
 
 /**
- * Generic packet extension which represents any pubsub form that is
+ * Generic stanza(/packet) extension which represents any pubsub form that is
  * parsed from the incoming stream or being sent out to the server.
  * 
  * Form types are defined in {@link FormNodeType}.
@@ -29,7 +29,7 @@ import org.jivesoftware.smackx.xdata.Form;
 public class FormNode extends NodeExtension
 {
 	private Form configForm;
-	
+
 	/**
 	 * Create a {@link FormNode} which contains the specified form.
 	 * 
@@ -44,7 +44,7 @@ public class FormNode extends NodeExtension
 			throw new IllegalArgumentException("Submit form cannot be null");
 		configForm = submitForm;
 	}
-	
+
 	/**
 	 * Create a {@link FormNode} which contains the specified form, which is 
 	 * associated with the specified node.
@@ -61,7 +61,7 @@ public class FormNode extends NodeExtension
 			throw new IllegalArgumentException("Submit form cannot be null");
 		configForm = submitForm;
 	}
-	
+
 	/**
 	 * Get the Form that is to be sent, or was retrieved from the server.
 	 * 
@@ -71,7 +71,7 @@ public class FormNode extends NodeExtension
 	{
 		return configForm;
 	}
-	
+
 	@Override
 	public CharSequence toXML()
 	{
@@ -83,7 +83,7 @@ public class FormNode extends NodeExtension
 		{
 			StringBuilder builder = new StringBuilder("<");
 			builder.append(getElementName());
-			
+
 			if (getNode() != null)
 			{
 				builder.append(" node='");

@@ -40,7 +40,7 @@ import javax.media.rtp.event.StreamMappedEvent;
 import org.jivesoftware.smackx.jingleold.media.JingleMediaSession;
 
 /**
- * This class implements receive methods and listeners to be used in AudioChannel
+ * This class implements receive methods and listeners to be used in AudioChannel.
  *
  * @author Thiago Camargo
  */
@@ -51,7 +51,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
 
 	boolean dataReceived = false;
 
-    Object dataSync;
+    final Object dataSync;
     JingleMediaSession jingleMediaSession;
 
     public AudioReceiver(final Object dataSync, final JingleMediaSession jingleMediaSession) {
@@ -70,7 +70,7 @@ public class AudioReceiver implements ReceiveStreamListener, SessionListener,
     }
 
     /**
-     * ReceiveStreamListener
+     * ReceiveStreamListener.
      */
     public synchronized void update(ReceiveStreamEvent evt) {
 

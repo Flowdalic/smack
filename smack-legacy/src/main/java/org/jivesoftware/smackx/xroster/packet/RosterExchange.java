@@ -17,10 +17,10 @@
 
 package org.jivesoftware.smackx.xroster.packet;
 
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
-import org.jivesoftware.smack.RosterGroup;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.RosterGroup;
 import org.jivesoftware.smackx.xroster.RemoteRosterEntry;
 import org.jivesoftware.smackx.xroster.RosterExchangeManager;
 
@@ -48,9 +48,9 @@ import java.util.List;
  *
  * @author Gaston Dombiak
  */
-public class RosterExchange implements PacketExtension {
+public class RosterExchange implements ExtensionElement {
 
-    private List<RemoteRosterEntry> remoteRosterEntries = new ArrayList<RemoteRosterEntry>();
+    private final List<RemoteRosterEntry> remoteRosterEntries = new ArrayList<>();
 
     /**
      * Creates a new empty roster exchange package.
@@ -87,9 +87,9 @@ public class RosterExchange implements PacketExtension {
 		groupNames = groupNamesList.toArray(new String[groupNamesList.size()]);
 
         // Create a new Entry based on the rosterEntry and add it to the packet
-        RemoteRosterEntry remoteRosterEntry = new RemoteRosterEntry(rosterEntry.getUser(),
+        RemoteRosterEntry remoteRosterEntry = new RemoteRosterEntry(rosterEntry.getJid(),
                 rosterEntry.getName(), groupNames);
-		
+
         addRosterEntry(remoteRosterEntry);
     }
 
@@ -103,12 +103,12 @@ public class RosterExchange implements PacketExtension {
             remoteRosterEntries.add(remoteRosterEntry);
         }
     }
-    
+
     /**
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "x"
     *
-    * @return the XML element name of the packet extension.
+    * @return the XML element name of the stanza(/packet) extension.
     */
     public String getElementName() {
         return RosterExchangeManager.ELEMENT;
@@ -119,7 +119,7 @@ public class RosterExchange implements PacketExtension {
      * According the specification the namespace is always "jabber:x:roster"
      * (which is not to be confused with the 'jabber:iq:roster' namespace
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     public String getNamespace() {
         return RosterExchangeManager.NAMESPACE;
@@ -165,14 +165,14 @@ public class RosterExchange implements PacketExtension {
      */
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
+        buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");
         // Loop through all roster entries and append them to the string buffer
         for (Iterator<RemoteRosterEntry> i = getRosterEntries(); i.hasNext();) {
             RemoteRosterEntry remoteRosterEntry = i.next();
             buf.append(remoteRosterEntry.toXML());
         }
-        buf.append("</").append(getElementName()).append(">");
+        buf.append("</").append(getElementName()).append('>');
         return buf.toString();
     }
 

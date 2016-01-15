@@ -92,7 +92,7 @@ public class STUNResolver extends TransportResolver {
     }
 
     /**
-     * Set the STUN server name and port
+     * Set the STUN server name and port.
      *
      * @param ip   the STUN server name
      * @param port the STUN server port
@@ -264,8 +264,9 @@ public class STUNResolver extends TransportResolver {
     /**
      * Resolve the IP and obtain a valid transport method.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public synchronized void resolve(JingleSession session) throws XMPPException, NotConnectedException {
+    public synchronized void resolve(JingleSession session) throws XMPPException, NotConnectedException, InterruptedException {
 
         setResolveInit();
 

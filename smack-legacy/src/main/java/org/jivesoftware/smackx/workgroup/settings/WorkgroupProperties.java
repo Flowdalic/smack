@@ -19,9 +19,9 @@ package org.jivesoftware.smackx.workgroup.settings;
 
 import java.io.IOException;
 
-import org.jivesoftware.smackx.workgroup.util.ModelUtil;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.util.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -66,12 +66,12 @@ public class WorkgroupProperties extends IQ {
 
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "workgroup-properties";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -81,7 +81,7 @@ public class WorkgroupProperties extends IQ {
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder buf) {
-        if (ModelUtil.hasLength(getJid())) {
+        if (StringUtils.isNotEmpty(getJid())) {
             buf.append("jid=\"" + getJid() + "\" ");
         }
         buf.setEmptyElement();
@@ -89,7 +89,7 @@ public class WorkgroupProperties extends IQ {
     }
 
     /**
-     * Packet extension provider for SoundSetting Packets.
+     * Stanza(/Packet) extension provider for SoundSetting Packets.
      */
     public static class InternalProvider extends IQProvider<WorkgroupProperties> {
 
