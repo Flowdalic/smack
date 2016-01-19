@@ -60,11 +60,7 @@ public class PacketCollector {
      * all packets will match this collector.
      *
      * @param connection the connection the collector is tied to.
-<<<<<<< HEAD
-     * @param configuraiton the configuration used to construct this collector
-=======
      * @param configuration the configuration used to construct this collector
->>>>>>> master
      */
     protected PacketCollector(XMPPConnection connection, Configuration configuration) {
         this.connection = connection;

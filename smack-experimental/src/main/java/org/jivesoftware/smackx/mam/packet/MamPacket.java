@@ -17,12 +17,11 @@
 package org.jivesoftware.smackx.mam.packet;
 
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.forward.packet.Forwarded;
 import org.jivesoftware.smackx.rsm.packet.RSMSet;
-
 
 /**
  * 
@@ -33,7 +32,7 @@ public class MamPacket {
 
     public static final String NAMESPACE = "urn:xmpp:mam:0";
 
-    public static abstract class AbstractMamExtension implements PacketExtension {
+    public static abstract class AbstractMamExtension implements ExtensionElement {
         public final String queryId;
 
         protected AbstractMamExtension(String queryId) {

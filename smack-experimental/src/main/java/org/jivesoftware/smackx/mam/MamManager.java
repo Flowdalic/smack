@@ -81,7 +81,7 @@ public class MamManager extends Manager {
     }
 
     public MamQueryResult queryArchive(Integer max, Date start, Date end, String withJid) throws NoResponseException,
-                    XMPPErrorException, NotConnectedException {
+                    XMPPErrorException, NotConnectedException, InterruptedException {
         DataForm dataForm = null;
         String queryId = UUID.randomUUID().toString();
         if (start != null || end != null || withJid != null) {
@@ -112,14 +112,14 @@ public class MamManager extends Manager {
     }
 
     public MamQueryResult pageNext(MamQueryResult mamQueryResult, int count) throws NoResponseException,
-                    XMPPErrorException, NotConnectedException {
+                    XMPPErrorException, NotConnectedException, InterruptedException {
         RSMSet previousResultRsmSet = mamQueryResult.mamFin.getRSMSet();
         RSMSet requestRsmSet = new RSMSet(count, previousResultRsmSet.getLast(), RSMSet.PageDirection.after);
         return page(mamQueryResult, requestRsmSet);
     }
 
     public MamQueryResult page(MamQueryResult mamQueryResult, RSMSet rsmSet) throws NoResponseException,
-                    XMPPErrorException, NotConnectedException {
+                    XMPPErrorException, NotConnectedException, InterruptedException {
         MamQueryIQ mamQueryIQ = new MamQueryIQ(UUID.randomUUID().toString(), mamQueryResult.form);
         mamQueryIQ.setType(IQ.Type.set);
         mamQueryIQ.addExtension(rsmSet);
@@ -127,7 +127,7 @@ public class MamManager extends Manager {
     }
 
     private MamQueryResult queryArchive(MamQueryIQ mamQueryIq, long extraTimeout) throws NoResponseException,
-                    XMPPErrorException, NotConnectedException {
+                    XMPPErrorException, NotConnectedException, InterruptedException {
         if (extraTimeout < 0) {
             throw new IllegalArgumentException("extra timeout must be zero or positive");
         }
@@ -135,7 +135,7 @@ public class MamManager extends Manager {
         MamFinExtension mamFinExtension;
         PacketCollector finMessageCollector = connection.createPacketCollector(new MamMessageFinFilter(
                         mamQueryIq));
-        PacketCollector.Configuration resultCollectorConfiguration = PacketCollector.newConfiguration().setPacketFilter(
+        PacketCollector.Configuration resultCollectorConfiguration = PacketCollector.newConfiguration().setStanzaFilter(
                         new MamMessageResultFilter(mamQueryIq)).setCollectorToReset(
                         finMessageCollector);
         PacketCollector resultCollector = connection.createPacketCollector(resultCollectorConfiguration);
@@ -179,7 +179,7 @@ public class MamManager extends Manager {
      * @throws XMPPErrorException
      * @throws NoResponseException
      */
-    public boolean isSupportedByServer() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean isSupportedByServer() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).serverSupportsFeature(MamPacket.NAMESPACE);
     }
 

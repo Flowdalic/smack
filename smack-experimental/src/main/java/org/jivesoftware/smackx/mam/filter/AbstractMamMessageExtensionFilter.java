@@ -16,13 +16,13 @@
  */
 package org.jivesoftware.smackx.mam.filter;
 
-import org.jivesoftware.smack.filter.FlexiblePacketTypeFilter;
+import org.jivesoftware.smack.filter.FlexibleStanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smackx.mam.packet.MamPacket.AbstractMamExtension;
 import org.jivesoftware.smackx.mam.packet.MamQueryIQ;
 
 public abstract class AbstractMamMessageExtensionFilter extends
-        FlexiblePacketTypeFilter<Message> {
+        FlexibleStanzaTypeFilter<Message> {
 
     private final String queryId;
 
