@@ -497,7 +497,7 @@ public class PacketParserUtils {
                 CharSequence text = parser.getText();
                 if (event == XmlPullParser.TEXT) {
                     // TODO the toString() can be removed in Smack 4.2.
-                    text = StringUtils.escapeForXML(text.toString());
+                    text = StringUtils.escapeForXmlText(text.toString());
                 }
                 sb.append(text);
             }
@@ -578,9 +578,8 @@ public class PacketParserUtils {
                     try {
                         PacketParserUtils.addExtensionElement(presence, parser, elementName, namespace);
                     } catch (Exception e) {
-                        LOGGER.log(Level.WARNING,
-                                        "Failed to parse extension packet in Presence packet. Attributes: from="
-                                                        + presence.getFrom() + " id=" + presence.getStanzaId(), e);
+                        LOGGER.warning("Failed to parse extension element in Presence stanza: \"" + e + "\" from: '"
+                                        + presence.getFrom() + " id: '" + presence.getStanzaId() + "'");
                     }
                     break;
                 }
