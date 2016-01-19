@@ -16,16 +16,12 @@
  */
 package org.jivesoftware.smackx.hoxt.provider;
 
-import java.io.IOException;
-
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.hoxt.packet.HttpMethod;
 import org.jivesoftware.smackx.hoxt.packet.HttpOverXmppReq;
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Req packet provider.
+ * Req stanza(/packet) provider.
  *
  * @author Andriy Tsykholyas
  * @see <a href="http://xmpp.org/extensions/xep-0332.html">XEP-0332: HTTP over XMPP transport</a>
@@ -37,45 +33,36 @@ public class HttpOverXmppReqProvider extends AbstractHttpOverXmppProvider<HttpOv
     private static final String ATTRIBUTE_MAX_CHUNK_SIZE = "maxChunkSize";
 
     @Override
-    public HttpOverXmppReq parse(XmlPullParser parser, int initialDepth)
-                    throws XmlPullParserException, IOException, SmackException {
+    public HttpOverXmppReq parse(XmlPullParser parser, int initialDepth) throws Exception {
+        HttpOverXmppReq.Builder builder = HttpOverXmppReq.builder();
+        builder.setResource(parser.getAttributeValue("", ATTRIBUTE_RESOURCE));
+        builder.setVersion(parser.getAttributeValue("", ATTRIBUTE_VERSION));
+
         String method = parser.getAttributeValue("", ATTRIBUTE_METHOD);
-        String resource = parser.getAttributeValue("", ATTRIBUTE_RESOURCE);
-        String version = parser.getAttributeValue("", ATTRIBUTE_VERSION);
-        String maxChunkSize = parser.getAttributeValue("", ATTRIBUTE_MAX_CHUNK_SIZE);
-
-        HttpMethod reqMethod = HttpMethod.valueOf(method);
-        HttpOverXmppReq req = new HttpOverXmppReq(reqMethod, resource);
-        req.setVersion(version);
-
-        Boolean sipub = true;
-        Boolean jingle = true;
-        Boolean ibb = true;
+        builder.setMethod(HttpMethod.valueOf(method));
 
         String sipubStr = parser.getAttributeValue("", AbstractHttpOverXmppProvider.ELEMENT_SIPUB);
         String ibbStr = parser.getAttributeValue("", AbstractHttpOverXmppProvider.ELEMENT_IBB);
         String jingleStr = parser.getAttributeValue("", AbstractHttpOverXmppProvider.ELEMENT_JINGLE);
 
         if (sipubStr != null) {
-            sipub = Boolean.valueOf(sipubStr);
+            builder.setSipub(Boolean.valueOf(sipubStr));
         }
         if (ibbStr != null) {
-            ibb = Boolean.valueOf(ibbStr);
+            builder.setIbb(Boolean.valueOf(ibbStr));
         }
         if (jingleStr != null) {
-            jingle = Boolean.valueOf(jingleStr);
+            builder.setJingle(Boolean.valueOf(jingleStr));
         }
 
-        req.setIbb(ibb);
-        req.setSipub(sipub);
-        req.setJingle(jingle);
-
+        String maxChunkSize = parser.getAttributeValue("", ATTRIBUTE_MAX_CHUNK_SIZE);
         if (maxChunkSize != null) {
-            int maxChunkSizeValue = Integer.parseInt(maxChunkSize);
-            req.setMaxChunkSize(maxChunkSizeValue);
+            builder.setMaxChunkSize(Integer.parseInt(maxChunkSize));
         }
 
-        parseHeadersAndData(parser, HttpOverXmppReq.ELEMENT, req);
-        return req;
+        builder.setHeaders(parseHeaders(parser));
+        builder.setData(parseData(parser));
+
+        return builder.build();
     }
 }

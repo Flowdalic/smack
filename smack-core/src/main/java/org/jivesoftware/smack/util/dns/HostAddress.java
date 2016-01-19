@@ -16,12 +16,20 @@
  */
 package org.jivesoftware.smack.util.dns;
 
+import java.net.InetAddress;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jivesoftware.smack.SmackException.ConnectionException;
+import org.jivesoftware.smack.util.Objects;
 
 public class HostAddress {
     private final String fqdn;
     private final int port;
-    private Exception exception;
+    private final Map<InetAddress, Exception> exceptions = new LinkedHashMap<>();
 
     /**
      * Creates a new HostAddress with the given FQDN. The port will be set to the default XMPP client port: 5222
@@ -42,8 +50,7 @@ public class HostAddress {
      * @throws IllegalArgumentException If the fqdn is null or port is out of valid range (0 - 65535).
      */
     public HostAddress(String fqdn, int port) {
-        if (fqdn == null)
-            throw new IllegalArgumentException("FQDN is null");
+        Objects.requireNonNull(fqdn, "FQDN is null");
         if (port < 0 || port > 65535)
             throw new IllegalArgumentException(
                     "Port must be a 16-bit unsiged integer (i.e. between 0-65535. Port was: " + port);
@@ -64,8 +71,13 @@ public class HostAddress {
         return port;
     }
 
-    public void setException(Exception e) {
-        this.exception = e;
+    public void setException(Exception exception) {
+        setException(null, exception);
+    }
+
+    public void setException(InetAddress inetAddress, Exception exception) {
+        Exception old = exceptions.put(inetAddress, exception);
+        assert(old == null);
     }
 
     /**
@@ -75,8 +87,8 @@ public class HostAddress {
      * 
      * @return the Exception causing this HostAddress to fail
      */
-    public Exception getException() {
-        return this.exception;
+    public Map<InetAddress, Exception> getExceptions() {
+        return Collections.unmodifiableMap(exceptions);
     }
 
     @Override
@@ -109,13 +121,24 @@ public class HostAddress {
     }
 
     public String getErrorMessage() {
-        String error;
-        if (exception == null) {
-            error = "No error logged";
+        if (exceptions.isEmpty()) {
+            return "No error logged";
         }
-        else {
-            error = exception.getMessage();
+        StringBuilder sb = new StringBuilder();
+        sb.append('\'').append(toString()).append("' failed because: ");
+        Iterator<Entry<InetAddress, Exception>> iterator = exceptions.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<InetAddress, Exception> entry = iterator.next();
+            InetAddress inetAddress = entry.getKey();
+            if (inetAddress != null) {
+                sb.append(entry.getKey()).append(" exception: ");
+            }
+            sb.append(entry.getValue());
+            if (iterator.hasNext()) {
+                sb.append(", ");
+            }
         }
-        return toString() + " Exception: " + error;
+
+        return sb.toString();
     }
 }

@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smackx.amp;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.amp.packet.AMPExtension;
 import org.jivesoftware.smackx.amp.provider.AMPExtensionProvider;
 import org.junit.Before;
@@ -37,7 +37,7 @@ public class AMPExtensionTest {
     private InputStream INCORRECT_RECEIVING_STANZA_STREAM;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() {
         CORRECT_SENDING_STANZA_STREAM = getClass().getResourceAsStream("correct_stanza_test.xml");
         INCORRECT_RECEIVING_STANZA_STREAM = getClass().getResourceAsStream("incorrect_stanza_test.xml");
     }
@@ -70,7 +70,7 @@ public class AMPExtensionTest {
         assertEquals(XmlPullParser.START_TAG, parser.next());
         assertEquals(AMPExtension.ELEMENT, parser.getName());
 
-        PacketExtension extension = ampProvider.parse(parser);
+        ExtensionElement extension = ampProvider.parse(parser);
         assertTrue(extension instanceof AMPExtension);
         AMPExtension amp = (AMPExtension) extension;
 
@@ -89,7 +89,7 @@ public class AMPExtensionTest {
 
         assertEquals(XmlPullParser.START_TAG, parser.next());
         assertEquals(AMPExtension.ELEMENT, parser.getName());
-        PacketExtension extension = ampProvider.parse(parser);
+        ExtensionElement extension = ampProvider.parse(parser);
         assertTrue(extension instanceof AMPExtension);
         AMPExtension amp = (AMPExtension) extension;
 
@@ -97,7 +97,7 @@ public class AMPExtensionTest {
     }
 
 
-    private String toString(InputStream stream) throws IOException {
+    private static String toString(InputStream stream) throws IOException {
         byte[] data = new byte[stream.available()];
         stream.read(data);
         stream.close();

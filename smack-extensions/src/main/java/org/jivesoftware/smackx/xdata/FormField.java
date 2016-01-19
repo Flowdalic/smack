@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.jivesoftware.smack.packet.NamedElement;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
 
@@ -31,12 +33,12 @@ import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement;
  *
  * @author Gaston Dombiak
  */
-public class FormField {
+public class FormField implements NamedElement {
 
     public static final String ELEMENT = "field";
 
     /**
-     * The constant String "FORM_TYPE"
+     * The constant String "FORM_TYPE".
      */
     public static final String FORM_TYPE = "FORM_TYPE";
 
@@ -57,17 +59,17 @@ public class FormField {
         bool,
 
         /**
-         * Fixed for putting in text to show sections, or just advertise your web site in the middle of the form
+         * Fixed for putting in text to show sections, or just advertise your web site in the middle of the form.
          */
         fixed,
 
         /**
-         * Is not given to the user at all, but returned with the questionnaire
+         * Is not given to the user at all, but returned with the questionnaire.
          */
         hidden,
 
         /**
-         * multiple entries for JIDs
+         * multiple entries for JIDs.
          */
         jid_multi,
 
@@ -112,7 +114,16 @@ public class FormField {
             }
         }
 
+        /**
+         * Get a form field type from the given string. If <code>string</code> is null, then null will be returned.
+         *
+         * @param string the string to transform or null.
+         * @return the type or null.
+         */
         public static Type fromString(String string) {
+            if (string == null) {
+                return null;
+            }
             switch (string) {
             case "boolean":
                 return bool;
@@ -140,7 +151,7 @@ public class FormField {
      * @param variable the variable name of the question.
      */
     public FormField(String variable) {
-        this.variable = variable;
+        this.variable = StringUtils.requireNotNullOrEmpty(variable, "Variable must not be null or empty");
     }
 
     /**
@@ -148,16 +159,17 @@ public class FormField {
      * name.
      */
     public FormField() {
-        this(null);
+        this.variable = null;
         this.type = Type.fixed;
     }
 
     /**
      * Returns a description that provides extra clarification about the question. This information
      * could be presented to the user either in tool-tip, help button, or as a section of text
-     * before the question.<p>
-     * <p/>
+     * before the question.
+     * <p>
      * If the question is of type FIXED then the description should remain empty.
+     * </p>
      *
      * @return description that provides extra clarification about the question.
      */
@@ -234,6 +246,8 @@ public class FormField {
     }
 
     /**
+     * Get validate element.
+     *
      * @return the validateElement
      */
     public ValidateElement getValidateElement() {
@@ -243,9 +257,10 @@ public class FormField {
     /**
      * Sets a description that provides extra clarification about the question. This information
      * could be presented to the user either in tool-tip, help button, or as a section of text
-     * before the question.<p>
-     * <p/>
+     * before the question.
+     * <p>
      * If the question is of type FIXED then the description should remain empty.
+     * </p>
      *
      * @param description provides extra clarification about the question.
      */
@@ -273,6 +288,7 @@ public class FormField {
     }
 
     /**
+     * Set validate element.
      * @param validateElement the validateElement to set
      */
     public void setValidateElement(ValidateElement validateElement) {
@@ -343,9 +359,13 @@ public class FormField {
         }
     }
 
+    @Override
+    public String getElementName() {
+        return ELEMENT;
+    }
+
     public XmlStringBuilder toXML() {
-        XmlStringBuilder buf = new XmlStringBuilder();
-        buf.halfOpenElement(ELEMENT);
+        XmlStringBuilder buf = new XmlStringBuilder(this);
         // Add attributes
         buf.optAttribute("label", getLabel());
         buf.optAttribute("var", getVariable());
@@ -363,7 +383,7 @@ public class FormField {
             buf.append(option.toXML());
         }
         buf.optElement(validateElement);
-        buf.closeElement(ELEMENT);
+        buf.closeElement(this);
         return buf;
     }
 
@@ -391,7 +411,7 @@ public class FormField {
      *
      * @author Gaston Dombiak
      */
-    public static class Option {
+    public static class Option implements NamedElement {
 
         public static final String ELEMENT = "option";
 
@@ -430,9 +450,13 @@ public class FormField {
             return getLabel();
         }
 
+        @Override
+        public String getElementName() {
+            return ELEMENT;
+        }
+
         public XmlStringBuilder toXML() {
-            XmlStringBuilder xml = new XmlStringBuilder();
-            xml.halfOpenElement(ELEMENT);
+            XmlStringBuilder xml = new XmlStringBuilder(this);
             // Add attribute
             xml.optAttribute("label", getLabel());
             xml.rightAngleBracket();
@@ -440,7 +464,7 @@ public class FormField {
             // Add element
             xml.element("value", getValue());
 
-            xml.closeElement(ELEMENT);
+            xml.closeElement(this);
             return xml;
         }
 

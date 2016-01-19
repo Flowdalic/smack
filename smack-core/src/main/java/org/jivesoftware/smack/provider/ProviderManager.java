@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jxmpp.util.XmppStringUtils;
 
@@ -64,7 +64,7 @@ import org.jxmpp.util.XmppStringUtils;
  * interface, or extend the IQ class. In the former case, each IQProvider is responsible for
  * parsing the raw XML stream to create an IQ instance. In the latter case, bean introspection
  * is used to try to automatically set properties of the IQ instance using the values found
- * in the IQ packet XML. For example, an XMPP time packet resembles the following:
+ * in the IQ stanza(/packet) XML. For example, an XMPP time stanza(/packet) resembles the following:
  * <pre>
  * &lt;iq type='result' to='joe@example.com' from='mary@example.com' id='time_1'&gt;
  *     &lt;query xmlns='jabber:iq:time'&gt;
@@ -74,13 +74,13 @@ import org.jxmpp.util.XmppStringUtils;
  *     &lt;/query&gt;
  * &lt;/iq&gt;</pre>
  *
- * In order for this packet to be automatically mapped to the Time object listed in the
+ * In order for this stanza(/packet) to be automatically mapped to the Time object listed in the
  * providers file above, it must have the methods setUtc(String), setTz(String), and
  * setDisplay(String). The introspection service will automatically try to convert the String
  * value from the XML into a boolean, int, long, float, double, or Class depending on the
  * type the IQ instance expects.<p>
  *
- * A pluggable system for packet extensions, child elements in a custom namespace for
+ * A pluggable system for stanza(/packet) extensions, child elements in a custom namespace for
  * message and presence packets, also exists. Each extension provider
  * is registered with a name space in the smack.providers file as in the following example:
  *
@@ -95,12 +95,12 @@ import org.jxmpp.util.XmppStringUtils;
  * &lt;/smackProviders&gt;</pre>
  *
  * If multiple provider entries attempt to register to handle the same element name and namespace,
- * the first entry loaded from the classpath will take precedence. Whenever a packet extension
+ * the first entry loaded from the classpath will take precedence. Whenever a stanza(/packet) extension
  * is found in a packet, parsing will be passed to the correct provider. Each provider
  * can either implement the PacketExtensionProvider interface or be a standard Java Bean. In
  * the former case, each extension provider is responsible for parsing the raw XML stream to
  * contruct an object. In the latter case, bean introspection is used to try to automatically
- * set the properties of th class using the values in the packet extension sub-element. When an
+ * set the properties of th class using the values in the stanza(/packet) extension sub-element. When an
  * extension provider is not registered for an element name and namespace combination, Smack will
  * store all top-level elements of the sub-packet in DefaultPacketExtension object and then
  * attach it to the packet.<p>
@@ -109,9 +109,9 @@ import org.jxmpp.util.XmppStringUtils;
  */
 public final class ProviderManager {
 
-    private static final Map<String, PacketExtensionProvider<PacketExtension>> extensionProviders = new ConcurrentHashMap<String, PacketExtensionProvider<PacketExtension>>();
+    private static final Map<String, ExtensionElementProvider<ExtensionElement>> extensionProviders = new ConcurrentHashMap<String, ExtensionElementProvider<ExtensionElement>>();
     private static final Map<String, IQProvider<IQ>> iqProviders = new ConcurrentHashMap<String, IQProvider<IQ>>();
-    private static final Map<String, PacketExtensionProvider<PacketExtension>> streamFeatureProviders = new ConcurrentHashMap<String, PacketExtensionProvider<PacketExtension>>();
+    private static final Map<String, ExtensionElementProvider<ExtensionElement>> streamFeatureProviders = new ConcurrentHashMap<String, ExtensionElementProvider<ExtensionElement>>();
 
     static {
         // Ensure that Smack is initialized by calling getVersion, so that user
@@ -128,7 +128,7 @@ public final class ProviderManager {
                 addIQProvider(info.getElementName(), info.getNamespace(), info.getProvider());
             }
         }
-        
+
         if (loader.getExtensionProviderInfo() != null) {
             for (ExtensionProviderInfo info : loader.getExtensionProviderInfo()) {
                 addExtensionProvider(info.getElementName(), info.getNamespace(), info.getProvider());
@@ -138,15 +138,15 @@ public final class ProviderManager {
         if (loader.getStreamFeatureProviderInfo() != null) {
             for (StreamFeatureProviderInfo info : loader.getStreamFeatureProviderInfo()) {
                 addStreamFeatureProvider(info.getElementName(), info.getNamespace(),
-                                (PacketExtensionProvider<PacketExtension>) info.getProvider());
+                                (ExtensionElementProvider<ExtensionElement>) info.getProvider());
             }
         }
     }
-    
+
     /**
      * Returns the IQ provider registered to the specified XML element name and namespace.
      * For example, if a provider was registered to the element name "query" and the
-     * namespace "jabber:iq:time", then the following packet would trigger the provider:
+     * namespace "jabber:iq:time", then the following stanza(/packet) would trigger the provider:
      *
      * <pre>
      * &lt;iq type='result' to='joe@example.com' from='mary@example.com' id='time_1'&gt;
@@ -220,9 +220,9 @@ public final class ProviderManager {
     }
 
     /**
-     * Returns the packet extension provider registered to the specified XML element name
+     * Returns the stanza(/packet) extension provider registered to the specified XML element name
      * and namespace. For example, if a provider was registered to the element name "x" and the
-     * namespace "jabber:x:event", then the following packet would trigger the provider:
+     * namespace "jabber:x:event", then the following stanza(/packet) would trigger the provider:
      *
      * <pre>
      * &lt;message to='romeo@montague.net' id='message_1'&gt;
@@ -238,7 +238,7 @@ public final class ProviderManager {
      * @param namespace namespace associated with extension provider.
      * @return the extenion provider.
      */
-    public static PacketExtensionProvider<PacketExtension> getExtensionProvider(String elementName, String namespace) {
+    public static ExtensionElementProvider<ExtensionElement> getExtensionProvider(String elementName, String namespace) {
         String key = getKey(elementName, namespace);
         return extensionProviders.get(key);
     }
@@ -259,8 +259,8 @@ public final class ProviderManager {
         validate(elementName, namespace);
         // First remove existing providers
         String key = removeExtensionProvider(elementName, namespace);
-        if (provider instanceof PacketExtensionProvider) {
-            extensionProviders.put(key, (PacketExtensionProvider<PacketExtension>) provider);
+        if (provider instanceof ExtensionElementProvider) {
+            extensionProviders.put(key, (ExtensionElementProvider<ExtensionElement>) provider);
         } else {
             throw new IllegalArgumentException("Provider must be a PacketExtensionProvider");
         }
@@ -273,7 +273,7 @@ public final class ProviderManager {
      *
      * @param elementName the XML element name.
      * @param namespace the XML namespace.
-     * @return the key of the removed packet extension provider
+     * @return the key of the removed stanza(/packet) extension provider
      */
     public static String removeExtensionProvider(String elementName, String namespace) {
         String key = getKey(elementName, namespace);
@@ -288,18 +288,18 @@ public final class ProviderManager {
      *
      * @return all PacketExtensionProvider instances.
      */
-    public static List<PacketExtensionProvider<PacketExtension>> getExtensionProviders() {
-        List<PacketExtensionProvider<PacketExtension>> providers = new ArrayList<>(extensionProviders.size());
+    public static List<ExtensionElementProvider<ExtensionElement>> getExtensionProviders() {
+        List<ExtensionElementProvider<ExtensionElement>> providers = new ArrayList<>(extensionProviders.size());
         providers.addAll(extensionProviders.values());
         return providers;
     }
 
-    public static PacketExtensionProvider<PacketExtension> getStreamFeatureProvider(String elementName, String namespace) {
+    public static ExtensionElementProvider<ExtensionElement> getStreamFeatureProvider(String elementName, String namespace) {
         String key = getKey(elementName, namespace);
         return streamFeatureProviders.get(key);
     }
 
-    public static void addStreamFeatureProvider(String elementName, String namespace, PacketExtensionProvider<PacketExtension> provider) {
+    public static void addStreamFeatureProvider(String elementName, String namespace, ExtensionElementProvider<ExtensionElement> provider) {
         validate(elementName, namespace);
         String key = getKey(elementName, namespace);
         streamFeatureProviders.put(key, provider);

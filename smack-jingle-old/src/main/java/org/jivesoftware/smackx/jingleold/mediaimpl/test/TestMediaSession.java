@@ -29,7 +29,7 @@ import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 public class TestMediaSession extends JingleMediaSession {
 
      /**
-     * Creates a TestMediaSession with defined payload type, remote and local candidates
+     * Creates a TestMediaSession with defined payload type, remote and local candidates.
      *
      * @param payloadType Payload of the jmf
      * @param remote      the remote information. The candidate that the jmf will be sent to.
@@ -53,7 +53,7 @@ public class TestMediaSession extends JingleMediaSession {
      * Starts transmission and for NAT Traversal reasons start receiving also.
      */
     public void startTrasmit() {
-        
+
     }
 
     /**
@@ -63,7 +63,7 @@ public class TestMediaSession extends JingleMediaSession {
      * @param active active state
      */
     public void setTrasmit(boolean active) {
-        
+
     }
 
     /**
@@ -77,13 +77,13 @@ public class TestMediaSession extends JingleMediaSession {
      * Stops transmission and for NAT Traversal reasons stop receiving also.
      */
     public void stopTrasmit() {
-       
+
     }
 
     /**
      * For NAT Reasons this method does nothing. Use startTransmit() to start transmit and receive jmf
      */
     public void stopReceive() {
-       
+
     }
 }

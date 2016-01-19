@@ -21,6 +21,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.security.GeneralSecurityException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.media.NoProcessorException;
@@ -56,7 +57,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
 	private MediaSession mediaSession;
 
     /**
-     * Create a Session using Speex Codec
+     * Create a Session using Speex Codec.
      *
      * @param localhost    localHost
      * @param localPort    localPort
@@ -95,7 +96,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
 
 
     /**
-     * Creates a org.jivesoftware.jingleaudio.jspeex.AudioMediaSession with defined payload type, remote and local candidates
+     * Creates a org.jivesoftware.jingleaudio.jspeex.AudioMediaSession with defined payload type, remote and local candidates.
      *
      * @param payloadType Payload of the jmf
      * @param remote      the remote information. The candidate that the jmf will be sent to.
@@ -109,7 +110,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
     }
 
     /**
-     * Initialize the Audio Channel to make it able to send and receive audio
+     * Initialize the Audio Channel to make it able to send and receive audio.
      */
     public void initialize() {
 
@@ -138,16 +139,16 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
             mediaSession = createSession(localIp, localPort, ip, remotePort, this, 2, false, true);
         }
         catch (NoProcessorException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         catch (UnsupportedFormatException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         catch (GeneralSecurityException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
     }
 
@@ -161,7 +162,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
             this.mediaReceived("");
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
     }
 
@@ -225,7 +226,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
                 return freePort;
             }
             catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
         }
         try {
@@ -234,7 +235,7 @@ public class AudioMediaSession extends JingleMediaSession implements MediaSessio
             ss.close();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         return freePort;
     }

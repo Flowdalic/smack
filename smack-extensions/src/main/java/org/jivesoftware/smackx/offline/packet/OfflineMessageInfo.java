@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.offline.packet;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -32,7 +32,7 @@ import org.xmlpull.v1.XmlPullParserException;
  *
  * @author Gaston Dombiak
  */
-public class OfflineMessageInfo implements PacketExtension {
+public class OfflineMessageInfo implements ExtensionElement {
 
     private String node = null;
 
@@ -40,7 +40,7 @@ public class OfflineMessageInfo implements PacketExtension {
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "offline"
     *
-    * @return the XML element name of the packet extension.
+    * @return the XML element name of the stanza(/packet) extension.
     */
     public String getElementName() {
         return "offline";
@@ -50,7 +50,7 @@ public class OfflineMessageInfo implements PacketExtension {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "http://jabber.org/protocol/offline"
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     public String getNamespace() {
         return "http://jabber.org/protocol/offline";
@@ -80,18 +80,18 @@ public class OfflineMessageInfo implements PacketExtension {
 
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
+        buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");
         if (getNode() != null)
             buf.append("<item node=\"").append(getNode()).append("\"/>");
-        buf.append("</").append(getElementName()).append(">");
+        buf.append("</").append(getElementName()).append('>');
         return buf.toString();
     }
 
-    public static class Provider extends PacketExtensionProvider<OfflineMessageInfo> {
+    public static class Provider extends ExtensionElementProvider<OfflineMessageInfo> {
 
         /**
-         * Parses a OfflineMessageInfo packet (extension sub-packet).
+         * Parses a OfflineMessageInfo stanza(/packet) (extension sub-packet).
          *
          * @param parser the XML parser, positioned at the starting element of the extension.
          * @return a PacketExtension.

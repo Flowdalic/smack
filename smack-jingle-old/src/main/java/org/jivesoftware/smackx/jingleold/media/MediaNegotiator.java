@@ -95,16 +95,17 @@ public class MediaNegotiator extends JingleNegotiator {
 
     /**
      * Dispatch an incoming packet. The method is responsible for recognizing
-     * the packet type and, depending on the current state, delivering the
-     * packet to the right event handler and wait for a response.
+     * the stanza(/packet) type and, depending on the current state, delivering the
+     * stanza(/packet) to the right event handler and wait for a response.
      * 
      * @param iq
-     *            the packet received
-     * @return the new Jingle packet to send.
+     *            the stanza(/packet) received
+     * @return the new Jingle stanza(/packet) to send.
      * @throws XMPPException
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, NotConnectedException {
+    public List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, NotConnectedException, InterruptedException {
         List<IQ> responses = new ArrayList<IQ>();
         IQ response = null;
 
@@ -116,9 +117,9 @@ public class MediaNegotiator extends JingleNegotiator {
             throw new JingleException(iq.getError().getDescriptiveText());
         } else if (iq.getType().equals(IQ.Type.result)) {
             // Process ACKs
-            if (isExpectedId(iq.getPacketID())) {
+            if (isExpectedId(iq.getStanzaId())) {
                 receiveResult(iq);
-                removeExpectedId(iq.getPacketID());
+                removeExpectedId(iq.getStanzaId());
             }
         } else if (iq instanceof Jingle) {
             Jingle jingle = (Jingle) iq;
@@ -165,7 +166,7 @@ public class MediaNegotiator extends JingleNegotiator {
         }
 
         if (response != null) {
-            addExpectedId(response.getPacketID());
+            addExpectedId(response.getStanzaId());
             responses.add(response);
         }
 
@@ -202,8 +203,9 @@ public class MediaNegotiator extends JingleNegotiator {
       *  @param jingle
       *  @return the iq
      * @throws NotConnectedException 
+     * @throws InterruptedException 
       */
-    private IQ receiveContentAcceptAction(Jingle jingle, JingleDescription description) throws XMPPException, NotConnectedException {
+    private IQ receiveContentAcceptAction(Jingle jingle, JingleDescription description) throws XMPPException, NotConnectedException, InterruptedException {
         IQ response = null;
         List<PayloadType> offeredPayloads = new ArrayList<PayloadType>();
 
@@ -211,10 +213,10 @@ public class MediaNegotiator extends JingleNegotiator {
         bestCommonAudioPt = calculateBestCommonAudioPt(offeredPayloads);
 
         if (bestCommonAudioPt == null) {
-            
+
             setNegotiatorState(JingleNegotiatorState.FAILED);
             response = session.createJingleError(jingle, JingleError.NEGOTIATION_ERROR);
-            
+
         } else {
 
             setNegotiatorState(JingleNegotiatorState.SUCCEEDED);
@@ -240,7 +242,7 @@ public class MediaNegotiator extends JingleNegotiator {
 
         offeredPayloads = description.getAudioPayloadTypesList();
         bestCommonAudioPt = calculateBestCommonAudioPt(offeredPayloads);
-        
+
         synchronized (remoteAudioPts) {
             remoteAudioPts.addAll(offeredPayloads);
         }
@@ -477,8 +479,9 @@ public class MediaNegotiator extends JingleNegotiator {
      * @param bestPt
      *            payload type that has been agreed.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    protected void triggerMediaEstablished(PayloadType bestPt) throws NotConnectedException {
+    protected void triggerMediaEstablished(PayloadType bestPt) throws NotConnectedException, InterruptedException {
         List<JingleListener> listeners = getListenersList();
         for (JingleListener li : listeners) {
             if (li instanceof JingleMediaListener) {
@@ -512,7 +515,7 @@ public class MediaNegotiator extends JingleNegotiator {
     }
 
     /**
-     * Terminate the jmf negotiator
+     * Terminate the jmf negotiator.
      */
     public void close() {
         super.close();

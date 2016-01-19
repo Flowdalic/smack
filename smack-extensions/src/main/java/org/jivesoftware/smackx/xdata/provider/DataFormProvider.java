@@ -17,10 +17,9 @@
 
 package org.jivesoftware.smackx.xdata.provider;
 
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.RosterPacket;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
-import org.jivesoftware.smack.provider.RosterPacketProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
+import org.jivesoftware.smack.roster.packet.RosterPacket;
+import org.jivesoftware.smack.roster.provider.RosterPacketProvider;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.jivesoftware.smackx.xdatalayout.packet.DataLayout;
@@ -39,11 +38,11 @@ import java.util.List;
  * 
  * @author Gaston Dombiak
  */
-public class DataFormProvider extends PacketExtensionProvider<DataForm> {
+public class DataFormProvider extends ExtensionElementProvider<DataForm> {
 
     @Override
-    public DataForm parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException,
-                    SmackException {
+    public DataForm parse(XmlPullParser parser, int initialDepth) throws
+                    Exception {
         DataForm.Type dataFormType = DataForm.Type.fromString(parser.getAttributeValue("", "type"));
         DataForm dataForm = new DataForm(dataFormType);
         outerloop: while (true) {
@@ -92,14 +91,20 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
         return dataForm;
     }
 
-    private FormField parseField(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static FormField parseField(XmlPullParser parser) throws XmlPullParserException, IOException {
         final int initialDepth = parser.getDepth();
-        FormField formField = new FormField(parser.getAttributeValue("", "var"));
-        formField.setLabel(parser.getAttributeValue("", "label"));
-        String typeString = parser.getAttributeValue("", "type");
-        if (typeString != null) {
-            formField.setType(FormField.Type.fromString(typeString));
+        final String var = parser.getAttributeValue("", "var");
+        final FormField.Type type = FormField.Type.fromString(parser.getAttributeValue("", "type"));
+
+        final FormField formField;
+        if (type == FormField.Type.fixed) {
+            formField = new FormField();
+        } else {
+            formField = new FormField(var);
+            formField.setType(type);
         }
+        formField.setLabel(parser.getAttributeValue("", "label"));
+
         outerloop: while (true) {
             int eventType = parser.next();
             switch (eventType) {
@@ -126,6 +131,7 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
                     }
                     break;
                 }
+                break;
             case XmlPullParser.END_TAG:
                 if (parser.getDepth() == initialDepth) {
                     break outerloop;
@@ -136,7 +142,7 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
         return formField;
     }
 
-    private DataForm.Item parseItem(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static DataForm.Item parseItem(XmlPullParser parser) throws XmlPullParserException, IOException {
         final int initialDepth = parser.getDepth();
         List<FormField> fields = new ArrayList<FormField>();
         outerloop: while (true) {
@@ -160,7 +166,7 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
         return new DataForm.Item(fields);
     }
 
-    private DataForm.ReportedData parseReported(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static DataForm.ReportedData parseReported(XmlPullParser parser) throws XmlPullParserException, IOException {
         final int initialDepth = parser.getDepth();
         List<FormField> fields = new ArrayList<FormField>();
         outerloop: while (true) {
@@ -184,7 +190,7 @@ public class DataFormProvider extends PacketExtensionProvider<DataForm> {
         return new DataForm.ReportedData(fields);
     }
 
-    private FormField.Option parseOption(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static FormField.Option parseOption(XmlPullParser parser) throws XmlPullParserException, IOException {
         final int initialDepth = parser.getDepth();
         FormField.Option option = null;
         String label = parser.getAttributeValue("", "label");

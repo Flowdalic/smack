@@ -38,13 +38,13 @@ public class ReflectionDebuggerFactory implements SmackDebuggerFactory {
     private static final String[] DEFAULT_DEBUGGERS = new String[] {
             "org.jivesoftware.smackx.debugger.EnhancedDebugger",
             "org.jivesoftware.smackx.debugger.android.AndroidDebugger",
-            "org.jivesoftware.smack.debugger.JulDebugger",
+            "org.jivesoftware.smack.debugger.ConsoleDebugger",
             "org.jivesoftware.smack.debugger.LiteDebugger",
-            "org.jivesoftware.smack.debugger.ConsoleDebugger" };
-
+            "org.jivesoftware.smack.debugger.JulDebugger",
+            };
 
     /**
-     * Sets custom debugger class to be created by this factory
+     * Sets custom debugger class to be created by this factory.
      * @param debuggerClass class to be used by this factory
      */
     public static void setDebuggerClass(Class<? extends SmackDebugger> debuggerClass) {
@@ -56,7 +56,7 @@ public class ReflectionDebuggerFactory implements SmackDebuggerFactory {
     }
 
     /**
-     * Returns debugger class used by this factory
+     * Returns debugger class used by this factory.
      * @return debugger class that will be used for instantiation by this factory
      */
     @SuppressWarnings("unchecked")

@@ -18,12 +18,12 @@ package org.jivesoftware.smackx.delay;
 
 import java.util.Date;
 
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
 
 /**
- * Delayed Delivery (XEP-203)
+ * Delayed Delivery (XEP-203).
  *
  * @author Florian Schmaus
  * @see <a href="http://xmpp.org/extensions/xep-0203.html">Delayed Delivery (XEP-203)</a>
@@ -38,24 +38,24 @@ public class DelayInformationManager {
     /**
      * Get Delayed Delivery information as defined in XEP-203
      * <p>
-     * Prefer {@link #getDelayInformation(Packet)} over this method for backwards compatibility.
+     * Prefer {@link #getDelayInformation(Stanza)} over this method for backwards compatibility.
      * </p>
      * @param packet
      * @return the Delayed Delivery information or <code>null</code>
      */
-    public static DelayInformation getXep203DelayInformation(Packet packet) {
+    public static DelayInformation getXep203DelayInformation(Stanza packet) {
         return DelayInformation.from(packet);
     }
 
     /**
      * Get Delayed Delivery information as defined in XEP-91
      * <p>
-     * Prefer {@link #getDelayInformation(Packet)} over this method for backwards compatibility.
+     * Prefer {@link #getDelayInformation(Stanza)} over this method for backwards compatibility.
      * </p>
      * @param packet
      * @return the Delayed Delivery information or <code>null</code>
      */
-    public static DelayInformation getLegacyDelayInformation(Packet packet) {
+    public static DelayInformation getLegacyDelayInformation(Stanza packet) {
         return packet.getExtension(LEGACY_DELAYED_DELIVERY_ELEMENT, LEGACY_DELAYED_DELIVERY_NAMESPACE);
     }
 
@@ -66,7 +66,7 @@ public class DelayInformationManager {
      * @param packet
      * @return the Delayed Delivery information or <code>null</code>
      */
-    public static DelayInformation getDelayInformation(Packet packet) {
+    public static DelayInformation getDelayInformation(Stanza packet) {
         DelayInformation delayInformation = getXep203DelayInformation(packet);
         if (delayInformation != null) {
             return delayInformation;
@@ -75,12 +75,12 @@ public class DelayInformationManager {
     }
 
     /**
-     * Get the Delayed Delivery timestamp or <code>null</code>
+     * Get the Delayed Delivery timestamp or <code>null</code>.
      *
      * @param packet
      * @return the Delayed Delivery timestamp or <code>null</code>
      */
-    public static Date getDelayTimestamp(Packet packet) {
+    public static Date getDelayTimestamp(Stanza packet) {
         DelayInformation delayInformation = getDelayInformation(packet);
         if (delayInformation == null) {
             return null;
@@ -94,8 +94,8 @@ public class DelayInformationManager {
      * @param packet
      * @return true if the stanza got delayed.
      */
-    public static boolean isDelayedStanza(Packet packet) {
-        PacketExtension packetExtension = getDelayInformation(packet);
+    public static boolean isDelayedStanza(Stanza packet) {
+        ExtensionElement packetExtension = getDelayInformation(packet);
         return packetExtension != null;
     }
 }

@@ -17,18 +17,20 @@
 package org.jivesoftware.smack.util.dns;
 
 /**
+ * A DNS SRV RR.
+ *
  * @see <a href="http://tools.ietf.org/html/rfc2782">RFC 2782: A DNS RR for specifying the location of services (DNS
  * SRV)</a>
  * @author Florian Schmaus
  * 
  */
 public class SRVRecord extends HostAddress implements Comparable<SRVRecord> {
-    
+
     private int weight;
     private int priority;
-    
+
     /**
-     * Create a new SRVRecord
+     * SRV Record constructor.
      * 
      * @param fqdn Fully qualified domain name
      * @param port The connection port
@@ -52,11 +54,11 @@ public class SRVRecord extends HostAddress implements Comparable<SRVRecord> {
         this.weight = weight;
 
     }
-    
+
     public int getPriority() {
         return priority;
     }
-    
+
     public int getWeight() {
         return weight;
     }

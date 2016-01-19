@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.si.packet;
 import java.util.Date;
 
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jxmpp.util.XmppDateTime;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
@@ -195,7 +195,7 @@ public class StreamInitiation extends IQ {
      *
      * @author Alexander Wenckus
      */
-    public static class File implements PacketExtension {
+    public static class File implements ExtensionElement {
 
         private final String name;
 
@@ -243,7 +243,7 @@ public class StreamInitiation extends IQ {
         }
 
         /**
-         * Sets the MD5 sum of the file's contents
+         * Sets the MD5 sum of the file's contents.
          *
          * @param hash The MD5 sum of the file's contents.
          */
@@ -252,7 +252,7 @@ public class StreamInitiation extends IQ {
         }
 
         /**
-         * Returns the MD5 sum of the file's contents
+         * Returns the MD5 sum of the file's contents.
          *
          * @return Returns the MD5 sum of the file's contents
          */
@@ -328,11 +328,11 @@ public class StreamInitiation extends IQ {
         public String toXML() {
             StringBuilder buffer = new StringBuilder();
 
-            buffer.append("<").append(getElementName()).append(" xmlns=\"")
+            buffer.append('<').append(getElementName()).append(" xmlns=\"")
                     .append(getNamespace()).append("\" ");
 
             if (getName() != null) {
-                buffer.append("name=\"").append(StringUtils.escapeForXML(getName())).append("\" ");
+                buffer.append("name=\"").append(StringUtils.escapeForXmlAttribute(getName())).append("\" ");
             }
 
             if (getSize() > 0) {
@@ -348,14 +348,14 @@ public class StreamInitiation extends IQ {
             }
 
             if ((desc != null && desc.length() > 0) || isRanged) {
-                buffer.append(">");
+                buffer.append('>');
                 if (getDesc() != null && desc.length() > 0) {
-                    buffer.append("<desc>").append(StringUtils.escapeForXML(getDesc())).append("</desc>");
+                    buffer.append("<desc>").append(StringUtils.escapeForXmlText(getDesc())).append("</desc>");
                 }
                 if (isRanged()) {
                     buffer.append("<range/>");
                 }
-                buffer.append("</").append(getElementName()).append(">");
+                buffer.append("</").append(getElementName()).append('>');
             }
             else {
                 buffer.append("/>");
@@ -370,7 +370,7 @@ public class StreamInitiation extends IQ {
      * @author Alexander Wenckus
      *
      */
-    public class Feature implements PacketExtension {
+    public class Feature implements ExtensionElement {
 
         private final DataForm data;
 

@@ -66,7 +66,7 @@ public abstract class SmackTestCase extends TestCase {
 
     private String[] usernames;
     private String[] passwords;
-    
+
     private String chatDomain = "chat";
     private String mucDomain = "conference";
 
@@ -118,7 +118,7 @@ public abstract class SmackTestCase extends TestCase {
     protected boolean createOfflineConnections() {
         return false;
     }
-    
+
     /**
      * Returns the XMPPTCPConnection located at the requested position. Each test case holds a
      * pool of connections which is initialized while setting up the test case. The maximum
@@ -165,7 +165,7 @@ public abstract class SmackTestCase extends TestCase {
     protected String getUsername(int index) {
         return usernames[index];
     }
-    
+
     /**
      * Returns the password of the user (e.g. johndoe) that is using the connection 
      * located at the requested position.
@@ -185,7 +185,7 @@ public abstract class SmackTestCase extends TestCase {
      * @return the bare XMPP address of the user (e.g. johndoe@jabber.org).
      */
     protected String getBareJID(int index) {
-        return getUsername(index) + "@" + getConnection(index).getServiceName();
+        return getUsername(index) + "@" + getConnection(index).getXMPPServiceDomain();
     }
 
     /**
@@ -207,7 +207,7 @@ public abstract class SmackTestCase extends TestCase {
         return port;
     }
 
-    protected String getServiceName() {
+    protected String getXMPPServiceDomain() {
         return serviceName;
     }
 
@@ -238,7 +238,7 @@ public abstract class SmackTestCase extends TestCase {
         connections = new XMPPTCPConnection[getMaxConnections()];
         usernames = new String[getMaxConnections()];
         passwords = new String[getMaxConnections()];
-        
+
         try {
             // Connect to the server
             for (int i = 0; i < getMaxConnections(); i++) {
@@ -259,20 +259,20 @@ public abstract class SmackTestCase extends TestCase {
             // cases, but could fail if the user set a hostname in their XMPP server
             // that will not resolve as a network connection.
             host = connections[0].getHost();
-            serviceName = connections[0].getServiceName();
-            
+            serviceName = connections[0].getXMPPServiceDomain();
+
             if (!createOfflineConnections()) {
                 for (int i = 0; i < getMaxConnections(); i++) {
                     String currentUser = usernames[i];
                     String currentPassword = passwords[i];
-                    
+
                     try {
                         getConnection(i).login(currentUser, currentPassword, "Smack");
                     } catch (XMPPException e) {
                         // Create the test accounts
                         if (!getConnection(0).getAccountManager().supportsAccountCreation())
                             fail("Server does not support account creation");
-                        
+
                         // Create the account and try logging in again as the 
                         // same user.
                         try {
@@ -297,12 +297,12 @@ public abstract class SmackTestCase extends TestCase {
     protected void connectAndLogin(int connectionIndex) throws XMPPException
     {
     	String password = usernamePrefix + (connectionIndex + 1);
-    	
+
     	if (passwordPrefix != null)
     		password = (samePassword ? passwordPrefix : passwordPrefix + (connectionIndex + 1));
 
     	TCPConnection con = getConnection(connectionIndex);
-    	
+
     	if (!con.isConnected())
     		con.connect();
     	try {

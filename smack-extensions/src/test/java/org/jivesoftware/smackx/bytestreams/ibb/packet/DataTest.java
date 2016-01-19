@@ -24,7 +24,9 @@ import java.util.Properties;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+import org.jivesoftware.smackx.InitExtensions;
 import org.junit.Test;
+import org.jxmpp.jid.impl.JidCreate;
 
 import com.jamesmurty.utils.XMLBuilder;
 
@@ -33,7 +35,7 @@ import com.jamesmurty.utils.XMLBuilder;
  * 
  * @author Henning Staib
  */
-public class DataTest {
+public class DataTest extends InitExtensions {
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotInstantiateWithInvalidArgument() {
@@ -55,7 +57,7 @@ public class DataTest {
     @Test
     public void shouldReturnValidIQStanzaXML() throws Exception {
         String encodedData = Base64.encode("Test");
-        
+
         String control = XMLBuilder.create("iq")
             .a("from", "romeo@montague.lit/orchard")
             .a("to", "juliet@capulet.lit/balcony")
@@ -70,10 +72,10 @@ public class DataTest {
 
         DataPacketExtension dpe = new DataPacketExtension("i781hf64", 0, encodedData);
         Data data = new Data(dpe);
-        data.setFrom("romeo@montague.lit/orchard");
-        data.setTo("juliet@capulet.lit/balcony");
-        data.setPacketID("kr91n475");
-        
+        data.setFrom(JidCreate.from("romeo@montague.lit/orchard"));
+        data.setTo(JidCreate.from("juliet@capulet.lit/balcony"));
+        data.setStanzaId("kr91n475");
+
         assertXMLEqual(control, data.toXML().toString());
     }
 

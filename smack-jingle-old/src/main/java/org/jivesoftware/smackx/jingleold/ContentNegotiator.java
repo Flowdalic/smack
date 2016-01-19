@@ -36,6 +36,8 @@ import org.jivesoftware.smackx.jingleold.packet.Jingle;
 import org.jivesoftware.smackx.jingleold.packet.JingleContent;
 
 /**
+ * Content negotiator.
+ *
  *  @author Jeff Williams
  */
 public class ContentNegotiator extends JingleNegotiator {
@@ -58,7 +60,7 @@ public class ContentNegotiator extends JingleNegotiator {
         transportNegotiators = new ArrayList<TransportNegotiator>();
     }
 
-    public List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, SmackException {
+    public List<IQ> dispatchIncomingPacket(IQ iq, String id) throws XMPPException, SmackException, InterruptedException {
         List<IQ> responses = new ArrayList<IQ>();
 
         // First only process IQ packets that contain <content> stanzas that
@@ -70,8 +72,8 @@ public class ContentNegotiator extends JingleNegotiator {
                 // TODO getState().eventError(iq);
             } else if (iq.getType().equals(IQ.Type.result)) {
                 // Process ACKs
-                if (isExpectedId(iq.getPacketID())) {
-                    removeExpectedId(iq.getPacketID());
+                if (isExpectedId(iq.getStanzaId())) {
+                    removeExpectedId(iq.getStanzaId());
                 }
             } else if (iq instanceof Jingle) {
                 Jingle jingle = (Jingle) iq;
@@ -106,7 +108,7 @@ public class ContentNegotiator extends JingleNegotiator {
     }
 
     /**
-     * Get the JingleMediaSession of this Jingle Session
+     * Get the JingleMediaSession of this Jingle Session.
      * 
      * @return the JingleMediaSession
      */
@@ -119,6 +121,7 @@ public class ContentNegotiator extends JingleNegotiator {
     }
 
     /**
+     * Set jingle transport manager.
      * @param jingleTransportManager
      */
     public void setJingleTransportManager(JingleTransportManager jingleTransportManager) {
@@ -126,6 +129,7 @@ public class ContentNegotiator extends JingleNegotiator {
     }
 
     /**
+     * Get jingle transport manager.
      * @return the JingleTransportManager
      */
     public JingleTransportManager getTransportManager() {
@@ -156,7 +160,7 @@ public class ContentNegotiator extends JingleNegotiator {
     }
 
     /**
-     * Obtain the description negotiator for this session
+     * Obtain the description negotiator for this session.
      * 
      * @return the description negotiator
      */
@@ -216,7 +220,7 @@ public class ContentNegotiator extends JingleNegotiator {
     }
 
     /**
-     * Return true if the transport and content negotiators have finished
+     * Return true if the transport and content negotiators have finished.
      */
     public boolean isFullyEstablished() {
         boolean result = true;
@@ -255,7 +259,7 @@ public class ContentNegotiator extends JingleNegotiator {
         return result;
     }
 
-    public void triggerContentEstablished() throws NotConnectedException {
+    public void triggerContentEstablished() throws NotConnectedException, InterruptedException {
 
         PayloadType bestCommonAudioPt = getMediaNegotiator().getBestCommonAudioPt();
         TransportCandidate bestRemoteCandidate = getTransportNegotiator().getBestRemoteCandidate();
@@ -268,8 +272,9 @@ public class ContentNegotiator extends JingleNegotiator {
     /**
      * Trigger a session established event.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    private void triggerContentEstablished(PayloadType pt, TransportCandidate rc, TransportCandidate lc) throws NotConnectedException {
+    private void triggerContentEstablished(PayloadType pt, TransportCandidate rc, TransportCandidate lc) throws NotConnectedException, InterruptedException {
 
         // Let the session know that we've established a content/media segment.
         JingleSession session = getSession();

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2007 Jive Software.
+ * Copyright 2003-2007 Jive Software, 2016 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 package org.jivesoftware.smack.util;
 
 import java.io.UnsupportedEncodingException;
+import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Random;
 
 /**
@@ -40,18 +42,85 @@ public class StringUtils {
     public static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
     /**
-     * Escapes all necessary characters in the String so that it can be used
+     * Escape <code>input</code> for XML.
+     *
+     * @param input the input to escape.
+     * @return the XML escaped variant of <code>input</code>.
+     * @deprecated use {@link #escapeForXml(CharSequence)} instead.
+     */
+    // Remove in 4.3.
+    @Deprecated
+    public static CharSequence escapeForXML(CharSequence input) {
+        return escapeForXml(input);
+    }
+
+    /**
+     * Escape <code>input</code> for XML.
+     *
+     * @param input the input to escape.
+     * @return the XML escaped variant of <code>input</code>.
+     */
+    public static CharSequence escapeForXml(CharSequence input) {
+        return escapeForXml(input, XmlEscapeMode.safe);
+    }
+
+    /**
+     * Escape <code>input</code> for XML.
+     *
+     * @param input the input to escape.
+     * @return the XML escaped variant of <code>input</code>.
+     * @since 4.2
+     */
+    public static CharSequence escapeForXmlAttribute(CharSequence input) {
+        return escapeForXml(input, XmlEscapeMode.forAttribute);
+    }
+
+    /**
+     * Escape <code>input</code> for XML.
+     * <p>
+     * This is an optimized variant of {@link #escapeForXmlAttribute(CharSequence)} for XML where the
+     * XML attribute is quoted using ''' (Apos).
+     * </p>
+     *
+     * @param input the input to escape.
+     * @return the XML escaped variant of <code>input</code>.
+     * @since 4.2
+     */
+    public static CharSequence escapeForXmlAttributeApos(CharSequence input) {
+        return escapeForXml(input, XmlEscapeMode.forAttributeApos);
+    }
+
+    /**
+     * Escape <code>input</code> for XML.
+     *
+     * @param input the input to escape.
+     * @return the XML escaped variant of <code>input</code>.
+     * @since 4.2
+     */
+    public static CharSequence escapeForXmlText(CharSequence input) {
+        return escapeForXml(input, XmlEscapeMode.forText);
+    }
+
+    private enum XmlEscapeMode {
+        safe,
+        forAttribute,
+        forAttributeApos,
+        forText,
+        ;
+    };
+
+    /**
+     * Escapes all necessary characters in the CharSequence so that it can be used
      * in an XML doc.
      *
-     * @param string the string to escape.
+     * @param input the CharSequence to escape.
      * @return the string with appropriate characters escaped.
      */
-    public static CharSequence escapeForXML(final String string) {
-        if (string == null) {
+    private static CharSequence escapeForXml(final CharSequence input, final XmlEscapeMode xmlEscapeMode) {
+        if (input == null) {
             return null;
         }
-        final char[] input = string.toCharArray();
-        final int len = input.length;
+        final int len = input.length();
         final StringBuilder out = new StringBuilder((int)(len*1.3));
         CharSequence toAppend;
         char ch;
@@ -59,29 +128,81 @@ public class StringUtils {
         int i = 0;
         while (i < len) {
             toAppend = null;
-            ch = input[i];
-            switch(ch) {
-            case '<':
-                toAppend = LT_ENCODE;
+            ch = input.charAt(i);
+            switch (xmlEscapeMode) {
+            case safe:
+                switch (ch) {
+                case '<':
+                    toAppend = LT_ENCODE;
+                    break;
+                case '>':
+                    toAppend = GT_ENCODE;
+                    break;
+                case '&':
+                    toAppend = AMP_ENCODE;
+                    break;
+                case '"':
+                    toAppend = QUOTE_ENCODE;
+                    break;
+                case '\'':
+                    toAppend = APOS_ENCODE;
+                    break;
+                default:
+                    break;
+                }
                 break;
-            case '>':
-                toAppend = GT_ENCODE;
+            case forAttribute:
+                // No need to escape '>' for attributes.
+                switch(ch) {
+                case '<':
+                    toAppend = LT_ENCODE;
+                    break;
+                case '&':
+                    toAppend = AMP_ENCODE;
+                    break;
+                case '"':
+                    toAppend = QUOTE_ENCODE;
+                    break;
+                case '\'':
+                    toAppend = APOS_ENCODE;
+                    break;
+                default:
+                    break;
+                }
                 break;
-            case '&':
-                toAppend = AMP_ENCODE;
+            case forAttributeApos:
+                // No need to escape '>' and '"' for attributes using '\'' as quote.
+                switch(ch) {
+                case '<':
+                    toAppend = LT_ENCODE;
+                    break;
+                case '&':
+                    toAppend = AMP_ENCODE;
+                    break;
+                case '\'':
+                    toAppend = APOS_ENCODE;
+                    break;
+                default:
+                    break;
+                }
                 break;
-            case '"':
-                toAppend = QUOTE_ENCODE;
-                break;
-            case '\'':
-                toAppend = APOS_ENCODE;
-                break;
-            default:
+            case forText:
+                // No need to escape '"', '\'', and '>' for text.
+                switch(ch) {
+                case '<':
+                    toAppend = LT_ENCODE;
+                    break;
+                case '&':
+                    toAppend = AMP_ENCODE;
+                    break;
+                default:
+                    break;
+                }
                 break;
             }
             if (toAppend != null) {
                 if (i > last) {
-                    out.append(input, last, i - last);
+                    out.append(input, last, i);
                 }
                 out.append(toAppend);
                 last = ++i;
@@ -90,10 +211,10 @@ public class StringUtils {
             }
         }
         if (last == 0) {
-            return string;
+            return input;
         }
         if (i > last) {
-            out.append(input, last, i - last);
+            out.append(input, last, i);
         }
         return out;
     }
@@ -144,13 +265,13 @@ public class StringUtils {
             throw new IllegalStateException("UTF-8 encoding not supported by platform", e);
         }
     }
- 
+
     /**
      * Pseudo-random number generator object for use with randomString().
      * The Random class is not considered to be cryptographically secure, so
      * only use these random Strings for low to medium security applications.
      */
-    private static Random randGen = new Random();
+    private static final Random randGen = new Random();
 
     /**
      * Array of numbers and letters of mixed case. Numbers appear in the list
@@ -158,7 +279,7 @@ public class StringUtils {
      * We can use the array to get a random number or letter by picking a random
      * array index.
      */
-    private static char[] numbersAndLetters = ("0123456789abcdefghijklmnopqrstuvwxyz" +
+    private static final char[] numbersAndLetters = ("0123456789abcdefghijklmnopqrstuvwxyz" +
                     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
 
     /**
@@ -174,7 +295,7 @@ public class StringUtils {
      * @param length the desired length of the random String to return.
      * @return a random String of numbers and letters of the specified length.
      */
-    public static String randomString(int length) {
+    public static String insecureRandomString(int length) {
         if (length < 1) {
             return null;
         }
@@ -186,8 +307,33 @@ public class StringUtils {
         return new String(randBuffer);
     }
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    public static String randomString(final int length) {
+        if (length < 1) {
+            return null;
+        }
+
+        byte[] randomBytes = new byte[length];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        char[] randomChars = new char[length];
+        for (int i = 0; i < length; i++) {
+            randomChars[i] = getPrintableChar(randomBytes[i]);
+        }
+        return new String(randomChars);
+    }
+
+    private static char getPrintableChar(byte indexByte) {
+        assert(numbersAndLetters.length < Byte.MAX_VALUE * 2);
+
+        // Convert indexByte as it where an unsigned byte by promoting it to int
+        // and masking it with 0xff. Yields results from 0 - 254.
+        int index = indexByte & 0xff;
+        return numbersAndLetters[index % numbersAndLetters.length];
+    }
+
     /**
-     * Returns true if CharSequence is not null and is not empty, false otherwise
+     * Returns true if CharSequence is not null and is not empty, false otherwise.
      * Examples:
      *    isNotEmpty(null) - false
      *    isNotEmpty("") - false
@@ -212,7 +358,7 @@ public class StringUtils {
     }
 
     /**
-     * Returns true if the given CharSequence is empty
+     * Returns true if the given CharSequence is empty.
      * 
      * @param cs
      * @return true if the given CharSequence is empty
@@ -221,16 +367,33 @@ public class StringUtils {
         return cs.length() == 0;
     }
 
-    public static String collectionToString(Collection<String> collection) {
-        StringBuilder sb = new StringBuilder();
-        for (String s : collection) {
-            sb.append(s);
-            sb.append(" ");
+    /**
+     * Transform a collection of objects to a whitespace delimited String.
+     *
+     * @param collection the collection to transform.
+     * @return a String with all the elements of the collection.
+     */
+    public static String collectionToString(Collection<? extends Object> collection) {
+        return toStringBuilder(collection, " ").toString();
+    }
+
+    /**
+     * Transform a collection of objects to a delimited String.
+     *
+     * @param collection the collection to transform.
+     * @param delimiter the delimiter used to delimit the Strings.
+     * @return a StringBuilder with all the elements of the collection.
+     */
+    public static StringBuilder toStringBuilder(Collection<? extends Object> collection, String delimiter) {
+        StringBuilder sb = new StringBuilder(collection.size() * 20);
+        for (Iterator<? extends Object> it = collection.iterator(); it.hasNext();) {
+            Object cs = it.next();
+            sb.append(cs);
+            if (it.hasNext()) {
+                sb.append(delimiter);
+            }
         }
-        String res = sb.toString();
-        // Remove the trailing whitespace
-        res = res.substring(0, res.length() - 1);
-        return res;
+        return sb;
     }
 
     public static String returnIfNotEmptyTrimmed(String string) {
@@ -256,5 +419,25 @@ public class StringUtils {
             return 0;
         }
         return csOne.toString().compareTo(csTwo.toString());
+    }
+
+    public static <CS extends CharSequence> CS requireNotNullOrEmpty(CS cs, String message) {
+        if (isNullOrEmpty(cs)) {
+            throw new IllegalArgumentException(message);
+        }
+        return cs;
+    }
+
+    /**
+     * Return the String representation of the given char sequence if it is not null.
+     *
+     * @param cs the char sequence or null.
+     * @return the String representation of <code>cs</code> or null.
+     */
+    public static String maybeToString(CharSequence cs) {
+        if (cs == null) {
+            return null;
+        }
+        return cs.toString();
     }
 }

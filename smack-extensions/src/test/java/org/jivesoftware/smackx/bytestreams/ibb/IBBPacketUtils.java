@@ -20,6 +20,7 @@ import org.jivesoftware.smack.packet.EmptyResultIQ;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jxmpp.jid.Jid;
 
 /**
  * Utility methods to create packets.
@@ -33,10 +34,11 @@ public class IBBPacketUtils {
      * 
      * @param from the senders JID
      * @param to the recipients JID
-     * @param xmppError the XMPP error
+     * @param condition the XMPP error condition
      * @return an error IQ
      */
-    public static IQ createErrorIQ(String from, String to, XMPPError xmppError) {
+    public static IQ createErrorIQ(Jid from, Jid to, XMPPError.Condition condition) {
+        XMPPError.Builder xmppError = XMPPError.getBuilder(condition);
         IQ errorIQ = new ErrorIQ(xmppError);
         errorIQ.setType(IQ.Type.error);
         errorIQ.setFrom(from);
@@ -51,7 +53,7 @@ public class IBBPacketUtils {
      * @param to the recipients JID
      * @return a result IQ
      */
-    public static IQ createResultIQ(String from, String to) {
+    public static IQ createResultIQ(Jid from, Jid to) {
         IQ result = new EmptyResultIQ();
         result.setType(IQ.Type.result);
         result.setFrom(from);

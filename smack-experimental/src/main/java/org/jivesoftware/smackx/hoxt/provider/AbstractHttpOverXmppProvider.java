@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2014 Andriy Tsykholyas
+ * Copyright 2014 Andriy Tsykholyas, 2015 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
  */
 package org.jivesoftware.smackx.hoxt.provider;
 
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.StringUtils;
@@ -29,7 +28,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 
 /**
- * Abstract parent for Req and Resp packet providers.
+ * Abstract parent for Req and Resp stanza(/packet) providers.
  *
  * @author Andriy Tsykholyas
  * @see <a href="http://xmpp.org/extensions/xep-0332.html">XEP-0332: HTTP over XMPP transport</a>
@@ -50,79 +49,82 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
     static final String ATTRIBUTE_VERSION = "version";
 
     /**
-     * Parses Headers and Data elements.
+     * Parses HeadersExtension element if any.
      *
-     * @param parser      parser
-     * @param elementName name of concrete implementation of this element
-     * @param body        parent Body element
-     * @throws IOException 
-     * @throws XmlPullParserException 
-     * @throws SmackException 
+     * @param parser parser
+     * @return HeadersExtension or null if no headers
+     * @throws Exception
      */
-    protected void parseHeadersAndData(XmlPullParser parser, String elementName, AbstractHttpOverXmpp body) throws XmlPullParserException, IOException, SmackException {
-        boolean done = false;
-
-        while (!done) {
-            int eventType = parser.next();
-
-            if (eventType == XmlPullParser.START_TAG) {
-                if (parser.getName().equals(HeadersExtension.ELEMENT)) {
-                    HeadersExtension headersExtension = HeadersProvider.INSTANCE.parse(parser);
-                    body.setHeaders(headersExtension);
-                } else if (parser.getName().endsWith(ELEMENT_DATA)) {
-                    AbstractHttpOverXmpp.Data data = parseData(parser);
-                    body.setData(data);
-                } else {
-                    throw new IllegalArgumentException("unexpected tag:" + parser.getName() + "'");
-                }
-            } else if (eventType == XmlPullParser.END_TAG) {
-                if (parser.getName().equals(elementName)) {
-                    done = true;
-                }
-            }
+    protected HeadersExtension parseHeaders(XmlPullParser parser) throws Exception {
+        HeadersExtension headersExtension = null;
+        /* We are either at start of headers, start of data or end of req/res */
+        if (parser.next() == XmlPullParser.START_TAG && parser.getName().equals(HeadersExtension.ELEMENT)) {
+            headersExtension = HeadersProvider.INSTANCE.parse(parser);
+            parser.next();
         }
+
+        return headersExtension;
     }
 
-    private AbstractHttpOverXmpp.Data parseData(XmlPullParser parser) throws XmlPullParserException, IOException {
+    /**
+     * Parses Data element if any.
+     *
+     * @param parser parser
+     * @return Data or null if no data
+     * 
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    protected AbstractHttpOverXmpp.Data parseData(XmlPullParser parser) throws XmlPullParserException, IOException {
         NamedElement child = null;
         boolean done = false;
+        AbstractHttpOverXmpp.Data data = null;
+        /* We are either at start of data or end of req/res */
+        if (parser.getEventType() == XmlPullParser.START_TAG) {
+            while (!done) {
+                int eventType = parser.next();
 
-        while (!done) {
-            int eventType = parser.next();
-
-            if (eventType == XmlPullParser.START_TAG) {
-                if (parser.getName().equals(ELEMENT_TEXT)) {
-                    child = parseText(parser);
-                } else if (parser.getName().equals(ELEMENT_BASE_64)) {
-                    child = parseBase64(parser);
-                } else if (parser.getName().equals(ELEMENT_CHUNKED_BASE_64)) {
-                    child = parseChunkedBase64(parser);
-                } else if (parser.getName().equals(ELEMENT_XML)) {
-                    child = parseXml(parser);
-                } else if (parser.getName().equals(ELEMENT_IBB)) {
-                    child = parseIbb(parser);
-                } else if (parser.getName().equals(ELEMENT_SIPUB)) {
-                    // TODO: sipub is allowed by xep-0332, but is not implemented yet
-                    throw new UnsupportedOperationException("sipub is not supported yet");
-                } else if (parser.getName().equals(ELEMENT_JINGLE)) {
-                    // TODO: jingle is allowed by xep-0332, but is not implemented yet
-                    throw new UnsupportedOperationException("jingle is not supported yet");
-                } else {
-                    // other elements are not allowed
-                    throw new IllegalArgumentException("unsupported child tag: " + parser.getName());
-                }
-            } else if (eventType == XmlPullParser.END_TAG) {
-                if (parser.getName().equals(ELEMENT_DATA)) {
-                    done = true;
+                if (eventType == XmlPullParser.START_TAG) {
+                    switch (parser.getName()) {
+                    case ELEMENT_TEXT:
+                        child = parseText(parser);
+                        break;
+                    case ELEMENT_BASE_64:
+                        child = parseBase64(parser);
+                        break;
+                    case ELEMENT_CHUNKED_BASE_64:
+                        child = parseChunkedBase64(parser);
+                        break;
+                    case ELEMENT_XML:
+                        child = parseXml(parser);
+                        break;
+                    case ELEMENT_IBB:
+                        child = parseIbb(parser);
+                        break;
+                    case ELEMENT_SIPUB:
+                        // TODO: sipub is allowed by xep-0332, but is not
+                        // implemented yet
+                        throw new UnsupportedOperationException("sipub is not supported yet");
+                    case ELEMENT_JINGLE:
+                        // TODO: jingle is allowed by xep-0332, but is not
+                        // implemented yet
+                        throw new UnsupportedOperationException("jingle is not supported yet");
+                    default:
+                        // other elements are not allowed
+                        throw new IllegalArgumentException("unsupported child tag: " + parser.getName());
+                    }
+                } else if (eventType == XmlPullParser.END_TAG) {
+                    if (parser.getName().equals(ELEMENT_DATA)) {
+                        done = true;
+                    }
                 }
             }
+            data = new AbstractHttpOverXmpp.Data(child);
         }
-
-        AbstractHttpOverXmpp.Data data = new AbstractHttpOverXmpp.Data(child);
         return data;
     }
 
-    private AbstractHttpOverXmpp.Text parseText(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static AbstractHttpOverXmpp.Text parseText(XmlPullParser parser) throws XmlPullParserException, IOException {
         String text = null;
         boolean done = false;
 
@@ -145,7 +147,8 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
         return new AbstractHttpOverXmpp.Text(text);
     }
 
-    private AbstractHttpOverXmpp.Xml parseXml(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static AbstractHttpOverXmpp.Xml parseXml(XmlPullParser parser)
+            throws XmlPullParserException, IOException {
         StringBuilder builder = new StringBuilder();
         boolean done = false;
         boolean startClosed = true;
@@ -183,7 +186,7 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
                         builder.append('>');
                         startClosed = true;
                     }
-                    builder.append(StringUtils.escapeForXML(parser.getText()));
+                    builder.append(StringUtils.escapeForXmlText(parser.getText()));
                 } else {
                     throw new IllegalArgumentException("unexpected eventType: " + eventType);
                 }
@@ -193,7 +196,7 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
         return new AbstractHttpOverXmpp.Xml(builder.toString());
     }
 
-    private void appendXmlAttributes(XmlPullParser parser, StringBuilder builder) {
+    private static void appendXmlAttributes(XmlPullParser parser, StringBuilder builder) {
         // NOTE: for now we ignore namespaces
         int count = parser.getAttributeCount();
 
@@ -203,13 +206,14 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
                 builder.append(' ');
                 builder.append(parser.getAttributeName(i));
                 builder.append("=\"");
-                builder.append(StringUtils.escapeForXML(parser.getAttributeValue(i)));
+                builder.append(StringUtils.escapeForXml(parser.getAttributeValue(i)));
                 builder.append('"');
             }
         }
     }
 
-    private AbstractHttpOverXmpp.Base64 parseBase64(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static AbstractHttpOverXmpp.Base64 parseBase64(XmlPullParser parser) throws XmlPullParserException,
+                    IOException {
         String text = null;
         boolean done = false;
 
@@ -233,7 +237,8 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
         return new AbstractHttpOverXmpp.Base64(text);
     }
 
-    private AbstractHttpOverXmpp.ChunkedBase64 parseChunkedBase64(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static AbstractHttpOverXmpp.ChunkedBase64 parseChunkedBase64(XmlPullParser parser)
+                    throws XmlPullParserException, IOException {
         String streamId = parser.getAttributeValue("", ATTRIBUTE_STREAM_ID);
         AbstractHttpOverXmpp.ChunkedBase64 child = new AbstractHttpOverXmpp.ChunkedBase64(streamId);
         boolean done = false;
@@ -254,7 +259,7 @@ public abstract class AbstractHttpOverXmppProvider<H extends AbstractHttpOverXmp
         return child;
     }
 
-    private AbstractHttpOverXmpp.Ibb parseIbb(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private static AbstractHttpOverXmpp.Ibb parseIbb(XmlPullParser parser) throws XmlPullParserException, IOException {
         String sid = parser.getAttributeValue("", ATTRIBUTE_SID);
         AbstractHttpOverXmpp.Ibb child = new AbstractHttpOverXmpp.Ibb(sid);
         boolean done = false;

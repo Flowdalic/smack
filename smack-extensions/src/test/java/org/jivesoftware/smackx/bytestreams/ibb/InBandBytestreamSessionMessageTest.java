@@ -25,13 +25,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.stringencoder.Base64;
+import org.jivesoftware.smackx.InitExtensions;
 import org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager.StanzaType;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.DataPacketExtension;
 import org.jivesoftware.smackx.bytestreams.ibb.packet.Open;
@@ -40,6 +41,9 @@ import org.jivesoftware.util.Protocol;
 import org.jivesoftware.util.Verification;
 import org.junit.Before;
 import org.junit.Test;
+import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityFullJid;
+import org.jxmpp.jid.JidTestUtil;
 import org.powermock.reflect.Whitebox;
 
 /**
@@ -49,12 +53,12 @@ import org.powermock.reflect.Whitebox;
  * 
  * @author Henning Staib
  */
-public class InBandBytestreamSessionMessageTest {
+public class InBandBytestreamSessionMessageTest extends InitExtensions {
 
     // settings
-    String initiatorJID = "initiator@xmpp-server/Smack";
-    String targetJID = "target@xmpp-server/Smack";
-    String xmppServer = "xmpp-server";
+    static final EntityFullJid initiatorJID = JidTestUtil.DUMMY_AT_EXAMPLE_ORG_SLASH_DUMMYRESOURCE;
+    static final EntityFullJid targetJID = JidTestUtil.FULL_JID_1_RESOURCE_1;
+    static final DomainBareJid xmppServer = JidTestUtil.DOMAIN_BARE_JID_1;
     String sessionID = "session_id";
 
     int blockSize = 10;
@@ -75,9 +79,10 @@ public class InBandBytestreamSessionMessageTest {
      * Initialize fields used in the tests.
      * @throws XMPPException 
      * @throws SmackException 
+     * @throws InterruptedException 
      */
     @Before
-    public void setup() throws XMPPException, SmackException {
+    public void setup() throws XMPPException, SmackException, InterruptedException {
 
         // build protocol verifier
         protocol = new Protocol();
@@ -244,7 +249,7 @@ public class InBandBytestreamSessionMessageTest {
     }
 
     /**
-     * If a data packet is received out of order the session should be closed. See XEP-0047 Section
+     * If a data stanza(/packet) is received out of order the session should be closed. See XEP-0047 Section
      * 2.2.
      * 
      * @throws Exception should not happen
@@ -260,7 +265,7 @@ public class InBandBytestreamSessionMessageTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // build invalid packet with out of order sequence
         String base64Data = Base64.encode("Data");
@@ -300,7 +305,7 @@ public class InBandBytestreamSessionMessageTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // verify data packet and notify listener
         for (int i = 0; i < controlData.length / blockSize; i++) {
@@ -345,7 +350,7 @@ public class InBandBytestreamSessionMessageTest {
         InBandBytestreamSession session = new InBandBytestreamSession(connection, initBytestream,
                         initiatorJID);
         InputStream inputStream = session.getInputStream();
-        PacketListener listener = Whitebox.getInternalState(inputStream, PacketListener.class);
+        StanzaListener listener = Whitebox.getInternalState(inputStream, StanzaListener.class);
 
         // verify data packet and notify listener
         for (int i = 0; i < controlData.length / blockSize; i++) {

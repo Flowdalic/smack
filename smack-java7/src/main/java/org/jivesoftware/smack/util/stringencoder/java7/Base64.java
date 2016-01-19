@@ -20,15 +20,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p>Encodes and decodes to and from Base64 notation.</p>
- * This code was obtained from <a href="http://iharder.net/base64">http://iharder.net/base64</a></p>
- *
+ * Encodes and decodes to and from Base64 notation.
+ * <p>
+ * This code was obtained from <a href="http://iharder.net/base64">http://iharder.net/base64</a>
+ * </p>
  *
  * @author Robert Harder
  * @author rob@iharder.net
  * @version 2.2.1
  */
-public class Base64
+public final class Base64
 {
     private static final Logger LOGGER = Logger.getLogger(Base64.class.getName());
 
@@ -49,7 +50,7 @@ public class Base64
     public final static int GZIP = 2;
 
 
-    /** Don't break lines when encoding (violates strict Base64 specification) */
+    /** Don't break lines when encoding (violates strict Base64 specification). */
     public final static int DONT_BREAK_LINES = 8;
 
 	/**
@@ -63,10 +64,10 @@ public class Base64
 	 public final static int URL_SAFE = 16;
 
 
-	 /**
-	  * Encode using the special "ordered" dialect of Base64 described here:
-	  * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
-	  */
+	/**
+	 * Encode using the special "ordered" dialect of Base64 described here:
+	 * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
+	 */
 	 public final static int ORDERED = 32;
 
 
@@ -898,7 +899,7 @@ public class Base64
         if( bytes != null && bytes.length >= 4 )
         {
 
-            int head = ((int)bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
+            int head = (bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
             if( java.util.zip.GZIPInputStream.GZIP_MAGIC == head )
             {
                 java.io.ByteArrayInputStream  bais = null;
@@ -969,12 +970,10 @@ public class Base64
         catch( java.io.IOException e )
         {
             LOGGER.log(Level.SEVERE, "Error reading object", e);
-            obj = null;
         }   // end catch
         catch( java.lang.ClassNotFoundException e )
         {
             LOGGER.log(Level.SEVERE, "Class not found for encoded object", e);
-            obj = null;
         }   // end catch
         finally
         {

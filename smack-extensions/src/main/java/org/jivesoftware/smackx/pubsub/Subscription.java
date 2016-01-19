@@ -27,7 +27,7 @@ public class Subscription extends NodeExtension
 	protected String id;
 	protected State state;
 	protected boolean configRequired = false;
-	
+
 	public enum State
 	{
 		subscribed, unconfigured, pending, none 
@@ -43,7 +43,7 @@ public class Subscription extends NodeExtension
 	{
 		this(subscriptionJid, null, null, null);
 	}
-	
+
 	/**
 	 * Used to constructs a subscription request to the specified node with the specified
 	 * JID.
@@ -55,7 +55,7 @@ public class Subscription extends NodeExtension
 	{
 		this(subscriptionJid, nodeId, null, null);
 	}
-	
+
 	/**
 	 * Constructs a representation of a subscription reply to the specified node 
 	 * and JID.  The server	will have supplied the subscription id and current state.
@@ -72,7 +72,7 @@ public class Subscription extends NodeExtension
 		id = subscriptionId;
 		this.state = state;
 	}
-	
+
 	/**
 	 * Constructs a representation of a subscription reply to the specified node 
 	 * and JID.  The server	will have supplied the subscription id and current state
@@ -92,9 +92,9 @@ public class Subscription extends NodeExtension
 		this.state = state;
 		this.configRequired = configRequired;
 	}
-	
+
 	/**
-	 * Gets the JID the subscription is created for
+	 * Gets the JID the subscription is created for.
 	 * 
 	 * @return The JID
 	 */
@@ -102,9 +102,9 @@ public class Subscription extends NodeExtension
 	{
 		return jid;
 	}
-	
+
 	/**
-	 * Gets the subscription id
+	 * Gets the subscription id.
 	 * 
 	 * @return The subscription id
 	 */
@@ -112,7 +112,7 @@ public class Subscription extends NodeExtension
 	{
 		return id;
 	}
-	
+
 	/**
 	 * Gets the current subscription state.
 	 * 
@@ -124,7 +124,7 @@ public class Subscription extends NodeExtension
 	}
 
 	/**
-	 * This value is only relevant when the {@link #getState()} is {@link State#unconfigured}
+	 * This value is only relevant when the {@link #getState()} is {@link State#unconfigured}.
 	 * 
 	 * @return true if configuration is required, false otherwise
 	 */
@@ -132,32 +132,32 @@ public class Subscription extends NodeExtension
 	{
 		return configRequired;
 	}
-	
+
 	public String toXML()
 	{
 		StringBuilder builder = new StringBuilder("<subscription");
 		appendAttribute(builder, "jid", jid);
-		
+
 		if (getNode() != null)
 			appendAttribute(builder, "node", getNode());
-		
+
 		if (id != null)
 			appendAttribute(builder, "subid", id);
-		
+
 		if (state != null)
 			appendAttribute(builder, "subscription", state.toString());
-		
+
 		builder.append("/>");
 		return builder.toString();
 	}
 
-	private void appendAttribute(StringBuilder builder, String att, String value)
+	private static void appendAttribute(StringBuilder builder, String att, String value)
 	{
-		builder.append(" ");
+		builder.append(' ');
 		builder.append(att);
 		builder.append("='");
 		builder.append(value);
-		builder.append("'");
+		builder.append('\'');
 	}
 
 }

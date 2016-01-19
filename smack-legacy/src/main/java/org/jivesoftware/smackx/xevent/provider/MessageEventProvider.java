@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.xevent.provider;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smackx.xevent.packet.MessageEvent;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -30,10 +30,10 @@ import org.xmlpull.v1.XmlPullParserException;
 *
  * @author Gaston Dombiak
  */
-public class MessageEventProvider extends PacketExtensionProvider<MessageEvent> {
+public class MessageEventProvider extends ExtensionElementProvider<MessageEvent> {
 
     /**
-     * Parses a MessageEvent packet (extension sub-packet).
+     * Parses a MessageEvent stanza(/packet) (extension sub-packet).
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.
@@ -49,7 +49,7 @@ public class MessageEventProvider extends PacketExtensionProvider<MessageEvent> 
             int eventType = parser.next();
             if (eventType == XmlPullParser.START_TAG) {
                 if (parser.getName().equals("id"))
-                    messageEvent.setPacketID(parser.nextText());
+                    messageEvent.setStanzaId(parser.nextText());
                 if (parser.getName().equals(MessageEvent.COMPOSING))
                     messageEvent.setComposing(true);
                 if (parser.getName().equals(MessageEvent.DELIVERED))

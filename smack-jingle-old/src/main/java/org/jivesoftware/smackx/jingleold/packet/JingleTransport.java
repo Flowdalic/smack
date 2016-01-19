@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smackx.jingleold.packet;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.jingleold.nat.ICECandidate;
 import org.jivesoftware.smackx.jingleold.nat.TransportCandidate;
 
@@ -26,11 +26,11 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A jingle transport extension
+ * A jingle transport extension.
  *
  * @author Alvaro Saurin <alvaro.saurin@gmail.com>
  */
-public class JingleTransport implements PacketExtension {
+public class JingleTransport implements ExtensionElement {
 
     // static
 
@@ -88,7 +88,7 @@ public class JingleTransport implements PacketExtension {
     }
 
     /**
-     * Get an iterator for the candidates
+     * Get an iterator for the candidates.
      *
      * @return an iterator
      */
@@ -151,19 +151,19 @@ public class JingleTransport implements PacketExtension {
     public String toXML() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append("<").append(getElementName()).append(" xmlns=\"");
+        buf.append('<').append(getElementName()).append(" xmlns=\"");
         buf.append(getNamespace()).append("\" ");
 
         synchronized (candidates) {
             if (getCandidatesCount() > 0) {
-                buf.append(">");
+                buf.append('>');
                 Iterator<JingleTransportCandidate> iter = getCandidates();
 
                 while (iter.hasNext()) {
                     JingleTransportCandidate candidate = iter.next();
                     buf.append(candidate.toXML());
                 }
-                buf.append("</").append(getElementName()).append(">");
+                buf.append("</").append(getElementName()).append('>');
             } else {
                 buf.append("/>");
             }
@@ -242,7 +242,7 @@ public class JingleTransport implements PacketExtension {
         }
 
         /**
-         * Obtain a valid XML representation of a trancport candidate
+         * Obtain a valid XML representation of a trancport candidate.
          *
          * @return A string containing the XML dump of the transport candidate.
          */
@@ -251,7 +251,7 @@ public class JingleTransport implements PacketExtension {
             String childElements = getChildElements();
 
             if (transportCandidate != null && childElements != null) {
-                buf.append("<").append(getElementName()).append(" ");
+                buf.append('<').append(getElementName()).append(' ');
                 buf.append(childElements);
                 buf.append("/>");
             }
@@ -263,7 +263,7 @@ public class JingleTransport implements PacketExtension {
     // Subclasses
 
     /**
-     * RTP-ICE profile
+     * RTP-ICE profile.
      */
     public static class Ice extends JingleTransport {
         public static final String NAMESPACE = "urn:xmpp:tmp:jingle:transports:ice-udp";
@@ -274,7 +274,7 @@ public class JingleTransport implements PacketExtension {
         }
 
         /**
-         * Add a transport candidate
+         * Add a transport candidate.
          *
          * @see org.jivesoftware.smackx.jingleold.packet.JingleTransport#addCandidate(org.jivesoftware.smackx.jingleold.packet.JingleTransport.JingleTransportCandidate)
          */
@@ -300,7 +300,7 @@ public class JingleTransport implements PacketExtension {
 
         public static class Candidate extends JingleTransportCandidate {
             /**
-             * Default constructor
+             * Default constructor.
              */
             public Candidate() {
                 super();
@@ -323,18 +323,18 @@ public class JingleTransport implements PacketExtension {
                     ICECandidate tci = (ICECandidate) transportCandidate;
 
                     // We convert the transportElement candidate to XML here...
-                    buf.append(" generation=\"").append(tci.getGeneration()).append("\"");
-                    buf.append(" ip=\"").append(tci.getIp()).append("\"");
-                    buf.append(" port=\"").append(tci.getPort()).append("\"");
-                    buf.append(" network=\"").append(tci.getNetwork()).append("\"");
-                    buf.append(" username=\"").append(tci.getUsername()).append("\"");
-                    buf.append(" password=\"").append(tci.getPassword()).append("\"");
-                    buf.append(" preference=\"").append(tci.getPreference()).append("\"");
-                    buf.append(" type=\"").append(tci.getType()).append("\"");
+                    buf.append(" generation=\"").append(tci.getGeneration()).append('"');
+                    buf.append(" ip=\"").append(tci.getIp()).append('"');
+                    buf.append(" port=\"").append(tci.getPort()).append('"');
+                    buf.append(" network=\"").append(tci.getNetwork()).append('"');
+                    buf.append(" username=\"").append(tci.getUsername()).append('"');
+                    buf.append(" password=\"").append(tci.getPassword()).append('"');
+                    buf.append(" preference=\"").append(tci.getPreference()).append('"');
+                    buf.append(" type=\"").append(tci.getType()).append('"');
 
                     // Optional elements
                     if (transportCandidate.getName() != null) {
-                        buf.append(" name=\"").append(tci.getName()).append("\"");
+                        buf.append(" name=\"").append(tci.getName()).append('"');
                     }
                 }
 
@@ -356,7 +356,7 @@ public class JingleTransport implements PacketExtension {
         }
 
         /**
-         * Add a transport candidate
+         * Add a transport candidate.
          *
          * @see org.jivesoftware.smackx.jingleold.packet.JingleTransport#addCandidate(org.jivesoftware.smackx.jingleold.packet.JingleTransport.JingleTransportCandidate)
          */
@@ -386,7 +386,7 @@ public class JingleTransport implements PacketExtension {
          */
         public static class Candidate extends JingleTransportCandidate {
             /**
-             * Default constructor
+             * Default constructor.
              */
             public Candidate() {
                 super();
@@ -408,14 +408,14 @@ public class JingleTransport implements PacketExtension {
                 if (transportCandidate != null && transportCandidate instanceof TransportCandidate.Fixed) {
                     TransportCandidate.Fixed tcf = (TransportCandidate.Fixed) transportCandidate;
 
-                    buf.append(" generation=\"").append(tcf.getGeneration()).append("\"");
-                    buf.append(" ip=\"").append(tcf.getIp()).append("\"");
-                    buf.append(" port=\"").append(tcf.getPort()).append("\"");
+                    buf.append(" generation=\"").append(tcf.getGeneration()).append('"');
+                    buf.append(" ip=\"").append(tcf.getIp()).append('"');
+                    buf.append(" port=\"").append(tcf.getPort()).append('"');
 
                     // Optional parameters
                     String name = tcf.getName();
                     if (name != null) {
-                        buf.append(" name=\"").append(name).append("\"");
+                        buf.append(" name=\"").append(name).append('"');
                     }
                 }
                 return buf.toString();

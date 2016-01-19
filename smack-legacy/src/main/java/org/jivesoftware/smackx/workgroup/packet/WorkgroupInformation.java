@@ -19,24 +19,24 @@ package org.jivesoftware.smackx.workgroup.packet;
 
 import java.io.IOException;
 
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * A packet extension that contains information about the user and agent in a
- * workgroup chat. The packet extension is attached to group chat invitations.
+ * A stanza(/packet) extension that contains information about the user and agent in a
+ * workgroup chat. The stanza(/packet) extension is attached to group chat invitations.
  */
-public class WorkgroupInformation implements PacketExtension {
+public class WorkgroupInformation implements ExtensionElement {
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "workgroup";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -62,16 +62,16 @@ public class WorkgroupInformation implements PacketExtension {
         StringBuilder buf = new StringBuilder();
 
         buf.append('<').append(ELEMENT_NAME);
-        buf.append(" jid=\"").append(getWorkgroupJID()).append("\"");
+        buf.append(" jid=\"").append(getWorkgroupJID()).append('"');
         buf.append(" xmlns=\"").append(NAMESPACE).append("\" />");
 
         return buf.toString();
     }
 
-    public static class Provider extends PacketExtensionProvider<WorkgroupInformation> {
+    public static class Provider extends ExtensionElementProvider<WorkgroupInformation> {
 
         /**
-         * PacketExtensionProvider implementation
+         * PacketExtensionProvider implementation.
          * @throws IOException 
          * @throws XmlPullParserException 
          */

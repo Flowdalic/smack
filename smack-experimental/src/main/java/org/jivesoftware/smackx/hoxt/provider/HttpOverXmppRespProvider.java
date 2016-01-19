@@ -16,15 +16,13 @@
  */
 package org.jivesoftware.smackx.hoxt.provider;
 
-import java.io.IOException;
-
-import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smackx.hoxt.packet.AbstractHttpOverXmpp;
 import org.jivesoftware.smackx.hoxt.packet.HttpOverXmppResp;
+import org.jivesoftware.smackx.shim.packet.HeadersExtension;
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Resp packet provider.
+ * Resp stanza(/packet) provider.
  *
  * @author Andriy Tsykholyas
  * @see <a href="http://xmpp.org/extensions/xep-0332.html">XEP-0332: HTTP over XMPP transport</a>
@@ -35,19 +33,15 @@ public class HttpOverXmppRespProvider extends AbstractHttpOverXmppProvider<HttpO
     private static final String ATTRIBUTE_STATUS_CODE = "statusCode";
 
     @Override
-    public HttpOverXmppResp parse(XmlPullParser parser, int initialDepth)
-                    throws XmlPullParserException, IOException, SmackException {
+    public HttpOverXmppResp parse(XmlPullParser parser, int initialDepth) throws Exception {
         String version = parser.getAttributeValue("", ATTRIBUTE_VERSION);
         String statusMessage = parser.getAttributeValue("", ATTRIBUTE_STATUS_MESSAGE);
         String statusCodeString = parser.getAttributeValue("", ATTRIBUTE_STATUS_CODE);
         int statusCode = Integer.parseInt(statusCodeString);
 
-        HttpOverXmppResp resp = new HttpOverXmppResp();
+        HeadersExtension headers = parseHeaders(parser);
+        AbstractHttpOverXmpp.Data data = parseData(parser);
+        return HttpOverXmppResp.builder().setHeaders(headers).setData(data).setStatusCode(statusCode).setStatusMessage(statusMessage).setVersion(version).build();
 
-        resp.setVersion(version);
-        resp.setStatusMessage(statusMessage);
-        resp.setStatusCode(statusCode);
-        parseHeadersAndData(parser, HttpOverXmppResp.ELEMENT, resp);
-        return resp;
     }
 }

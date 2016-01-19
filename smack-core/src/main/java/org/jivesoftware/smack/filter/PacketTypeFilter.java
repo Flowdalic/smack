@@ -18,7 +18,7 @@
 package org.jivesoftware.smack.filter;
 
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
 
 /**
@@ -31,29 +31,32 @@ import org.jivesoftware.smack.packet.Presence;
  * </ul>
  *
  * @author Matt Tucker
+ * @deprecated use {@link StanzaTypeFilter} instead.
  */
-public class PacketTypeFilter implements PacketFilter {
+@Deprecated
+public class PacketTypeFilter implements StanzaFilter {
 
     public static final PacketTypeFilter PRESENCE = new PacketTypeFilter(Presence.class);
     public static final PacketTypeFilter MESSAGE = new PacketTypeFilter(Message.class);
 
-    private final Class<? extends Packet> packetType;
+    private final Class<? extends Stanza> packetType;
 
     /**
-     * Creates a new packet type filter that will filter for packets that are the
+     * Creates a new stanza(/packet) type filter that will filter for packets that are the
      * same type as <tt>packetType</tt>.
      *
      * @param packetType the Class type.
      */
-    public PacketTypeFilter(Class<? extends Packet> packetType) {
+    public PacketTypeFilter(Class<? extends Stanza> packetType) {
         this.packetType = packetType;
     }
 
-    public boolean accept(Packet packet) {
+    public boolean accept(Stanza packet) {
         return packetType.isInstance(packet);
     }
 
+    @Override
     public String toString() {
-        return "PacketTypeFilter: " + packetType.getName();
+        return getClass().getSimpleName() + ": " + packetType.getName();
     }
 }

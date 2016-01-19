@@ -26,8 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -36,7 +36,7 @@ import org.xmlpull.v1.XmlPullParserException;
  *
  * @author Matt Tucker
  */
-public class AgentStatus implements PacketExtension {
+public class AgentStatus implements ExtensionElement {
 
     private static final SimpleDateFormat UTC_FORMAT = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
 
@@ -45,12 +45,12 @@ public class AgentStatus implements PacketExtension {
     }
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "agent-status";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -91,18 +91,18 @@ public class AgentStatus implements PacketExtension {
     public String toXML() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append("<").append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\"");
+        buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append('"');
         if (workgroupJID != null) {
-            buf.append(" jid=\"").append(workgroupJID).append("\"");
+            buf.append(" jid=\"").append(workgroupJID).append('"');
         }
-        buf.append(">");
+        buf.append('>');
         if (maxChats != -1) {
             buf.append("<max-chats>").append(maxChats).append("</max-chats>");
         }
         if (!currentChats.isEmpty()) {
             buf.append("<current-chats xmlns= \"http://jivesoftware.com/protocol/workgroup\">");
             for (Iterator<ChatInfo> it = currentChats.iterator(); it.hasNext();) {
-                buf.append(((ChatInfo)it.next()).toXML());
+                buf.append(it.next().toXML());
             }
             buf.append("</current-chats>");
         }
@@ -197,22 +197,22 @@ public class AgentStatus implements PacketExtension {
 
             buf.append("<chat ");
             if (sessionID != null) {
-                buf.append(" sessionID=\"").append(sessionID).append("\"");
+                buf.append(" sessionID=\"").append(sessionID).append('"');
             }
             if (userID != null) {
-                buf.append(" userID=\"").append(userID).append("\"");
+                buf.append(" userID=\"").append(userID).append('"');
             }
             if (date != null) {
-                buf.append(" startTime=\"").append(UTC_FORMAT.format(date)).append("\"");
+                buf.append(" startTime=\"").append(UTC_FORMAT.format(date)).append('"');
             }
             if (email != null) {
-                buf.append(" email=\"").append(email).append("\"");
+                buf.append(" email=\"").append(email).append('"');
             }
             if (username != null) {
-                buf.append(" username=\"").append(username).append("\"");
+                buf.append(" username=\"").append(username).append('"');
             }
             if (question != null) {
-                buf.append(" question=\"").append(question).append("\"");
+                buf.append(" question=\"").append(question).append('"');
             }
             buf.append("/>");
 
@@ -221,9 +221,9 @@ public class AgentStatus implements PacketExtension {
     }
 
     /**
-     * Packet extension provider for AgentStatus packets.
+     * Stanza(/Packet) extension provider for AgentStatus packets.
      */
-    public static class Provider extends PacketExtensionProvider<AgentStatus> {
+    public static class Provider extends ExtensionElementProvider<AgentStatus> {
 
         @Override
         public AgentStatus parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
@@ -251,7 +251,7 @@ public class AgentStatus implements PacketExtension {
             return agentStatus;
         }
 
-        private ChatInfo parseChatInfo(XmlPullParser parser) {
+        private static ChatInfo parseChatInfo(XmlPullParser parser) {
 
             String sessionID = parser.getAttributeValue("", "sessionID");
             String userID = parser.getAttributeValue("", "userID");

@@ -24,14 +24,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 import org.jivesoftware.smackx.jiveproperties.JivePropertiesManager;
 import org.jivesoftware.smackx.jiveproperties.packet.JivePropertiesExtension;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-public class JivePropertiesExtensionProvider extends PacketExtensionProvider<JivePropertiesExtension> {
+public class JivePropertiesExtensionProvider extends ExtensionElementProvider<JivePropertiesExtension> {
 
     private static final Logger LOGGER = Logger.getLogger(JivePropertiesExtensionProvider.class.getName());
 
@@ -39,7 +39,7 @@ public class JivePropertiesExtensionProvider extends PacketExtensionProvider<Jiv
      * Parse a properties sub-packet. If any errors occur while de-serializing Java object
      * properties, an exception will be printed and not thrown since a thrown exception will shut
      * down the entire connection. ClassCastExceptions will occur when both the sender and receiver
-     * of the packet don't have identical versions of the same class.
+     * of the stanza(/packet) don't have identical versions of the same class.
      * <p>
      * Note that you have to explicitly enabled Java object deserialization with @{link
      * {@link JivePropertiesManager#setJavaObjectEnabled(boolean)}

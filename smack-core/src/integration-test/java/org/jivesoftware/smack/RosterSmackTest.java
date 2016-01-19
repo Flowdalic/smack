@@ -44,7 +44,7 @@ public class RosterSmackTest extends SmackTestCase {
         super(name);
     }
 
-    
+
     /**
      * 1. Create entries in roster groups
      * 2. Iterate on the groups and remove the entry from each group
@@ -57,29 +57,29 @@ public class RosterSmackTest extends SmackTestCase {
 
             CountDownLatch latch = new CountDownLatch(2);
             setupCountdown(latch, roster);
-            
+
             roster.createEntry(getBareJID(1), "gato11", new String[] { "Friends", "Family" });
             roster.createEntry(getBareJID(2), "gato12", new String[] { "Family" });
-            
+
             waitForCountdown(latch, roster, 2);
 
             final CountDownLatch removeLatch = new CountDownLatch(3);
             RosterListener latchCounter = new RosterListener() {
                 @Override
                 public void presenceChanged(Presence presence) {}
-                
+
                 @Override
                 public void entriesUpdated(Collection<String> addresses) {
                     removeLatch.countDown();
                 }
-                
+
                 @Override
                 public void entriesDeleted(Collection<String> addresses) {}
-                
+
                 @Override
                 public void entriesAdded(Collection<String> addresses) {}
             }; 
-            
+
             roster.addRosterListener(latchCounter);
 
             for (RosterEntry entry : roster.getEntries()) {
@@ -87,10 +87,10 @@ public class RosterSmackTest extends SmackTestCase {
                     rosterGroup.removeEntry(entry);
                 }
             }
-            
+
             removeLatch.await(5, TimeUnit.SECONDS);
             roster.removeRosterListener(latchCounter);
-            
+
             assertEquals("The number of entries in connection 1 should be 1", 1, getConnection(1).getRoster().getEntryCount());
             assertEquals("The number of groups in connection 1 should be 0", 0, getConnection(1).getRoster().getGroupCount());
             assertEquals("The number of entries in connection 2 should be 1", 1, getConnection(2).getRoster().getEntryCount());
@@ -105,18 +105,18 @@ public class RosterSmackTest extends SmackTestCase {
 
     private void setupCountdown(final CountDownLatch latch, Roster roster) {
         roster.addRosterListener(new RosterListener() {
-            
+
             @Override
             public void presenceChanged(Presence presence) {}
-            
+
             @Override
             public void entriesUpdated(Collection<String> addresses) {
                 latch.countDown();
             }
-            
+
             @Override
             public void entriesDeleted(Collection<String> addresses) {}
-            
+
             @Override
             public void entriesAdded(Collection<String> addresses) {}
         });
@@ -135,10 +135,10 @@ public class RosterSmackTest extends SmackTestCase {
     public void testDeleteAllRosterEntries() throws Exception {
         // Add a new roster entry
         Roster roster = getConnection(0).getRoster();
-        
+
         CountDownLatch latch = new CountDownLatch(2);
         setupCountdown(latch, roster);
-        
+
         roster.createEntry(getBareJID(1), "gato11", new String[] { "Friends" });
         roster.createEntry(getBareJID(2), "gato12", new String[] { "Family" });
 
@@ -170,10 +170,10 @@ public class RosterSmackTest extends SmackTestCase {
         try {
             // Add a new roster entry
             Roster roster = getConnection(0).getRoster();
-            
+
             CountDownLatch latch = new CountDownLatch(2);
             setupCountdown(latch, roster);
-            
+
             roster.createEntry(getBareJID(1), "gato11", null);
             roster.createEntry(getBareJID(2), "gato12", null);
 
@@ -212,9 +212,9 @@ public class RosterSmackTest extends SmackTestCase {
             Roster roster = getConnection(0).getRoster();
             CountDownLatch latch = new CountDownLatch(1);
             setupCountdown(latch, roster);
-            
+
             roster.createEntry(getBareJID(1), null, null);
-            
+
             waitForCountdown(latch, roster, 1);
 
             final CountDownLatch updateLatch = new CountDownLatch(2);
@@ -242,9 +242,9 @@ public class RosterSmackTest extends SmackTestCase {
             }
             // Reload the roster and check the name again
             roster.reload();
-            
+
             updateLatch.await(5, TimeUnit.SECONDS);
-            
+
             for (RosterEntry entry : roster.getEntries()) {
                 assertEquals("gato11", entry.getName());
             }
@@ -434,7 +434,7 @@ public class RosterSmackTest extends SmackTestCase {
 
         // Create another connection for the same user of connection 1
         ConnectionConfiguration connectionConfiguration =
-                new ConnectionConfiguration(getHost(), getPort(), getServiceName());
+                new ConnectionConfiguration(getHost(), getPort(), getXMPPServiceDomain());
         XMPPTCPConnection conn4 = new XMPPConnection(connectionConfiguration);
         conn4.connect();
         conn4.login(getUsername(1), getPassword(1), "Home");
@@ -455,7 +455,7 @@ public class RosterSmackTest extends SmackTestCase {
         assertTrue("Returned a null Presence for an existing user", presence.isAvailable());
 
         // Check that the right presence is returned for a user+resource
-        presence = roster.getPresenceResource(getUsername(1) + "@" + conn4.getServiceName() + "/Home");
+        presence = roster.getPresenceResource(getUsername(1) + "@" + conn4.getXMPPServiceDomain() + "/Home");
         assertEquals("Returned the wrong Presence", "Home",
                 StringUtils.parseResource(presence.getFrom()));
 
@@ -466,7 +466,7 @@ public class RosterSmackTest extends SmackTestCase {
                 StringUtils.parseResource(presence.getFrom()));
 
         // Check the returned presence for a non-existent user+resource
-        presence = roster.getPresenceResource("noname@" + getServiceName() + "/Smack");
+        presence = roster.getPresenceResource("noname@" + getXMPPServiceDomain() + "/Smack");
         assertFalse("Available presence was returned for a non-existing user", presence.isAvailable());
         assertEquals("Returned Presence for a non-existing user has the incorrect type",
                 Presence.Type.unavailable, presence.getType());
@@ -501,7 +501,7 @@ public class RosterSmackTest extends SmackTestCase {
     public void testMultipleResources() throws Exception {
         // Create another connection for the same user of connection 1
         ConnectionConfiguration connectionConfiguration =
-                new ConnectionConfiguration(getHost(), getPort(), getServiceName());
+                new ConnectionConfiguration(getHost(), getPort(), getXMPPServiceDomain());
         XMPPTCPConnection conn4 = new XMPPConnection(connectionConfiguration);
         conn4.connect();
         conn4.login(getUsername(1), getPassword(1), "Home");
@@ -566,7 +566,7 @@ public class RosterSmackTest extends SmackTestCase {
 
         // Create another connection for the same user of connection 0
         ConnectionConfiguration connectionConfiguration =
-                new ConnectionConfiguration(getHost(), getPort(), getServiceName());
+                new ConnectionConfiguration(getHost(), getPort(), getXMPPServiceDomain());
         XMPPTCPConnection conn2 = new XMPPConnection(connectionConfiguration);
         conn2.connect();
         conn2.login(getUsername(0), getPassword(0), "Home");
@@ -588,22 +588,22 @@ public class RosterSmackTest extends SmackTestCase {
             Roster roster = getConnection(i).getRoster();
             final CountDownLatch removalLatch = new CountDownLatch(roster.getEntryCount());
             roster.addRosterListener(new RosterListener() {
-                
+
                 @Override
                 public void presenceChanged(Presence presence) {}
-                
+
                 @Override
                 public void entriesUpdated(Collection<String> addresses) {}
-                
+
                 @Override
                 public void entriesDeleted(Collection<String> addresses) {
                     removalLatch.countDown();
                 }
-                
+
                 @Override
                 public void entriesAdded(Collection<String> addresses) {}
             });
-            
+
             for (RosterEntry entry : roster.getEntries()) {
                 try {
                     roster.removeEntry(entry);
@@ -668,7 +668,7 @@ public class RosterSmackTest extends SmackTestCase {
         assertEquals("Presence should be online after a connection reconnection",
                 Presence.Type.available, presence.getType());
     }
-    
+
     protected int getMaxConnections() {
         return 3;
     }
@@ -684,25 +684,25 @@ public class RosterSmackTest extends SmackTestCase {
         cleanUpRoster();
         super.tearDown();
     }
-    
+
     private class RemovalListener implements RosterListener {
         private CountDownLatch latch;
-        
+
         private RemovalListener(CountDownLatch removalLatch) {
             latch = removalLatch;
         }
-        
+
         @Override
         public void presenceChanged(Presence presence) {}
-        
+
         @Override
         public void entriesUpdated(Collection<String> addresses) {}
-        
+
         @Override
         public void entriesDeleted(Collection<String> addresses) {                
             latch.countDown();
         }
-        
+
         @Override
         public void entriesAdded(Collection<String> addresses) {}
     }; 

@@ -29,7 +29,7 @@ import org.jivesoftware.smackx.xdatavalidation.packet.ValidateElement.RegexValid
 import org.junit.Test;
 
 /**
- *
+ * Data validation helper test.
  * @author Anno van Vliet
  *
  */
@@ -48,15 +48,15 @@ public class DataValidationHelperTest {
         catch (ValidationConsistencyException e) {
             assertEquals("Field type 'jid-single' is not consistent with validation method 'basic'.", e.getMessage());
         }
-        
+
         try {
             new ListRange(-1L, 1L);
             fail("No correct check on consistency");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("min must not be negative", e.getMessage());
+            assertEquals("unsigned 32-bit integers can't be negative", e.getMessage());
         }
-        
+
         element.setListRange(new ListRange(10L, 100L));
         try {
             element.checkConsistency(field);

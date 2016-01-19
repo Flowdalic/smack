@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2014 Florian Schmaus
+ * Copyright © 2014-2015 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
  */
 package org.jivesoftware.smackx.csi.packet;
 
-import org.jivesoftware.smack.packet.FullStreamElement;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Nonza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 
 /**
- * 
+ * Client State Indication.
  * @see <a href="http://xmpp.org/extensions/xep-0352.html">XEP-0352: Client State Indication</a>
  *
  */
 public class ClientStateIndication {
     public static final String NAMESPACE = "urn:xmpp:csi:0";
 
-    public static class Active extends FullStreamElement {
+    public static final class Active implements Nonza {
         public static final Active INSTANCE = new Active();
         public static final String ELEMENT = "active";
 
@@ -50,7 +50,7 @@ public class ClientStateIndication {
         }
     }
 
-    public static class Inactive extends FullStreamElement {
+    public static final class Inactive implements Nonza {
         public static final Inactive INSTANCE = new Inactive();
         public static final String ELEMENT = "inactive";
 
@@ -73,7 +73,7 @@ public class ClientStateIndication {
         }
     }
 
-    public static class Feature implements PacketExtension {
+    public static final class Feature implements ExtensionElement {
         public static final Feature INSTANCE = new Feature();
         public static final String ELEMENT = "csi";
 

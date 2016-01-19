@@ -56,7 +56,7 @@ import org.jivesoftware.smack.provider.ProviderManager;
  *
  * @author Gaston Dombiak
  */
-public class EnhancedDebuggerWindow {
+public final class EnhancedDebuggerWindow {
 
     private static EnhancedDebuggerWindow instance;
 
@@ -197,7 +197,7 @@ public class EnhancedDebuggerWindow {
                 getInstance().tabbedPane.indexOfComponent(debugger.tabbedPane),
                 connectionActiveIcon);
     }
-    
+
     /**
      * Creates the main debug window that provides information about Smack and also shows
      * a tab panel for each connection that is being debugged.

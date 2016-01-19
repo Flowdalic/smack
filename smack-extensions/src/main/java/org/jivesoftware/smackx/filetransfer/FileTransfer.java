@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.jxmpp.jid.Jid;
+
 /**
  * Contains the generic file information and progress related to a particular
  * file transfer.
@@ -35,7 +37,7 @@ public abstract class FileTransfer {
 
 	private long fileSize;
 
-	private String peer;
+	private Jid peer;
 
 	private Status status = Status.initial;
 
@@ -56,7 +58,7 @@ public abstract class FileTransfer {
      */
     private static final int BUFFER_SIZE = 8192;
 
-    protected FileTransfer(String peer, String streamID,
+    protected FileTransfer(Jid peer, String streamID,
 			FileTransferNegotiator negotiator) {
 		this.peer = peer;
 		this.streamID = streamID;
@@ -106,7 +108,7 @@ public abstract class FileTransfer {
 	 *
 	 * @return Returns the JID of the peer for this file transfer.
 	 */
-	public String getPeer() {
+	public Jid getPeer() {
 		return peer;
 	}
 
@@ -185,8 +187,10 @@ public abstract class FileTransfer {
 
 	protected void setStatus(Status status) {
         synchronized (statusMonitor) {
+         // CHECKSTYLE:OFF
 		    this.status = status;
 	    }
+        // CHECKSTYLE:ON
     }
 
     protected boolean updateStatus(Status oldStatus, Status newStatus) {
@@ -284,7 +288,7 @@ public abstract class FileTransfer {
 		complete("Complete"),
 
 		/**
-		 * The file transfer was cancelled
+		 * The file transfer was cancelled.
 		 */
 		cancelled("Cancelled");
 
@@ -309,7 +313,7 @@ public abstract class FileTransfer {
 
     public enum Error {
 		/**
-		 * No error
+		 * No error.
 		 */
 		none("No error"),
 
@@ -335,7 +339,7 @@ public abstract class FileTransfer {
 		connection("An error occured over the socket connected to send the file."),
 
 		/**
-		 * An error occurred while sending or receiving the file
+		 * An error occurred while sending or receiving the file.
 		 */
 		stream("An error occured while sending or recieving the file.");
 

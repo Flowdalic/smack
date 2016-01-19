@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.jivesoftware.smack.util.TypedCloneable;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jxmpp.jid.Jid;
 
 /**
  * Represents XMPP message packets. A message can be one of several types:
@@ -40,6 +42,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  * For each message type, different message fields are typically used as follows:
  * <p>
  * <table border="1">
+ * <caption>Message Types</caption>
  * <tr><td>&nbsp;</td><td colspan="5"><b>Message type</b></td></tr>
  * <tr><td><i>Field</i></td><td><b>Normal</b></td><td><b>Chat</b></td><td><b>Group Chat</b></td><td><b>Headline</b></td><td><b>XMPPError</b></td></tr>
  * <tr><td><i>subject</i></td> <td>SHOULD</td><td>SHOULD NOT</td><td>SHOULD NOT</td><td>SHOULD NOT</td><td>SHOULD NOT</td></tr>
@@ -50,12 +53,12 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  *
  * @author Matt Tucker
  */
-public final class Message extends Packet {
+public final class Message extends Stanza implements TypedCloneable<Message> {
 
     public static final String ELEMENT = "message";
     public static final String BODY = "body";
 
-    private Type type = Type.normal;
+    private Type type;
     private String thread = null;
 
     private final Set<Subject> subjects = new HashSet<Subject>();
@@ -72,7 +75,7 @@ public final class Message extends Packet {
      *
      * @param to the recipient of the message.
      */
-    public Message(String to) {
+    public Message(Jid to) {
         setTo(to);
     }
 
@@ -82,7 +85,7 @@ public final class Message extends Packet {
      * @param to the user to send the message to.
      * @param type the message type.
      */
-    public Message(String to, Type type) {
+    public Message(Jid to, Type type) {
         this(to);
         setType(type);
     }
@@ -93,9 +96,26 @@ public final class Message extends Packet {
      * @param to the user to send the message to.
      * @param body the body of the message.
      */
-    public Message(String to, String body) {
+    public Message(Jid to, String body) {
         this(to);
         setBody(body);
+    }
+
+    /**
+     * Copy constructor.
+     * <p>
+     * This does not perform a deep clone, as extension elements are shared between the new and old
+     * instance.
+     * </p>
+     *
+     * @param other
+     */
+    public Message(Message other) {
+        super(other);
+        this.type = other.type;
+        this.thread = other.thread;
+        this.subjects.addAll(other.subjects);
+        this.bodies.addAll(other.bodies);
     }
 
     /**
@@ -105,6 +125,9 @@ public final class Message extends Packet {
      * @return the type of the message.
      */
     public Type getType() {
+        if (type == null) {
+            return Type.normal;
+        }
         return type;
     }
 
@@ -112,12 +135,8 @@ public final class Message extends Packet {
      * Sets the type of the message.
      *
      * @param type the type of the message.
-     * @throws IllegalArgumentException if null is passed in as the type
      */
     public void setType(Type type) {
-        if (type == null) {
-            throw new IllegalArgumentException("Type cannot be null.");
-        }
         this.type = type;
     }
 
@@ -127,14 +146,14 @@ public final class Message extends Packet {
      * <p>
      * The default subject of a message is the subject that corresponds to the message's language.
      * (see {@link #getLanguage()}) or if no language is set to the applications default
-     * language (see {@link Packet#getDefaultLanguage()}).
+     * language (see {@link Stanza#getDefaultLanguage()}).
      *
      * @return the subject of the message.
      */
     public String getSubject() {
         return getSubject(null);
     }
-    
+
     /**
      * Returns the subject corresponding to the language. If the language is null, the method result
      * will be the same as {@link #getSubject()}. Null will be returned if the language does not have
@@ -147,7 +166,7 @@ public final class Message extends Packet {
         Subject subject = getMessageSubject(language);
         return subject == null ? null : subject.subject;
     }
-    
+
     private Subject getMessageSubject(String language) {
         language = determineLanguage(language);
         for (Subject subject : subjects) {
@@ -245,7 +264,7 @@ public final class Message extends Packet {
      * <p>
      * The default body of a message is the body that corresponds to the message's language.
      * (see {@link #getLanguage()}) or if no language is set to the applications default
-     * language (see {@link Packet#getDefaultLanguage()}).
+     * language (see {@link Stanza#getDefaultLanguage()}).
      *
      * @return the body of the message.
      */
@@ -266,7 +285,7 @@ public final class Message extends Packet {
         Body body = getMessageBody(language);
         return body == null ? null : body.message;
     }
-    
+
     private Body getMessageBody(String language) {
         language = determineLanguage(language);
         for (Body body : bodies) {
@@ -382,7 +401,7 @@ public final class Message extends Packet {
     }
 
     private String determineLanguage(String language) {
-        
+
         // empty string is passed by #setSubject() and #setBody() and is the same as null
         language = "".equals(language) ? null : language;
 
@@ -396,7 +415,7 @@ public final class Message extends Packet {
         else {
             return language;
         }
-        
+
     }
 
     @Override
@@ -404,9 +423,7 @@ public final class Message extends Packet {
         XmlStringBuilder buf = new XmlStringBuilder();
         buf.halfOpenElement(ELEMENT);
         addCommonAttributes(buf);
-        if (type != Type.normal) {
-            buf.attribute("type", type);
-        }
+        buf.optAttribute("type", type);
         buf.rightAngleBracket();
 
         // Add the subject in the default language
@@ -449,9 +466,22 @@ public final class Message extends Packet {
     }
 
     /**
+     * Creates and returns a copy of this message stanza.
+     * <p>
+     * This does not perform a deep clone, as extension elements are shared between the new and old
+     * instance.
+     * </p>
+     * @return a clone of this message.
+     */
+    @Override
+    public Message clone() {
+        return new Message(this);
+    }
+
+    /**
      * Represents a message subject, its language and the content of the subject.
      */
-    public static class Subject {
+    public static final class Subject {
 
         private final String subject;
         private final String language;
@@ -508,13 +538,13 @@ public final class Message extends Packet {
             // simplified comparison because language and subject are always set
             return this.language.equals(other.language) && this.subject.equals(other.subject);
         }
-        
+
     }
 
     /**
      * Represents a message body, its language and the content of the message.
      */
-    public static class Body {
+    public static final class Body {
 
         private final String message;
         private final String language;
@@ -570,7 +600,7 @@ public final class Message extends Packet {
             // simplified comparison because language and message are always set
             return this.language.equals(other.language) && this.message.equals(other.message);
         }
-        
+
     }
 
     /**

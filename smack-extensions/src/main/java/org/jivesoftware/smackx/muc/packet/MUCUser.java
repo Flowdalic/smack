@@ -18,14 +18,14 @@
 package org.jivesoftware.smackx.muc.packet;
 
 import org.jivesoftware.smack.packet.NamedElement;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
@@ -34,7 +34,7 @@ import org.jivesoftware.smack.util.XmlStringBuilder;
  *
  * @author Gaston Dombiak
  */
-public class MUCUser implements PacketExtension {
+public class MUCUser implements ExtensionElement {
 
     public static final String ELEMENT = "x";
     public static final String NAMESPACE = MUCInitialPresence.NAMESPACE + "#user";
@@ -119,8 +119,21 @@ public class MUCUser implements PacketExtension {
     }
 
     /**
+     * Returns true if this MUCUser instance has also {@link Status} information.
+     * <p>
+     * If <code>true</code> is returned, then {@link #getStatus()} will return a non-empty set.
+     * </p>
+     *
+     * @return true if this MUCUser has status information.
+     * @since 4.1
+     */
+    public boolean hasStatus() {
+        return !statusCodes.isEmpty();
+    }
+
+    /**
      * Returns the notification that the room has been destroyed. After a room has been destroyed,
-     * the room occupants will receive a Presence packet of type 'unavailable' with the reason for
+     * the room occupants will receive a Presence stanza(/packet) of type 'unavailable' with the reason for
      * the room destruction if provided by the room owner.
      *
      * @return a notification that the room has been destroyed.
@@ -190,7 +203,7 @@ public class MUCUser implements PacketExtension {
 
     /**
      * Sets the notification that the room has been destroyed. After a room has been destroyed,
-     * the room occupants will receive a Presence packet of type 'unavailable' with the reason for
+     * the room occupants will receive a Presence stanza(/packet) of type 'unavailable' with the reason for
      * the room destruction if provided by the room owner.
      *
      * @param destroy the notification that the room has been destroyed.
@@ -204,10 +217,10 @@ public class MUCUser implements PacketExtension {
      *
      * @param packet
      * @return the MUCUser PacketExtension or {@code null}
-     * @deprecated use {@link #from(Packet)} instead
+     * @deprecated use {@link #from(Stanza)} instead
      */
     @Deprecated
-    public static MUCUser getFrom(Packet packet) {
+    public static MUCUser getFrom(Stanza packet) {
         return from(packet);
     }
 
@@ -217,7 +230,7 @@ public class MUCUser implements PacketExtension {
      * @param packet
      * @return the MUCUser PacketExtension or {@code null}
      */
-    public static MUCUser from(Packet packet) {
+    public static MUCUser from(Stanza packet) {
         return packet.getExtension(ELEMENT, NAMESPACE);
     }
 
@@ -400,11 +413,12 @@ public class MUCUser implements PacketExtension {
      *
      * @author Gaston Dombiak
      */
-    public static class Status implements NamedElement {
+    public static final class Status implements NamedElement {
         public static final String ELEMENT = "status";
 
         private static final Map<Integer, Status> statusMap = new HashMap<Integer, Status>(8);
 
+        public static final Status PRESENCE_TO_SELF_110 = Status.create(110);
         public static final Status ROOM_CREATED_201 = Status.create(201);
         public static final Status BANNED_301 = Status.create(301);
         public static final Status NEW_NICKNAME_303 = Status.create(303);
@@ -455,6 +469,11 @@ public class MUCUser implements PacketExtension {
         }
 
         @Override
+        public String toString() {
+            return code.toString();
+        }
+
+        @Override
         public boolean equals(Object other) {
             if (other == null) {
                 return false;
@@ -462,7 +481,7 @@ public class MUCUser implements PacketExtension {
             if (other instanceof Status) {
                 Status otherStatus = (Status) other;
                 return code.equals(otherStatus.getCode());
-            } 
+            }
             return false;
         }
 

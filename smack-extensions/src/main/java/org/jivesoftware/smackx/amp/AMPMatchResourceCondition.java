@@ -27,14 +27,15 @@ public class AMPMatchResourceCondition implements AMPExtension.Condition {
     public static final String NAME = "match-resource";
 
     /**
-     * Check if server supports match-resource condition
+     * Check if server supports match-resource condition.
      * @param connection Smack connection instance
      * @return true if match-resource condition is supported.
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static boolean isSupported(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public static boolean isSupported(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         return AMPManager.isConditionSupported(connection, NAME);
     }
 
@@ -62,7 +63,7 @@ public class AMPMatchResourceCondition implements AMPExtension.Condition {
     }
 
     /**
-     * match-resource amp condition value as defined by XEP-0079
+     * match-resource amp condition value as defined by XEP-0079.
      * See http://xmpp.org/extensions/xep-0079.html#conditions-def-match
      */
     public static enum Value {

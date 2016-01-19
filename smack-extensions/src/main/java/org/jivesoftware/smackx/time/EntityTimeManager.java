@@ -30,12 +30,12 @@ import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
-import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.packet.XMPPError.Condition;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.time.packet.Time;
+import org.jxmpp.jid.Jid;
 
-public class EntityTimeManager extends Manager {
+public final class EntityTimeManager extends Manager {
 
     private static final Map<XMPPConnection, EntityTimeManager> INSTANCES = new WeakHashMap<XMPPConnection, EntityTimeManager>();
 
@@ -77,7 +77,7 @@ public class EntityTimeManager extends Manager {
                     return Time.createResponse(iqRequest);
                 }
                 else {
-                    return IQ.createErrorResponse(iqRequest, new XMPPError(Condition.not_acceptable));
+                    return IQ.createErrorResponse(iqRequest, Condition.not_acceptable);
                 }
             }
         });
@@ -99,11 +99,11 @@ public class EntityTimeManager extends Manager {
         enabled = false;
     }
 
-    public boolean isTimeSupported(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public boolean isTimeSupported(Jid jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid, Time.NAMESPACE);
     }
 
-    public Time getTime(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public Time getTime(Jid jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         if (!isTimeSupported(jid))
             return null;
 

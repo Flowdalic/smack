@@ -20,6 +20,8 @@ package org.jivesoftware.smackx.workgroup;
 import java.util.List;
 import java.util.Map;
 
+import org.jxmpp.jid.Jid;
+
 /**
  * An immutable class wrapping up the basic information which comprises a group chat invitation.
  *
@@ -27,18 +29,18 @@ import java.util.Map;
  */
 public class WorkgroupInvitation {
 
-    protected String uniqueID;
+    protected Jid uniqueID;
 
     protected String sessionID;
 
-    protected String groupChatName;
-    protected String issuingWorkgroupName;
+    protected Jid groupChatName;
+    protected Jid issuingWorkgroupName;
     protected String messageBody;
-    protected String invitationSender;
+    protected Jid invitationSender;
     protected Map<String, List<String>> metaData;
 
     /**
-     * This calls the 5-argument constructor with a null MetaData argument value
+     * This calls the 5-argument constructor with a null MetaData argument value.
      *
      * @param jid the jid string with which the issuing AgentSession or Workgroup instance
      *                  was created
@@ -48,13 +50,14 @@ public class WorkgroupInvitation {
      * @param msgBody the body of the message which contained the invitation
      * @param from the user jid who issued the invitation, if known, null otherwise
      */
-    public WorkgroupInvitation (String jid, String group, String workgroup,
-                       String sessID, String msgBody, String from) {
+    public WorkgroupInvitation (Jid jid, Jid group, Jid workgroup,
+                       String sessID, String msgBody, Jid from) {
         this(jid, group, workgroup, sessID, msgBody, from, null);
     }
 
     /**
-     * @param jid the jid string with which the issuing AgentSession or Workgroup instance
+     * WorkgroupInvitation.
+     * @param jid the jid string with which the issuing AgentSession or Workgroup instance.
      *                  was created
      * @param group the jid of the room to which the person is invited
      * @param workgroup the jid of the workgroup issuing the invitation
@@ -63,8 +66,8 @@ public class WorkgroupInvitation {
      * @param from the user jid who issued the invitation, if known, null otherwise
      * @param metaData the metadata sent with the invitation
      */
-    public WorkgroupInvitation (String jid, String group, String workgroup, String sessID, String msgBody,
-                       String from, Map<String, List<String>> metaData) {
+    public WorkgroupInvitation (Jid jid, Jid group, Jid workgroup, String sessID, String msgBody,
+                       Jid from, Map<String, List<String>> metaData) {
         super();
 
         this.uniqueID = jid;
@@ -77,15 +80,17 @@ public class WorkgroupInvitation {
     }
 
     /**
+     * Get the unique id.
      * @return the jid string with which the issuing AgentSession or Workgroup instance
      *  was created.
      */
-    public String getUniqueID () {
+    public Jid getUniqueID () {
         return this.uniqueID;
     }
 
     /**
-     * @return the session id associated with the pending chat; working backwards temporally,
+     * Get the session id.
+     * @return the session id associated with the pending chat; working backwards temporally
      *              this session id should match the session id to the corresponding offer request
      *              which resulted in this invitation.
      */
@@ -94,20 +99,23 @@ public class WorkgroupInvitation {
     }
 
     /**
+     * Get the group chat name.
      * @return the jid of the room to which the person is invited.
      */
-    public String getGroupChatName () {
+    public Jid getGroupChatName () {
         return this.groupChatName;
     }
 
     /**
+     * Get workgroup name.
      * @return the name of the workgroup from which the invitation was issued.
      */
-    public String getWorkgroupName () {
+    public Jid getWorkgroupName () {
         return this.issuingWorkgroupName;
     }
 
     /**
+     * Get the message body.
      * @return the contents of the body-block of the message that housed this invitation.
      */
     public String getMessageBody () {
@@ -115,13 +123,15 @@ public class WorkgroupInvitation {
     }
 
     /**
+     * Get invitation sender.
      * @return the user who issued the invitation, or null if it wasn't known.
      */
-    public String getInvitationSender () {
+    public Jid getInvitationSender () {
         return this.invitationSender;
     }
 
     /**
+     * Get meta data.
      * @return the meta data associated with the invitation, or null if this instance was
      *              constructed with none
      */

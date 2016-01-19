@@ -27,6 +27,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -77,7 +78,7 @@ public class ImageTransmitter implements Runnable {
 
         }
         catch (AWTException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
 
     }
@@ -141,7 +142,7 @@ public class ImageTransmitter implements Runnable {
                                                 socket.send(p);
                                             }
                                             catch (IOException e) {
-                                                e.printStackTrace();
+                                                LOGGER.log(Level.WARNING, "exception", e);
                                             }
 
                                             tiles[i][j] = pixels;
@@ -157,7 +158,7 @@ public class ImageTransmitter implements Runnable {
                             }
                         }
                         catch (InterruptedException e) {
-                            e.printStackTrace();
+                            LOGGER.log(Level.WARNING, "exception", e);
                         }
                     }
                 }
@@ -170,7 +171,7 @@ public class ImageTransmitter implements Runnable {
                         Thread.sleep(500 - trace);
                     }
                     catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, "exception", e);
                     }
                 }
             }
@@ -182,7 +183,7 @@ public class ImageTransmitter implements Runnable {
     }
 
     /**
-     * Set Transmit Enabled/Disabled
+     * Set Transmit Enabled/Disabled.
      *
      * @param transmit boolean Enabled/Disabled
      */
@@ -191,7 +192,7 @@ public class ImageTransmitter implements Runnable {
     }
 
     /**
-     * Get the encoder used to encode Images Tiles
+     * Get the encoder used to encode Images Tiles.
      *
      * @return encoder
      */
@@ -200,7 +201,7 @@ public class ImageTransmitter implements Runnable {
     }
 
     /**
-     * Set the encoder used to encode Image Tiles
+     * Set the encoder used to encode Image Tiles.
      *
      * @param encoder encoder
      */
@@ -209,7 +210,7 @@ public class ImageTransmitter implements Runnable {
     }
 
     /**
-     * Stops Transmitter
+     * Stops Transmitter.
      */
     public void stop() {
         this.transmit = false;

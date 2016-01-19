@@ -23,9 +23,10 @@ import java.util.List;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.NamedElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jxmpp.jid.Jid;
 
 /**
- * A packet representing part of a SOCKS5 Bytestream negotiation.
+ * A stanza(/packet) representing part of a SOCKS5 Bytestream negotiation.
  * 
  * @author Alexander Wenckus
  */
@@ -34,7 +35,7 @@ public class Bytestream extends IQ {
     public static final String ELEMENT = QUERY_ELEMENT;
 
     /**
-     * The XMPP namespace of the SOCKS5 Bytestream
+     * The XMPP namespace of the SOCKS5 Bytestream.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/bytestreams";
 
@@ -49,7 +50,7 @@ public class Bytestream extends IQ {
     private Activate toActivate;
 
     /**
-     * The default constructor
+     * The default constructor.
      */
     public Bytestream() {
         super(ELEMENT, NAMESPACE);
@@ -113,7 +114,7 @@ public class Bytestream extends IQ {
      * @param address The internet address of the stream host.
      * @return The added stream host.
      */
-    public StreamHost addStreamHost(final String JID, final String address) {
+    public StreamHost addStreamHost(final Jid JID, final String address) {
         return addStreamHost(JID, address, 0);
     }
 
@@ -125,7 +126,7 @@ public class Bytestream extends IQ {
      * @param port The port on which the remote host is seeking connections.
      * @return The added stream host.
      */
-    public StreamHost addStreamHost(final String JID, final String address, final int port) {
+    public StreamHost addStreamHost(final Jid JID, final String address, final int port) {
         StreamHost host = new StreamHost(JID, address, port);
         addStreamHost(host);
 
@@ -156,7 +157,7 @@ public class Bytestream extends IQ {
      * @param JID The JID of the desired stream host.
      * @return Returns the stream host related to the given JID, or null if there is none.
      */
-    public StreamHost getStreamHost(final String JID) {
+    public StreamHost getStreamHost(final Jid JID) {
         if (JID == null) {
             return null;
         }
@@ -184,7 +185,7 @@ public class Bytestream extends IQ {
      * 
      * @param JID The JID of the used host.
      */
-    public void setUsedHost(final String JID) {
+    public void setUsedHost(final Jid JID) {
         this.usedHost = new StreamHostUsed(JID);
     }
 
@@ -198,10 +199,10 @@ public class Bytestream extends IQ {
     }
 
     /**
-     * Returns the activate element of the packet sent to the proxy host to verify the identity of
+     * Returns the activate element of the stanza(/packet) sent to the proxy host to verify the identity of
      * the initiator and match them to the appropriate stream.
      * 
-     * @return Returns the activate element of the packet sent to the proxy host to verify the
+     * @return Returns the activate element of the stanza(/packet) sent to the proxy host to verify the
      *         identity of the initiator and match them to the appropriate stream.
      */
     public Activate getToActivate() {
@@ -209,13 +210,13 @@ public class Bytestream extends IQ {
     }
 
     /**
-     * Upon the response from the target of the used host the activate packet is sent to the SOCKS5
+     * Upon the response from the target of the used host the activate stanza(/packet) is sent to the SOCKS5
      * proxy. The proxy will activate the stream or return an error after verifying the identity of
      * the initiator, using the activate packet.
      * 
      * @param targetID The JID of the target of the file transfer.
      */
-    public void setToActivate(final String targetID) {
+    public void setToActivate(final Jid targetID) {
         this.toActivate = new Activate(targetID);
     }
 
@@ -256,7 +257,7 @@ public class Bytestream extends IQ {
     }
 
     /**
-     * Packet extension that represents a potential SOCKS5 proxy for the file transfer. Stream hosts
+     * Stanza(/Packet) extension that represents a potential SOCKS5 proxy for the file transfer. Stream hosts
      * are forwarded to the target of the file transfer who then chooses and connects to one.
      * 
      * @author Alexander Wenckus
@@ -265,13 +266,13 @@ public class Bytestream extends IQ {
 
         public static String ELEMENTNAME = "streamhost";
 
-        private final String JID;
+        private final Jid JID;
 
         private final String addy;
 
         private final int port;
 
-        public StreamHost(String jid, String address) {
+        public StreamHost(Jid jid, String address) {
             this(jid, address, 0);
         }
 
@@ -281,7 +282,7 @@ public class Bytestream extends IQ {
          * @param JID The JID of the stream host.
          * @param address The internet address of the stream host.
          */
-        public StreamHost(final String JID, final String address, int port) {
+        public StreamHost(final Jid JID, final String address, int port) {
             this.JID = JID;
             this.addy = address;
             this.port = port;
@@ -292,7 +293,7 @@ public class Bytestream extends IQ {
          * 
          * @return Returns the JID of the stream host.
          */
-        public String getJID() {
+        public Jid getJID() {
             return JID;
         }
 
@@ -335,7 +336,7 @@ public class Bytestream extends IQ {
 
     /**
      * After selected a SOCKS5 stream host and successfully connecting, the target of the file
-     * transfer returns a byte stream packet with the stream host used extension.
+     * transfer returns a byte stream stanza(/packet) with the stream host used extension.
      * 
      * @author Alexander Wenckus
      */
@@ -343,14 +344,14 @@ public class Bytestream extends IQ {
 
         public static String ELEMENTNAME = "streamhost-used";
 
-        private final String JID;
+        private final Jid JID;
 
         /**
          * Default constructor.
          * 
          * @param JID The JID of the selected stream host.
          */
-        public StreamHostUsed(final String JID) {
+        public StreamHostUsed(final Jid JID) {
             this.JID = JID;
         }
 
@@ -359,7 +360,7 @@ public class Bytestream extends IQ {
          * 
          * @return Returns the JID of the selected stream host.
          */
-        public String getJID() {
+        public Jid getJID() {
             return JID;
         }
 
@@ -377,7 +378,7 @@ public class Bytestream extends IQ {
     }
 
     /**
-     * The packet sent by the stream initiator to the stream proxy to activate the connection.
+     * The stanza(/packet) sent by the stream initiator to the stream proxy to activate the connection.
      * 
      * @author Alexander Wenckus
      */
@@ -385,14 +386,14 @@ public class Bytestream extends IQ {
 
         public static String ELEMENTNAME = "activate";
 
-        private final String target;
+        private final Jid target;
 
         /**
          * Default constructor specifying the target of the stream.
          * 
          * @param target The target of the stream.
          */
-        public Activate(final String target) {
+        public Activate(final Jid target) {
             this.target = target;
         }
 
@@ -401,7 +402,7 @@ public class Bytestream extends IQ {
          * 
          * @return Returns the target of the activation.
          */
-        public String getTarget() {
+        public Jid getTarget() {
             return target;
         }
 

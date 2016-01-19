@@ -36,7 +36,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * STUN IQ Packet used to request and retrieve a STUN server and port to make p2p connections easier. STUN is usually used by Jingle Media Transmission between two parties that are behind NAT.
+ * STUN IQ Stanza(/Packet) used to request and retrieve a STUN server and port to make p2p connections easier. STUN is usually used by Jingle Media Transmission between two parties that are behind NAT.
  * <p/>
  * High Level Usage Example:
  * <p/>
@@ -53,17 +53,17 @@ public class STUN extends SimpleIQ {
     private String publicIp = null;
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String DOMAIN = "stun";
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "query";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "google:jingleinfo";
 
@@ -72,14 +72,14 @@ public class STUN extends SimpleIQ {
     }
 
     /**
-     * Creates a STUN IQ
+     * Creates a STUN IQ.
      */
     public STUN() {
         super(ELEMENT_NAME, NAMESPACE);
     }
 
     /**
-     * Get a list of STUN Servers recommended by the Server
+     * Get a list of STUN Servers recommended by the Server.
      *
      * @return the list of STUN servers
      */
@@ -88,7 +88,7 @@ public class STUN extends SimpleIQ {
     }
 
     /**
-     * Get Public Ip returned from the XMPP server
+     * Get Public Ip returned from the XMPP server.
      *
      * @return the public IP
      */
@@ -107,7 +107,7 @@ public class STUN extends SimpleIQ {
 
     /**
      * IQProvider for RTP Bridge packets.
-     * Parse receive RTPBridge packet to a RTPBridge instance
+     * Parse receive RTPBridge stanza(/packet) to a RTPBridge instance
      *
      * @author Thiago Rocha
      */
@@ -173,15 +173,17 @@ public class STUN extends SimpleIQ {
      * @param connection
      * @return the STUN server address
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static STUN getSTUNServer(XMPPConnection connection) throws NotConnectedException {
+    @SuppressWarnings("deprecation")
+    public static STUN getSTUNServer(XMPPConnection connection) throws NotConnectedException, InterruptedException {
 
         if (!connection.isConnected()) {
             return null;
         }
 
         STUN stunPacket = new STUN();
-        stunPacket.setTo(DOMAIN + "." + connection.getServiceName());
+        stunPacket.setTo(DOMAIN + "." + connection.getXMPPServiceDomain());
 
         PacketCollector collector = connection.createPacketCollectorAndSend(stunPacket);
 
@@ -200,8 +202,9 @@ public class STUN extends SimpleIQ {
      * @return true if the server support STUN
      * @throws SmackException 
      * @throws XMPPException 
+     * @throws InterruptedException 
      */
-    public static boolean serviceAvailable(XMPPConnection connection) throws XMPPException, SmackException {
+    public static boolean serviceAvailable(XMPPConnection connection) throws XMPPException, SmackException, InterruptedException {
 
         if (!connection.isConnected()) {
             return false;
@@ -210,7 +213,7 @@ public class STUN extends SimpleIQ {
         LOGGER.fine("Service listing");
 
         ServiceDiscoveryManager disco = ServiceDiscoveryManager.getInstanceFor(connection);
-        DiscoverItems items = disco.discoverItems(connection.getServiceName());
+        DiscoverItems items = disco.discoverItems(connection.getXMPPServiceDomain());
 
         for (DiscoverItems.Item item : items.getItems()) {
             DiscoverInfo info = disco.discoverInfo(item.getEntityID());
@@ -229,7 +232,7 @@ public class STUN extends SimpleIQ {
     }
 
     /**
-     * Provides easy abstract to store STUN Server Addresses and Ports
+     * Provides easy abstract to store STUN Server Addresses and Ports.
      */
     public static class StunServerAddress {
 
@@ -242,7 +245,7 @@ public class STUN extends SimpleIQ {
         }
 
         /**
-         * Get the Host Address
+         * Get the Host Address.
          *
          * @return the host address
          */
@@ -251,7 +254,7 @@ public class STUN extends SimpleIQ {
         }
 
         /**
-         * Get the Server Port
+         * Get the Server Port.
          *
          * @return the server port
          */

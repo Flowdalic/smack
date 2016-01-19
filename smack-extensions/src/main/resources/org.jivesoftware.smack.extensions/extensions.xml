@@ -3,6 +3,7 @@
         <className>org.jivesoftware.smackx.disco.ServiceDiscoveryManager</className>
         <className>org.jivesoftware.smackx.xhtmlim.XHTMLManager</className>
         <className>org.jivesoftware.smackx.muc.MultiUserChatManager</className>
+        <className>org.jivesoftware.smackx.muc.bookmarkautojoin.MucBookmarkAutojoinManager</className>
         <className>org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager</className>
         <className>org.jivesoftware.smackx.bytestreams.socks5.Socks5BytestreamManager</className>
         <className>org.jivesoftware.smackx.filetransfer.FileTransferManager</className>
@@ -15,5 +16,8 @@
         <className>org.jivesoftware.smackx.xdata.XDataManager</className>
         <className>org.jivesoftware.smackx.xdatalayout.XDataLayoutManager</className>
         <className>org.jivesoftware.smackx.xdatavalidation.XDataValidationManager</className>
+		<className>org.jivesoftware.smackx.receipts.DeliveryReceiptManager</className>
+		<className>org.jivesoftware.smackx.iqversion.VersionManager</className>
+		<className>org.jivesoftware.smackx.caps.EntityCapsManager</className>
     </startupClasses>
 </smack>

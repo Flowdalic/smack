@@ -17,8 +17,9 @@
 package org.jivesoftware.smackx.pubsub.packet;
 
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smackx.pubsub.PubSubElementType;
+import org.jxmpp.jid.Jid;
 
 /**
  * The standard PubSub extension of an {@link IQ} packet.  This is the topmost
@@ -40,23 +41,14 @@ public class PubSub extends IQ
         super(ELEMENT, ns.getXmlns());
     }
 
-    public PubSub(String to, Type type, PubSubNamespace ns) {
+    public PubSub(Jid to, Type type, PubSubNamespace ns) {
         super(ELEMENT, (ns == null ? PubSubNamespace.BASIC : ns).getXmlns());
         setTo(to);
         setType(type);
     }
 
-	/**
-    * Returns the XML element name of the extension sub-packet root element.
-    *
-    * @return the XML element name of the packet extension.
-    */
-    public String getElementName() {
-        return ELEMENT;
-    }
-
     @SuppressWarnings("unchecked")
-    public <PE extends PacketExtension> PE getExtension(PubSubElementType elem)
+    public <PE extends ExtensionElement> PE getExtension(PubSubElementType elem)
 	{
 		return (PE) getExtension(elem.getElementName(), elem.getNamespace().getXmlns());
 	}
@@ -64,7 +56,7 @@ public class PubSub extends IQ
     /**
      * Returns the XML representation of a pubsub element according the specification.
      * 
-     * The XML representation will be inside of an iq packet like
+     * The XML representation will be inside of an iq stanza(/packet) like
      * in the following example:
      * <pre>
      * &lt;iq type='set' id="MlIpV-4" to="pubsub.gato.home" from="gato3@gato.home/Smack"&gt;
@@ -86,7 +78,7 @@ public class PubSub extends IQ
         return xml;
     }
 
-    public static PubSub createPubsubPacket(String to, Type type, PacketExtension extension, PubSubNamespace ns) {
+    public static PubSub createPubsubPacket(Jid to, Type type, ExtensionElement extension, PubSubNamespace ns) {
         PubSub pubSub = new PubSub(to, type, ns);
         pubSub.addExtension(extension);
         return pubSub;

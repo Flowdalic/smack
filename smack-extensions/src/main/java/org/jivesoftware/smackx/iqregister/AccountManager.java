@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Logger;
 
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.PacketCollector;
@@ -31,17 +32,21 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.filter.PacketIDFilter;
+import org.jivesoftware.smack.filter.StanzaIdFilter;
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.iqregister.packet.Registration;
-import org.jxmpp.util.XmppStringUtils;
+import org.jxmpp.jid.parts.Localpart;
 
 /**
  * Allows creation and management of accounts on an XMPP server.
  *
  * @author Matt Tucker
  */
-public class AccountManager extends Manager {
+public final class AccountManager extends Manager {
+
+    private static final Logger LOGGER = Logger.getLogger(AccountManager.class.getName());
+
     private static final Map<XMPPConnection, AccountManager> INSTANCES = new WeakHashMap<XMPPConnection, AccountManager>();
 
     /**
@@ -59,12 +64,41 @@ public class AccountManager extends Manager {
         return accountManager;
     }
 
+    private static boolean allowSensitiveOperationOverInsecureConnectionDefault = false;
+
+    /**
+     * The default value used by new account managers for <code>allowSensitiveOperationOverInsecureConnection</code>.
+     *
+     * @param allow
+     * @see #sensitiveOperationOverInsecureConnection(boolean)
+     * @since 4.1
+     */
+    public static void sensitiveOperationOverInsecureConnectionDefault(boolean allow) {
+        AccountManager.allowSensitiveOperationOverInsecureConnectionDefault = allow;
+    }
+
+    private boolean allowSensitiveOperationOverInsecureConnection = allowSensitiveOperationOverInsecureConnectionDefault;
+
+    /**
+     * Set to <code>true</code> to allow sensitive operation over insecure connection.
+     * <p>
+     * Set to true to allow sensitive operations like account creation or password changes over an insecure (e.g.
+     * unencrypted) connections.
+     * </p>
+     *
+     * @param allow
+     * @since 4.1
+     */
+    public void sensitiveOperationOverInsecureConnection(boolean allow) {
+        this.allowSensitiveOperationOverInsecureConnection = allow;
+    }
+
     private Registration info = null;
 
     /**
      * Flag that indicates whether the server supports In-Band Registration.
      * In-Band Registration may be advertised as a stream feature. If no stream feature
-     * was advertised from the server then try sending an IQ packet to discover if In-Band
+     * was advertised from the server then try sending an IQ stanza(/packet) to discover if In-Band
      * Registration is available.
      */
     private boolean accountCreationSupported = false;
@@ -72,7 +106,7 @@ public class AccountManager extends Manager {
     /**
      * Creates a new AccountManager instance.
      *
-     * @param connection a connection to a XMPP server.
+     * @param connection a connection to an XMPP server.
      */
     private AccountManager(XMPPConnection connection) {
         super(connection);
@@ -81,7 +115,7 @@ public class AccountManager extends Manager {
     /**
      * Sets whether the server supports In-Band Registration. In-Band Registration may be
      * advertised as a stream feature. If no stream feature was advertised from the server
-     * then try sending an IQ packet to discover if In-Band Registration is available.
+     * then try sending an IQ stanza(/packet) to discover if In-Band Registration is available.
      *
      * @param accountCreationSupported true if the server supports In-Band Registration.
      */
@@ -98,8 +132,9 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public boolean supportsAccountCreation() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean supportsAccountCreation() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // Check if we already know that the server supports creating new accounts
         if (accountCreationSupported) {
             return true;
@@ -140,8 +175,9 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public Set<String> getAccountAttributes() throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public Set<String> getAccountAttributes() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         if (info == null) {
             getRegistrationInfo();
         }
@@ -163,8 +199,9 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public String getAccountAttribute(String name) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public String getAccountAttribute(String name) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         if (info == null) {
             getRegistrationInfo();
         }
@@ -180,8 +217,9 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public String getAccountInstructions() throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public String getAccountInstructions() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         if (info == null) {
             getRegistrationInfo();
         }
@@ -201,8 +239,9 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void createAccount(String username, String password) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public void createAccount(Localpart username, String password) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException  {
         // Create a map for all the required attributes, but give them blank values.
         Map<String, String> attributes = new HashMap<String, String>();
         for (String attributeName : getAccountAttributes()) {
@@ -222,15 +261,28 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException if an error occurs creating the account.
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      * @see #getAccountAttributes()
      */
-    public void createAccount(String username, String password, Map<String, String> attributes)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
-        attributes.put("username", username);
+    public void createAccount(Localpart username, String password, Map<String, String> attributes)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        if (!connection().isSecureConnection() && !allowSensitiveOperationOverInsecureConnection) {
+            // TODO throw exception in newer Smack versions
+            LOGGER.warning("Creating account over insecure connection. "
+                            + "This will throw an exception in future versions of Smack if AccountManager.sensitiveOperationOverInsecureConnection(true) is not set");
+        }
+        if (username == null) {
+            throw new IllegalArgumentException("Username must not be null");
+        }
+        if (StringUtils.isNullOrEmpty(password)) {
+            throw new IllegalArgumentException("Password must not be null");
+        }
+
+        attributes.put("username", username.toString());
         attributes.put("password", password);
         Registration reg = new Registration(attributes);
         reg.setType(IQ.Type.set);
-        reg.setTo(connection().getServiceName());
+        reg.setTo(connection().getXMPPServiceDomain());
         createPacketCollectorAndSend(reg).nextResultOrThrow();
     }
 
@@ -243,14 +295,20 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException if an error occurs when changing the password.
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void changePassword(String newPassword) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public void changePassword(String newPassword) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        if (!connection().isSecureConnection() && !allowSensitiveOperationOverInsecureConnection) {
+            // TODO throw exception in newer Smack versions
+            LOGGER.warning("Changing password over insecure connection. "
+                            + "This will throw an exception in future versions of Smack if AccountManager.sensitiveOperationOverInsecureConnection(true) is not set");
+        }
         Map<String, String> map = new HashMap<String, String>();
-        map.put("username",XmppStringUtils.parseLocalpart(connection().getUser()));
+        map.put("username",  connection().getUser().getLocalpart().toString());
         map.put("password",newPassword);
         Registration reg = new Registration(map);
         reg.setType(IQ.Type.set);
-        reg.setTo(connection().getServiceName());
+        reg.setTo(connection().getXMPPServiceDomain());
         createPacketCollectorAndSend(reg).nextResultOrThrow();
     }
 
@@ -263,14 +321,15 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException if an error occurs when deleting the account.
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void deleteAccount() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public void deleteAccount() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Map<String, String> attributes = new HashMap<String, String>();
         // To delete an account, we add a single attribute, "remove", that is blank.
         attributes.put("remove", "");
         Registration reg = new Registration(attributes);
         reg.setType(IQ.Type.set);
-        reg.setTo(connection().getServiceName());
+        reg.setTo(connection().getXMPPServiceDomain());
         createPacketCollectorAndSend(reg).nextResultOrThrow();
     }
 
@@ -279,18 +338,19 @@ public class AccountManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      *
      * @throws XMPPException if an error occurs.
      * @throws SmackException if there was no response from the server.
      */
-    private synchronized void getRegistrationInfo() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private synchronized void getRegistrationInfo() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Registration reg = new Registration();
-        reg.setTo(connection().getServiceName());
+        reg.setTo(connection().getXMPPServiceDomain());
         info = createPacketCollectorAndSend(reg).nextResultOrThrow();
     }
 
-    private PacketCollector createPacketCollectorAndSend(IQ req) throws NotConnectedException {
-        PacketCollector collector = connection().createPacketCollectorAndSend(new PacketIDFilter(req.getPacketID()), req);
+    private PacketCollector createPacketCollectorAndSend(IQ req) throws NotConnectedException, InterruptedException {
+        PacketCollector collector = connection().createPacketCollectorAndSend(new StanzaIdFilter(req.getStanzaId()), req);
         return collector;
     }
 }

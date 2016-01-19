@@ -19,7 +19,7 @@ package org.jivesoftware.smackx.amp.provider;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smackx.amp.AMPDeliverCondition;
 import org.jivesoftware.smackx.amp.AMPExpireAtCondition;
 import org.jivesoftware.smackx.amp.AMPMatchResourceCondition;
@@ -28,11 +28,11 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 
-public class AMPExtensionProvider extends PacketExtensionProvider<AMPExtension> {
+public class AMPExtensionProvider extends ExtensionElementProvider<AMPExtension> {
     private static final Logger LOGGER = Logger.getLogger(AMPExtensionProvider.class.getName());
 
     /**
-     * Parses a AMPExtension packet (extension sub-packet).
+     * Parses a AMPExtension stanza(/packet) (extension sub-packet).
      *
      * @param parser the XML parser, positioned at the starting element of the extension.
      * @return a PacketExtension.
@@ -98,7 +98,7 @@ public class AMPExtensionProvider extends PacketExtensionProvider<AMPExtension> 
         return ampExtension;
     }
 
-    private AMPExtension.Condition createCondition(String name, String value) {
+    private static AMPExtension.Condition createCondition(String name, String value) {
         if (name == null || value == null) {
             LOGGER.severe("Can't create rule condition from null name and/or value");
             return null;

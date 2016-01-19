@@ -18,6 +18,7 @@
 package org.jivesoftware.smackx.address;
 
 import org.jivesoftware.smackx.address.packet.MultipleAddresses;
+import org.jxmpp.jid.Jid;
 
 import java.util.List;
 
@@ -64,17 +65,18 @@ public class MultipleRecipientInfo {
      * @return the JID of a MUC room to which responses should be sent or <tt>null</tt>  if
      *         no specific address was provided.
      */
-    public String getReplyRoom() {
+    // TODO should return EntityBareJid
+    public Jid getReplyRoom() {
         List<MultipleAddresses.Address> replyRoom = extension.getAddressesOfType(MultipleAddresses.Type.replyroom);
-        return replyRoom.isEmpty() ? null : ((MultipleAddresses.Address) replyRoom.get(0)).getJid();
+        return replyRoom.isEmpty() ? null : replyRoom.get(0).getJid();
     }
 
     /**
-     * Returns true if the received packet should not be replied. Use
+     * Returns true if the received stanza(/packet) should not be replied. Use
      * {@link MultipleRecipientManager#reply(org.jivesoftware.smack.XMPPConnection, org.jivesoftware.smack.packet.Message, org.jivesoftware.smack.packet.Message)}
      * to send replies. 
      *
-     * @return true if the received packet should not be replied.
+     * @return true if the received stanza(/packet) should not be replied.
      */
     public boolean shouldNotReply() {
         return !extension.getAddressesOfType(MultipleAddresses.Type.noreply).isEmpty();
@@ -90,6 +92,6 @@ public class MultipleRecipientInfo {
      */
     public MultipleAddresses.Address getReplyAddress() {
         List<MultipleAddresses.Address> replyTo = extension.getAddressesOfType(MultipleAddresses.Type.replyto);
-        return replyTo.isEmpty() ? null : (MultipleAddresses.Address) replyTo.get(0);
+        return replyTo.isEmpty() ? null : replyTo.get(0);
     }
 }

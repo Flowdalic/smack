@@ -1,21 +1,23 @@
-Provider Architecture: Packet Extensions and Custom IQ's
+Provider Architecture: Stanza Extensions and Custom IQ's
 ========================================================
 
-[Back](index.html)
+[Back](index.md)
 
 Introduction
 ------------
 
 The Smack provider architecture is a system for plugging in custom XML parsing
 of packet extensions and IQ packets. The standard [Smack
-Extensions](extensions/index.html) are built using the provider architecture.
+Extensions](extensions/index.md) are built using the provider architecture.
 There are two types of providers:
 
   * `IQProvider` -- parses IQ requests into Java objects.
   * `Extension Provider` -- parses XML sub-documents attached to packets into PacketExtension instances. By default, Smack only knows how to process a few standard packets and sub-packets that are in a few namespaces such as:
-  * jabber:iq:auth
-  * jabber:iq:roster
-  * jabber:iq:register There are many more IQ types and extensions that are part of XMPP standards, and of course an endless number that can be added as custom extensions. To support this, an extensible parsing mechanism is provided via Smack and user build providers.
+    * jabber:iq:auth
+    * jabber:iq:roster
+    * jabber:iq:register
+
+There are many more IQ types and extensions that are part of XMPP standards, and of course an endless number that can be added as custom extensions. To support this, an extensible parsing mechanism is provided via Smack and user build providers.
 
 Whenever a packet extension is found in a packet, parsing will be
 passed to the correct provider. Each provider must implement the
@@ -73,7 +75,7 @@ an XMPP time packet resembles the following:
 
 ### Introspection
 
-_Time Packet_
+_Time Stanza_
 
 
 	<iq type='result' to='joe@example.com' from='mary@example.com' id='time_1'>
@@ -140,7 +142,7 @@ _Custom IQ_
 <iq type='set' from='juliet@capulet.example/balcony' to='romeo@montage.example'>
   <myiq xmlns='example:iq:foo' token='secret'>
     <user age='42'>John Doe</user>
-	<location>New York</location>
+    <location>New York</location>
   </myiq>
 </iq>
 ```
@@ -154,43 +156,43 @@ public class MyIQProvider extends IQProvider<MyIQ> {
   public MyIQ parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
     // Define the data we are trying to collect with sane defaults
     int age = -1;
-	String user = null;
-	String location = null;
+    String user = null;
+    String location = null;
 
     // Start parsing loop
-	outerloop: while(true) {
-	  int eventType = parser.next();
-	  switch(eventType) {
-	  case XmlPullParser.START_TAG:
-		String elementName = parser.getName();
-		switch (elementName) {
-		case "user":
-		  age = ParserUtils.getIntegerAttribute(parser, "age");
-		  user = parser.nextText();
-		  break;
-		case "location"
-		  location = parser.nextText();
-		  break;
-	    }
-		break;
-	  case XmlPullParser.END_TAG:
-		// Abort condition: if the are on a end tag (closing element) of the same depth
-		if (parser.getDepth() == initialDepth) {
-		  break outerloop;
-		}
-		break;
-	  }
-	}
+    outerloop: while(true) {
+      int eventType = parser.next();
+      switch(eventType) {
+      case XmlPullParser.START_TAG:
+        String elementName = parser.getName();
+        switch (elementName) {
+        case "user":
+          age = ParserUtils.getIntegerAttribute(parser, "age");
+          user = parser.nextText();
+          break;
+        case "location"
+          location = parser.nextText();
+          break;
+        }
+        break;
+      case XmlPullParser.END_TAG:
+        // Abort condition: if the are on a end tag (closing element) of the same depth
+        if (parser.getDepth() == initialDepth) {
+          break outerloop;
+        }
+        break;
+      }
+    }
 
     // Construct the IQ instance at the end of parsing, when all data has been collected
-	return new MyIQ(user, age, location);
+    return new MyIQ(user, age, location);
   }
 }
 ```
 
 ### DiscoItemsProvider
 
-_Disco Items Packet_
+_Disco Items Stanza_
 
 
 
@@ -264,11 +266,11 @@ _Disco Items IQProvider_
 Extension Providers
 -------------------
 
-Packet extension providers are responsible for parsing packet extensions,
+Stanza extension providers are responsible for parsing packet extensions,
 which are child elements in a custom namespace of IQ, message and presence
 packets.
 
-_Pubsub Subscription Packet_
+_Pubsub Subscription Stanza_
 
 
 	<iq type='result' from='pubsub.shakespeare.lit' to='francisco@denmark.lit/barracks' id='sub1'>

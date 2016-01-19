@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.SmackException;
@@ -39,7 +40,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * RTPBridge IQ Packet used to request and retrieve a RTPBridge Candidates that can be used for a Jingle Media Transmission between two parties that are behind NAT.
+ * RTPBridge IQ Stanza(/Packet) used to request and retrieve a RTPBridge Candidates that can be used for a Jingle Media Transmission between two parties that are behind NAT.
  * This Jingle Bridge has all the needed information to establish a full UDP Channel (Send and Receive) between two parties.
  * <i>This transport method should be used only if other transport methods are not allowed. Or if you want a more reliable transport.</i>
  * <p/>
@@ -69,17 +70,17 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String NAME = "rtpbridge";
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "rtpbridge";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://www.jivesoftware.com/protocol/rtpbridge";
 
@@ -88,7 +89,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Creates a RTPBridge Instance with defined Session ID
+     * Creates a RTPBridge Instance with defined Session ID.
      *
      * @param sid
      */
@@ -98,7 +99,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Creates a RTPBridge Instance with defined Session ID
+     * Creates a RTPBridge Instance with defined Session ID.
      *
      * @param action
      */
@@ -108,7 +109,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Creates a RTPBridge Instance with defined Session ID
+     * Creates a RTPBridge Instance with defined Session ID.
      *
      * @param sid
      * @param bridgeAction
@@ -120,41 +121,41 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Creates a RTPBridge Packet without Session ID
+     * Creates a RTPBridge Stanza(/Packet) without Session ID.
      */
     public RTPBridge() {
         super(ELEMENT_NAME, NAMESPACE);
     }
 
     /**
-     * Get the attributes string
+     * Get the attributes string.
      */
     public String getAttributes() {
         StringBuilder str = new StringBuilder();
 
         if (getSid() != null)
-            str.append(" sid='").append(getSid()).append("'");
+            str.append(" sid='").append(getSid()).append('\'');
 
         if (getPass() != null)
-            str.append(" pass='").append(getPass()).append("'");
+            str.append(" pass='").append(getPass()).append('\'');
 
         if (getPortA() != -1)
-            str.append(" porta='").append(getPortA()).append("'");
+            str.append(" porta='").append(getPortA()).append('\'');
 
         if (getPortB() != -1)
-            str.append(" portb='").append(getPortB()).append("'");
+            str.append(" portb='").append(getPortB()).append('\'');
 
         if (getHostA() != null)
-            str.append(" hosta='").append(getHostA()).append("'");
+            str.append(" hosta='").append(getHostA()).append('\'');
 
         if (getHostB() != null)
-            str.append(" hostb='").append(getHostB()).append("'");
+            str.append(" hostb='").append(getHostB()).append('\'');
 
         return str.toString();
     }
 
     /**
-     * Get the Session ID of the Packet (usually same as Jingle Session ID)
+     * Get the Session ID of the Stanza(/Packet) (usually same as Jingle Session ID).
      *
      * @return the session ID
      */
@@ -163,7 +164,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the Session ID of the Packet (usually same as Jingle Session ID)
+     * Set the Session ID of the Stanza(/Packet) (usually same as Jingle Session ID).
      *
      * @param sid
      */
@@ -172,7 +173,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the Host A IP Address
+     * Get the Host A IP Address.
      *
      * @return the Host A IP Address
      */
@@ -181,7 +182,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the Host A IP Address
+     * Set the Host A IP Address.
      *
      * @param hostA
      */
@@ -190,7 +191,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the Host B IP Address
+     * Get the Host B IP Address.
      *
      * @return the Host B IP Address
      */
@@ -199,7 +200,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the Host B IP Address
+     * Set the Host B IP Address.
      *
      * @param hostB
      */
@@ -208,7 +209,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get Side A receive port
+     * Get Side A receive port.
      *
      * @return the side A receive prot
      */
@@ -217,7 +218,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set Side A receive port
+     * Set Side A receive port.
      *
      * @param portA
      */
@@ -226,7 +227,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get Side B receive port
+     * Get Side B receive port.
      *
      * @return the side B receive port
      */
@@ -235,7 +236,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set Side B receive port
+     * Set Side B receive port.
      *
      * @param portB
      */
@@ -244,7 +245,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the RTP Bridge IP
+     * Get the RTP Bridge IP.
      *
      * @return the RTP Bridge IP
      */
@@ -253,7 +254,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the RTP Bridge IP
+     * Set the RTP Bridge IP.
      *
      * @param ip
      */
@@ -262,7 +263,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the RTP Agent Pass
+     * Get the RTP Agent Pass.
      *
      * @return the RTP Agent Pass
      */
@@ -271,7 +272,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the RTP Agent Pass
+     * Set the RTP Agent Pass.
      *
      * @param pass
      */
@@ -280,7 +281,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Get the name of the Candidate
+     * Get the name of the Candidate.
      *
      * @return the name of the Candidate
      */
@@ -289,7 +290,7 @@ public class RTPBridge extends IQ {
     }
 
     /**
-     * Set the name of the Candidate
+     * Set the name of the Candidate.
      *
      * @param name
      */
@@ -318,7 +319,7 @@ public class RTPBridge extends IQ {
 
     /**
      * IQProvider for RTP Bridge packets.
-     * Parse receive RTPBridge packet to a RTPBridge instance
+     * Parse receive RTPBridge stanza(/packet) to a RTPBridge instance
      *
      * @author Thiago Rocha
      */
@@ -389,15 +390,17 @@ public class RTPBridge extends IQ {
      * @param sessionID
      * @return the new RTPBridge
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static RTPBridge getRTPBridge(XMPPConnection connection, String sessionID) throws NotConnectedException {
+    @SuppressWarnings("deprecation")
+    public static RTPBridge getRTPBridge(XMPPConnection connection, String sessionID) throws NotConnectedException, InterruptedException {
 
         if (!connection.isConnected()) {
             return null;
         }
 
         RTPBridge rtpPacket = new RTPBridge(sessionID);
-        rtpPacket.setTo(RTPBridge.NAME + "." + connection.getServiceName());
+        rtpPacket.setTo(RTPBridge.NAME + "." + connection.getXMPPServiceDomain());
 
         PacketCollector collector = connection.createPacketCollectorAndSend(rtpPacket);
 
@@ -417,9 +420,10 @@ public class RTPBridge extends IQ {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
     public static boolean serviceAvailable(XMPPConnection connection) throws NoResponseException,
-                    XMPPErrorException, NotConnectedException {
+                    XMPPErrorException, NotConnectedException, InterruptedException {
 
         if (!connection.isConnected()) {
             return false;
@@ -429,7 +433,7 @@ public class RTPBridge extends IQ {
 
         ServiceDiscoveryManager disco = ServiceDiscoveryManager
                 .getInstanceFor(connection);
-//            DiscoverItems items = disco.discoverItems(connection.getServiceName());
+//            DiscoverItems items = disco.discoverItems(connection.getXMPPServiceDomain());
 //            Iterator iter = items.getItems();
 //            while (iter.hasNext()) {
 //                DiscoverItems.Item item = (DiscoverItems.Item) iter.next();
@@ -437,8 +441,8 @@ public class RTPBridge extends IQ {
 //                    return true;
 //                }
 //            }
-            
-        DiscoverInfo discoInfo = disco.discoverInfo(connection.getServiceName());
+
+        DiscoverInfo discoInfo = disco.discoverInfo(connection.getXMPPServiceDomain());
         for (DiscoverInfo.Identity identity : discoInfo.getIdentities()) {
             if ((identity.getName() != null) && (identity.getName().startsWith("rtpbridge"))) {
                 return true;
@@ -454,15 +458,17 @@ public class RTPBridge extends IQ {
      * @param connection
      * @return the RTPBridge
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static RTPBridge relaySession(XMPPConnection connection, String sessionID, String pass, TransportCandidate proxyCandidate, TransportCandidate localCandidate) throws NotConnectedException {
+    @SuppressWarnings("deprecation")
+    public static RTPBridge relaySession(XMPPConnection connection, String sessionID, String pass, TransportCandidate proxyCandidate, TransportCandidate localCandidate) throws NotConnectedException, InterruptedException {
 
         if (!connection.isConnected()) {
             return null;
         }
 
         RTPBridge rtpPacket = new RTPBridge(sessionID, RTPBridge.BridgeAction.change);
-        rtpPacket.setTo(RTPBridge.NAME + "." + connection.getServiceName());
+        rtpPacket.setTo(RTPBridge.NAME + "." + connection.getXMPPServiceDomain());
         rtpPacket.setType(Type.set);
 
         rtpPacket.setPass(pass);
@@ -489,15 +495,17 @@ public class RTPBridge extends IQ {
      * @param xmppConnection
      * @return public IP String or null if not found
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public static String getPublicIP(XMPPConnection xmppConnection) throws NotConnectedException {
+    @SuppressWarnings("deprecation")
+    public static String getPublicIP(XMPPConnection xmppConnection) throws NotConnectedException, InterruptedException {
 
         if (!xmppConnection.isConnected()) {
             return null;
         }
 
         RTPBridge rtpPacket = new RTPBridge(RTPBridge.BridgeAction.publicip);
-        rtpPacket.setTo(RTPBridge.NAME + "." + xmppConnection.getServiceName());
+        rtpPacket.setTo(RTPBridge.NAME + "." + xmppConnection.getXMPPServiceDomain());
         rtpPacket.setType(Type.set);
 
         // LOGGER.debug("Relayed to: " + candidate.getIp() + ":" + candidate.getPort());
@@ -518,7 +526,7 @@ public class RTPBridge extends IQ {
             ifaces = NetworkInterface.getNetworkInterfaces();
         }
         catch (SocketException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         while (ifaces!=null&&ifaces.hasMoreElements()) {
 

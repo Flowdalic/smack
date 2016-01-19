@@ -17,7 +17,7 @@
 
 package org.jivesoftware.smack;
 
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.StreamError;
 import org.jivesoftware.smack.packet.XMPPError;
 
@@ -37,7 +37,7 @@ import org.jivesoftware.smack.packet.XMPPError;
  */
 public abstract class XMPPException extends Exception {
     private static final long serialVersionUID = 6881651633890968625L;
-    
+
 
     /**
      * Creates a new XMPPException.
@@ -73,6 +73,10 @@ public abstract class XMPPException extends Exception {
         private static final long serialVersionUID = 212790389529249604L;
         private final XMPPError error;
 
+        public XMPPErrorException(XMPPError.Builder xmppErrorBuilder) {
+            this(xmppErrorBuilder.build());
+        }
+
         /**
          * Creates a new XMPPException with the XMPPError that was the root case of the exception.
          * 
@@ -90,7 +94,9 @@ public abstract class XMPPException extends Exception {
          * @param message a description of the exception.
          * @param error the root cause of the exception.
          * @param wrappedThrowable the root cause of the exception.
+         * @deprecated use {@link #XMPPException.XMPPErrorException(XMPPError)} instead.
          */
+        @Deprecated
         public XMPPErrorException(String message, XMPPError error, Throwable wrappedThrowable) {
             super(message, wrappedThrowable);
             this.error = error;
@@ -102,7 +108,9 @@ public abstract class XMPPException extends Exception {
          * 
          * @param message a description of the exception.
          * @param error the root cause of the exception.
+         * @deprecated use {@link #XMPPException.XMPPErrorException(XMPPError)} instead.
          */
+        @Deprecated
         public XMPPErrorException(String message, XMPPError error) {
             super(message);
             this.error = error;
@@ -129,12 +137,7 @@ public abstract class XMPPException extends Exception {
             }
         }
 
-        @Override
-        public String toString() {
-            return getMessage();
-        }
-
-        public static void ifHasErrorThenThrow(Packet packet) throws XMPPErrorException {
+        public static void ifHasErrorThenThrow(Stanza packet) throws XMPPErrorException {
             XMPPError xmppError = packet.getError();
             if (xmppError != null) {
                 throw new XMPPErrorException(xmppError);
@@ -157,7 +160,9 @@ public abstract class XMPPException extends Exception {
          * @param streamError the root cause of the exception.
          */
         public StreamErrorException(StreamError streamError) {
-            super();
+            super(streamError.getCondition().toString()
+                  + " You can read more about the meaning of this stream error at http://xmpp.org/rfcs/rfc6120.html#streams-error-conditions\n"
+                  + streamError.toString());
             this.streamError = streamError;
         }
 
@@ -171,14 +176,5 @@ public abstract class XMPPException extends Exception {
             return streamError;
         }
 
-        @Override
-        public String getMessage() {
-            return streamError.toString();
-        }
-
-        @Override
-        public String toString() {
-            return getMessage();
-        }
     }
 }

@@ -28,7 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A very Simple HTTP Server
+ * A very Simple HTTP Server.
  */
 public class HttpServer {
 
@@ -93,7 +93,7 @@ public class HttpServer {
                 processRequest();
             }
             catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
         }
 
@@ -139,7 +139,7 @@ public class HttpServer {
             }
             catch (Exception e) {
                 // Do Nothing
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
         }
     }

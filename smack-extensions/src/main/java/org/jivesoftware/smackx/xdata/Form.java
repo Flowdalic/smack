@@ -21,17 +21,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
 /**
  * Represents a Form for gathering data. The form could be of the following types:
  * <ul>
- *  <li>form -> Indicates a form to fill out.</li>
- *  <li>submit -> The form is filled out, and this is the data that is being returned from 
+ *  <li>form &rarr; Indicates a form to fill out.</li>
+ *  <li>submit &rarr; The form is filled out, and this is the data that is being returned from 
  * the form.</li>
- *  <li>cancel -> The form was cancelled. Tell the asker that piece of information.</li>
- *  <li>result -> Data results being returned from a search, or some other query.</li>
+ *  <li>cancel &rarr; The form was cancelled. Tell the asker that piece of information.</li>
+ *  <li>result &rarr; Data results being returned from a search, or some other query.</li>
  * </ul>
  * 
  * Depending of the form's type different operations are available. For example, it's only possible
@@ -46,14 +46,14 @@ public class Form {
     private DataForm dataForm;
 
     /**
-     * Returns a new ReportedData if the packet is used for gathering data and includes an 
+     * Returns a new ReportedData if the stanza(/packet) is used for gathering data and includes an 
      * extension that matches the elementName and namespace "x","jabber:x:data".  
      * 
-     * @param packet the packet used for gathering data.
-     * @return the data form parsed from the packet or <tt>null</tt> if there was not
+     * @param packet the stanza(/packet) used for gathering data.
+     * @return the data form parsed from the stanza(/packet) or <tt>null</tt> if there was not
      *      a form in the packet.
      */
-    public static Form getFormFrom(Packet packet) {
+    public static Form getFormFrom(Stanza packet) {
         // Check if the packet includes the DataForm extension
         DataForm dataForm = DataForm.from(packet);
         if (dataForm != null) {
@@ -73,7 +73,7 @@ public class Form {
     public Form(DataForm dataForm) {
         this.dataForm = dataForm;
     }
-    
+
     /**
      * Creates a new Form of a given type from scratch.
      *
@@ -82,7 +82,7 @@ public class Form {
     public Form(DataForm.Type type) {
         this.dataForm = new DataForm(type);
     }
-    
+
     /**
      * Adds a new field to complete as part of the form.
      * 
@@ -91,7 +91,7 @@ public class Form {
     public void addField(FormField field) {
         dataForm.addField(field);
     }
-    
+
     /**
      * Sets a new String value to a given form's field. The field whose variable matches the 
      * requested variable will be completed with the specified value. If no field could be found 
@@ -350,16 +350,18 @@ public class Form {
      * @return the field of the form whose variable matches the specified variable.
      */
     public FormField getField(String variable) {
-        if (variable == null || variable.equals("")) {
-            throw new IllegalArgumentException("Variable must not be null or blank.");
-        }
-        // Look for the field whose variable matches the requested variable
-        for (FormField field : getFields()) {
-            if (variable.equals(field.getVariable())) {
-                return field;
-            }
-        }
-        return null;
+        return dataForm.getField(variable);
+    }
+
+    /**
+     * Check if a field with the given variable exists.
+     *
+     * @param variable the variable to check for.
+     * @return true if a field with the variable exists, false otherwise.
+     * @since 4.2
+     */
+    public boolean hasField(String variable) {
+        return dataForm.hasField(variable);
     }
 
     /**
@@ -374,7 +376,7 @@ public class Form {
             sb.append(it.next());
             // If this is not the last instruction then append a newline
             if (it.hasNext()) {
-                sb.append("\n");
+                sb.append('\n');
             }
         }
         return sb.toString();
@@ -383,7 +385,7 @@ public class Form {
 
     /**
      * Returns the description of the data. It is similar to the title on a web page or an X 
-     * window.  You can put a <title/> on either a form to fill out, or a set of data results.
+     * window.  You can put a title on either a form to fill out, or a set of data results.
      * 
      * @return description of the data.
      */
@@ -401,7 +403,7 @@ public class Form {
     public DataForm.Type getType() {
         return dataForm.getType(); 
     }
-    
+
 
     /**
      * Sets instructions that explain how to fill out the form and what the form is about.
@@ -417,20 +419,20 @@ public class Form {
         }
         // Set the new list of instructions
         dataForm.setInstructions(instructionsList);
-        
+
     }
 
 
     /**
      * Sets the description of the data. It is similar to the title on a web page or an X window.
-     * You can put a <title/> on either a form to fill out, or a set of data results.
+     * You can put a title on either a form to fill out, or a set of data results.
      * 
      * @param title description of the data.
      */
     public void setTitle(String title) {
         dataForm.setTitle(title);
     }
-    
+
     /**
      * Returns a DataForm that serves to send this Form to the server. If the form is of type 
      * submit, it may contain fields with no value. These fields will be removed since they only 
@@ -451,7 +453,7 @@ public class Form {
         }
         return dataForm;
     }
-    
+
     /**
      * Returns true if the form is a form to fill out.
      * 
@@ -460,7 +462,7 @@ public class Form {
     private boolean isFormType() {
         return DataForm.Type.form == dataForm.getType();
     }
-    
+
     /**
      * Returns true if the form is a form to submit.
      * 

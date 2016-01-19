@@ -21,14 +21,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 
 /**
  * Jingle content.
  * 
  * @author Jeff Williams
  */
-public class JingleContent implements PacketExtension {
+public class JingleContent implements ExtensionElement {
 
     public static final String NODENAME = "content";
     public static final String CREATOR = "creator";
@@ -162,7 +162,7 @@ public class JingleContent implements PacketExtension {
 
         synchronized (transports) {
 
-            buf.append("<").append(getElementName());
+            buf.append('<').append(getElementName());
 
             buf.append(" creator='" + creator + "' name='" + name + "'>");
 
@@ -175,7 +175,7 @@ public class JingleContent implements PacketExtension {
             for (JingleTransport transport : transports) {
                 buf.append(transport.toXML());
             }
-            buf.append("</").append(getElementName()).append(">");
+            buf.append("</").append(getElementName()).append('>');
         }
         return buf.toString();
     }

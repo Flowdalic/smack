@@ -16,26 +16,26 @@
  */
 package org.jivesoftware.smackx.bytestreams.ibb.packet;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.packet.IQ.IQChildElementXmlStringBuilder;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smack.util.stringencoder.Base64;
 
 /**
  * Represents a chunk of data of an In-Band Bytestream within an IQ stanza or a
- * message stanza
+ * message stanza.
  * 
  * @author Henning Staib
  */
-public class DataPacketExtension implements PacketExtension {
+public class DataPacketExtension implements ExtensionElement {
 
     /**
-     * The element name of the data packet extension.
+     * The element name of the data stanza(/packet) extension.
      */
     public final static String ELEMENT = "data";
 
     /**
-     * The XMPP namespace of the In-Band Bytestream
+     * The XMPP namespace of the In-Band Bytestream.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/ibb";
 
@@ -54,7 +54,7 @@ public class DataPacketExtension implements PacketExtension {
      * Creates a new In-Band Bytestream data packet.
      * 
      * @param sessionID unique session ID identifying this In-Band Bytestream
-     * @param seq sequence of this packet in regard to the other data packets
+     * @param seq sequence of this stanza(/packet) in regard to the other data packets
      * @param data the base64 encoded data contained in this packet
      */
     public DataPacketExtension(String sessionID, long seq, String data) {
@@ -82,9 +82,9 @@ public class DataPacketExtension implements PacketExtension {
     }
 
     /**
-     * Returns the sequence of this packet in regard to the other data packets.
+     * Returns the sequence of this stanza(/packet) in regard to the other data packets.
      * 
-     * @return the sequence of this packet in regard to the other data packets.
+     * @return the sequence of this stanza(/packet) in regard to the other data packets.
      */
     public long getSeq() {
         return seq;

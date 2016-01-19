@@ -17,7 +17,7 @@
 
 package org.jivesoftware.smackx.xevent.packet;
 
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +53,7 @@ import java.util.List;
  *
  * @author Gaston Dombiak
  */
-public class MessageEvent implements PacketExtension {
+public class MessageEvent implements ExtensionElement {
 
     public static final String NAMESPACE = "jabber:x:event";
     public static final String ELEMENT = "x";
@@ -76,7 +76,7 @@ public class MessageEvent implements PacketExtension {
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "x"
     *
-    * @return the XML element name of the packet extension.
+    * @return the XML element name of the stanza(/packet) extension.
     */
     public String getElementName() {
         return ELEMENT;
@@ -86,7 +86,7 @@ public class MessageEvent implements PacketExtension {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "jabber:x:event"
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     public String getNamespace() {
         return NAMESPACE;
@@ -153,11 +153,11 @@ public class MessageEvent implements PacketExtension {
 
     /**
      * Returns the unique ID of the message that requested to be notified of the event.
-     * The packet id is not used when the message is a request for notifications
+     * The stanza(/packet) id is not used when the message is a request for notifications
      *
      * @return the message id that requested to be notified of the event.
      */
-    public String getPacketID() {
+    public String getStanzaId() {
         return packetID;
     }
 
@@ -254,11 +254,11 @@ public class MessageEvent implements PacketExtension {
 
     /**
      * Sets the unique ID of the message that requested to be notified of the event.
-     * The packet id is not used when the message is a request for notifications
+     * The stanza(/packet) id is not used when the message is a request for notifications
      *
      * @param packetID the message id that requested to be notified of the event.
      */
-    public void setPacketID(String packetID) {
+    public void setStanzaId(String packetID) {
         this.packetID = packetID;
     }
 
@@ -305,30 +305,30 @@ public class MessageEvent implements PacketExtension {
      */
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
+        buf.append('<').append(getElementName()).append(" xmlns=\"").append(getNamespace()).append(
             "\">");
         // Note: Cancellation events don't specify any tag. They just send the packetID
 
         // Add the offline tag if the sender requests to be notified of offline events or if 
         // the target is offline
         if (isOffline())
-            buf.append("<").append(MessageEvent.OFFLINE).append("/>");
+            buf.append('<').append(MessageEvent.OFFLINE).append("/>");
         // Add the delivered tag if the sender requests to be notified when the message is 
         // delivered or if the target notifies that the message has been delivered
         if (isDelivered())
-            buf.append("<").append(MessageEvent.DELIVERED).append("/>");
+            buf.append('<').append(MessageEvent.DELIVERED).append("/>");
         // Add the displayed tag if the sender requests to be notified when the message is 
         // displayed or if the target notifies that the message has been displayed
         if (isDisplayed())
-            buf.append("<").append(MessageEvent.DISPLAYED).append("/>");
+            buf.append('<').append(MessageEvent.DISPLAYED).append("/>");
         // Add the composing tag if the sender requests to be notified when the target is 
         // composing a reply or if the target notifies that he/she is composing a reply
         if (isComposing())
-            buf.append("<").append(MessageEvent.COMPOSING).append("/>");
+            buf.append('<').append(MessageEvent.COMPOSING).append("/>");
         // Add the id tag only if the MessageEvent is a notification message (not a request)
-        if (getPacketID() != null)
-            buf.append("<id>").append(getPacketID()).append("</id>");
-        buf.append("</").append(getElementName()).append(">");
+        if (getStanzaId() != null)
+            buf.append("<id>").append(getStanzaId()).append("</id>");
+        buf.append("</").append(getElementName()).append('>');
         return buf.toString();
     }
 

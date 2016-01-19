@@ -18,9 +18,9 @@ package org.jivesoftware.smackx.workgroup.settings;
 
 import java.io.IOException;
 
-import org.jivesoftware.smackx.workgroup.util.ModelUtil;
 import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.util.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -29,7 +29,7 @@ public class SearchSettings extends SimpleIQ {
     private String kbLocation;
 
     public boolean isSearchEnabled() {
-        return ModelUtil.hasLength(getForumsLocation()) && ModelUtil.hasLength(getKbLocation());
+        return StringUtils.isNotEmpty(getForumsLocation()) && StringUtils.isNotEmpty(getKbLocation());
     }
 
     public String getForumsLocation() {
@@ -49,21 +49,21 @@ public class SearchSettings extends SimpleIQ {
     }
 
     public boolean hasKB(){
-        return ModelUtil.hasLength(getKbLocation());
+        return StringUtils.isNotEmpty(getKbLocation());
     }
 
     public boolean hasForums(){
-        return ModelUtil.hasLength(getForumsLocation());
+        return StringUtils.isNotEmpty(getForumsLocation());
     }
 
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "search-settings";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -72,7 +72,7 @@ public class SearchSettings extends SimpleIQ {
     }
 
     /**
-     * Packet extension provider for AgentStatusRequest packets.
+     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
      */
     public static class InternalProvider extends IQProvider<SearchSettings> {
 

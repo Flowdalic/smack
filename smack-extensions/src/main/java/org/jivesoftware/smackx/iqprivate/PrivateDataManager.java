@@ -24,11 +24,13 @@ import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.XMPPError.Condition;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smackx.iqprivate.packet.DefaultPrivateData;
 import org.jivesoftware.smackx.iqprivate.packet.PrivateData;
 import org.jivesoftware.smackx.iqprivate.packet.PrivateDataIQ;
 import org.jivesoftware.smackx.iqprivate.provider.PrivateDataProvider;
+import org.jxmpp.util.XmppStringUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -59,7 +61,7 @@ import java.util.WeakHashMap;
  *
  * @author Matt Tucker
  */
-public class PrivateDataManager extends Manager {
+public final class PrivateDataManager extends Manager {
     private static final Map<XMPPConnection, PrivateDataManager> instances = new WeakHashMap<XMPPConnection, PrivateDataManager>();
 
     public static synchronized PrivateDataManager getInstanceFor(XMPPConnection connection) {
@@ -78,7 +80,7 @@ public class PrivateDataManager extends Manager {
     /**
      * Returns the private data provider registered to the specified XML element name and namespace.
      * For example, if a provider was registered to the element name "prefs" and the
-     * namespace "http://www.xmppclient.com/prefs", then the following packet would trigger
+     * namespace "http://www.xmppclient.com/prefs", then the following stanza(/packet) would trigger
      * the provider:
      *
      * <pre>
@@ -98,8 +100,8 @@ public class PrivateDataManager extends Manager {
      * @return the PrivateData provider.
      */
     public static PrivateDataProvider getPrivateDataProvider(String elementName, String namespace) {
-        String key = getProviderKey(elementName, namespace);
-        return (PrivateDataProvider)privateDataProviders.get(key);
+        String key = XmppStringUtils.generateKey(elementName, namespace);
+        return privateDataProviders.get(key);
     }
 
     /**
@@ -113,7 +115,7 @@ public class PrivateDataManager extends Manager {
     public static void addPrivateDataProvider(String elementName, String namespace,
             PrivateDataProvider provider)
     {
-        String key = getProviderKey(elementName, namespace);
+        String key = XmppStringUtils.generateKey(elementName, namespace);
         privateDataProviders.put(key, provider);
     }
 
@@ -124,7 +126,7 @@ public class PrivateDataManager extends Manager {
      * @param namespace The XML namespace.
      */
     public static void removePrivateDataProvider(String elementName, String namespace) {
-        String key = getProviderKey(elementName, namespace);
+        String key = XmppStringUtils.generateKey(elementName, namespace);
         privateDataProviders.remove(key);
     }
 
@@ -153,8 +155,9 @@ public class PrivateDataManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public PrivateData getPrivateData(final String elementName, final String namespace) throws NoResponseException, XMPPErrorException, NotConnectedException
+    public PrivateData getPrivateData(final String elementName, final String namespace) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException
     {
         // Create an IQ packet to get the private data.
         IQ privateDataGet = new PrivateDataIQ(elementName, namespace);
@@ -173,25 +176,58 @@ public class PrivateDataManager extends Manager {
      * @throws XMPPErrorException 
      * @throws NoResponseException 
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public void setPrivateData(final PrivateData privateData) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public void setPrivateData(final PrivateData privateData) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         // Create an IQ packet to set the private data.
         IQ privateDataSet = new PrivateDataIQ(privateData);
 
         connection().createPacketCollectorAndSend(privateDataSet).nextResultOrThrow();
     }
 
+    private static final PrivateData DUMMY_PRIVATE_DATA = new PrivateData() {
+        @Override
+        public String getElementName() {
+            return "smackDummyPrivateData";
+        }
+
+        @Override
+        public String getNamespace() {
+            return "https://igniterealtime.org/projects/smack/";
+        }
+
+        @Override
+        public CharSequence toXML() {
+            return '<' + getElementName() + " xmlns='" + getNamespace() + "'/>";
+        }
+    };
+
     /**
-     * Returns a String key for a given element name and namespace.
+     * Check if the service supports private data.
      *
-     * @param elementName the element name.
-     * @param namespace the namespace.
-     * @return a unique key for the element name and namespace pair.
+     * @return true if the service supports private data, false otherwise.
+     * @throws NoResponseException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     * @throws XMPPErrorException
+     * @since 4.2
      */
-    private static String getProviderKey(String elementName, String namespace) {
-        StringBuilder buf = new StringBuilder();
-        buf.append("<").append(elementName).append("/><").append(namespace).append("/>");
-        return buf.toString();
+    public boolean isSupported() throws NoResponseException, NotConnectedException,
+                    InterruptedException, XMPPErrorException {
+        // This is just a primitive hack, since XEP-49 does not specify a way to determine if the
+        // service supports it
+        try {
+            setPrivateData(DUMMY_PRIVATE_DATA);
+            return true;
+        }
+        catch (XMPPErrorException e) {
+            if (e.getXMPPError().getCondition() == Condition.service_unavailable) {
+                return false;
+            }
+            else {
+                throw e;
+            }
+        }
     }
 
     /**

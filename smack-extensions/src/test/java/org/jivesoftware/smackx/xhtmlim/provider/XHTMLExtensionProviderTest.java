@@ -17,7 +17,7 @@
 package org.jivesoftware.smackx.xhtmlim.provider;
 
 import static org.jivesoftware.smack.test.util.CharsequenceEquals.equalsCharSequence;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jivesoftware.smackx.xhtmlim.packet.XHTMLExtension;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class XHTMLExtensionProviderTest {
         parser.next();
 
         XHTMLExtensionProvider provider = new XHTMLExtensionProvider();
-        PacketExtension extension = provider.parse(parser, parser.getDepth());
+        ExtensionElement extension = provider.parse(parser, parser.getDepth());
 
         assertThat(extension, instanceOf(XHTMLExtension.class));
         XHTMLExtension attachmentsInfo = (XHTMLExtension) extension;
@@ -48,7 +48,7 @@ public class XHTMLExtensionProviderTest {
         assertThat(sampleXhtml(), equalsCharSequence(attachmentsInfo.getBodies().get(0)));
     }
 
-    private String sampleXhtml() {
+    private static String sampleXhtml() {
         return "<body xmlns='http://www.w3.org/1999/xhtml'>" +
                 "<span style='color: rgb(0, 0, 0); font-family: sans-serif, &apos;trebuchet ms&apos;" +
                 ", &apos;lucida grande&apos;, &apos;lucida sans unicode&apos;, arial, helvetica, " +

@@ -73,11 +73,11 @@ HttpOverXmppReq req = new HttpOverXmppReq(HttpMethod.POST, "/mailbox");
 req.setVersion("1.1");
 
 // prepare headers
-Set<Header> set = new HashSet<Header>();
-set.add(new Header("Host", "juliet.capulet.com"));
-set.add(new Header("Content-Type", "application/x-www-form- urlencoded"));
-set.add(new Header("Content-Length", Integer.toString(urlEncodedMessage.length())));
-req.setHeaders(new HeadersExtension(set));
+List<Header> list = new ArrayList<Header>();
+list.add(new Header("Host", "juliet.capulet.com"));
+list.add(new Header("Content-Type", "application/x-www-form- urlencoded"));
+list.add(new Header("Content-Length", Integer.toString(urlEncodedMessage.length())));
+req.setHeaders(new HeadersExtension(list));
 
 // provide body or request (not mandatory, - empty body is used for GET)
 AbstractHttpOverXmpp.Text child = new AbstractHttpOverXmpp.Text(urlEncodedMessage);
@@ -89,7 +89,7 @@ req.setTo("juliet@capulet.com/balcony");
 
 // send it
 connection.sendIqWithResponseCallback(req, new PacketListener() {
-   public void processPacket(Packet packet) {
+   public void processPacket(Stanza packet) {
 		HttpOverXmppResp resp = (HttpOverXmppResp) iq;
 		// check HTTP response code
 		if (resp.getStatusCode() == 200) {

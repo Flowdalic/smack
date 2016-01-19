@@ -33,7 +33,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
- * Packet used for requesting information about occupants of a room or for retrieving information
+ * Stanza(/Packet) used for requesting information about occupants of a room or for retrieving information
  * such information.
  *
  * @author Gaston Dombiak
@@ -47,12 +47,12 @@ public class OccupantsInfo extends IQ {
     }
 
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "occupants-info";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jivesoftware.com/protocol/workgroup";
 
@@ -127,12 +127,12 @@ public class OccupantsInfo extends IQ {
     }
 
     /**
-     * Packet extension provider for AgentStatusRequest packets.
+     * Stanza(/Packet) extension provider for AgentStatusRequest packets.
      */
     public static class Provider extends IQProvider<OccupantsInfo> {
 
         @Override
-        public OccupantsInfo parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException {
+        public OccupantsInfo parse(XmlPullParser parser, int initialDepth) throws XmlPullParserException, IOException, SmackException {
             OccupantsInfo occupantsInfo = new OccupantsInfo(parser.getAttributeValue("", "roomID"));
 
             boolean done = false;
@@ -149,7 +149,7 @@ public class OccupantsInfo extends IQ {
             return occupantsInfo;
         }
 
-        private OccupantInfo parseOccupantInfo(XmlPullParser parser) throws XmlPullParserException, IOException {
+        private OccupantInfo parseOccupantInfo(XmlPullParser parser) throws XmlPullParserException, IOException, SmackException {
 
             boolean done = false;
             String jid = null;
@@ -167,7 +167,7 @@ public class OccupantsInfo extends IQ {
                     try {
                         joined = UTC_FORMAT.parse(parser.nextText());
                     } catch (ParseException e) {
-                        new SmackException(e);
+                        throw new SmackException(e);
                     }
                 } else if (eventType == XmlPullParser.END_TAG &&
                         "occupant".equals(parser.getName())) {

@@ -25,6 +25,9 @@ import java.util.Map;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.util.StringUtils;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.stringprep.XmppStringprepException;
+import org.jxmpp.jid.EntityBareJid;
 
 public class DigestMd5SaslTest extends AbstractSaslTest {
 
@@ -35,9 +38,12 @@ public class DigestMd5SaslTest extends AbstractSaslTest {
         super(saslMechanism);
     }
 
-    protected void runTest() throws NotConnectedException, SmackException {
-        saslMechanism.authenticate("florian", "irrelevant", "xmpp.org", "secret");
-
+    protected void runTest(boolean useAuthzid) throws NotConnectedException, SmackException, InterruptedException, XmppStringprepException {
+        EntityBareJid authzid = null;
+        if (useAuthzid) {
+            authzid = JidCreate.entityBareFrom("shazbat@xmpp.org");
+        }
+        saslMechanism.authenticate("florian", "irrelevant", JidCreate.domainBareFrom("xmpp.org"), "secret", authzid);
         byte[] response = saslMechanism.evaluateChallenge(challengeBytes);
         String responseString = new String(response);
         String[] responseParts = responseString.split(",");
@@ -49,6 +55,11 @@ public class DigestMd5SaslTest extends AbstractSaslTest {
             String value = keyValue[1].replace("\"", "");
             responsePairs.put(key, value);
         }
+        if (useAuthzid) {
+          assertMapValue("authzid", "shazbat@xmpp.org", responsePairs);
+        } else {
+          assert(!responsePairs.containsKey("authzid"));
+        }
         assertMapValue("username", "florian", responsePairs);
         assertMapValue("realm", "xmpp.org", responsePairs);
         assertMapValue("digest-uri", "xmpp/xmpp.org", responsePairs);
@@ -56,6 +67,6 @@ public class DigestMd5SaslTest extends AbstractSaslTest {
     }
 
     private static void assertMapValue(String key, String value, Map<String, String> map) {
-        assertEquals(map.get(key), value);
+        assertEquals(value, map.get(key));
     }
 }

@@ -18,7 +18,7 @@
 package org.jivesoftware.smackx.xhtmlim.packet;
 
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 import java.util.ArrayList;
@@ -35,18 +35,18 @@ import java.util.List;
  *
  * @author Gaston Dombiak
  */
-public class XHTMLExtension implements PacketExtension {
+public class XHTMLExtension implements ExtensionElement {
 
     public static final String ELEMENT = "html";
     public static final String NAMESPACE = "http://jabber.org/protocol/xhtml-im";
 
-    private List<CharSequence> bodies = new ArrayList<CharSequence>();
+    private final List<CharSequence> bodies = new ArrayList<>();
 
     /**
     * Returns the XML element name of the extension sub-packet root element.
     * Always returns "html"
     *
-    * @return the XML element name of the packet extension.
+    * @return the XML element name of the stanza(/packet) extension.
     */
     public String getElementName() {
         return ELEMENT;
@@ -56,7 +56,7 @@ public class XHTMLExtension implements PacketExtension {
      * Returns the XML namespace of the extension sub-packet root element.
      * According the specification the namespace is always "http://jabber.org/protocol/xhtml-im"
      *
-     * @return the XML namespace of the packet extension.
+     * @return the XML namespace of the stanza(/packet) extension.
      */
     public String getNamespace() {
         return NAMESPACE;

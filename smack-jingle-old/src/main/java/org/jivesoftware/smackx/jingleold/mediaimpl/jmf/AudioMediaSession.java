@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.jingleold.mediaimpl.jmf;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.media.MediaLocator;
@@ -44,7 +45,7 @@ public class AudioMediaSession extends JingleMediaSession {
 	private AudioChannel audioChannel;
 
     /**
-     * Creates a org.jivesoftware.jingleaudio.jmf.AudioMediaSession with defined payload type, remote and local candidates
+     * Creates a org.jivesoftware.jingleaudio.jmf.AudioMediaSession with defined payload type, remote and local candidates.
      *
      * @param payloadType Payload of the jmf
      * @param remote      the remote information. The candidate that the jmf will be sent to.
@@ -58,7 +59,7 @@ public class AudioMediaSession extends JingleMediaSession {
     }
 
     /**
-     * Initialize the Audio Channel to make it able to send and receive audio
+     * Initialize the Audio Channel to make it able to send and receive audio.
      */
     public void initialize() {
 
@@ -144,7 +145,7 @@ public class AudioMediaSession extends JingleMediaSession {
                 return freePort;
             }
             catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.log(Level.WARNING, "exception", e);
             }
         }
         try {
@@ -153,7 +154,7 @@ public class AudioMediaSession extends JingleMediaSession {
             ss.close();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "exception", e);
         }
         return freePort;
     }

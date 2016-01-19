@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.xdata.Form;
 import org.jivesoftware.smackx.xdata.FormField;
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
 
 /**
  * Represents the room information that was discovered using Service Discovery. It's possible to
@@ -39,9 +41,9 @@ public class RoomInfo {
     private static final Logger LOGGER = Logger.getLogger(RoomInfo.class.getName());
 
     /**
-     * JID of the room. The node of the JID is commonly used as the ID of the room or name.
+     * JID of the room. The localpart of the JID is commonly used as the ID of the room or name.
      */
-    private final String room;
+    private final EntityBareJid room;
     /**
      * Description of the room.
      */
@@ -72,7 +74,7 @@ public class RoomInfo {
      */
     private final boolean moderated;
     /**
-     * Every presence packet can include the JID of every occupant unless the owner deactives this
+     * Every presence stanza(/packet) can include the JID of every occupant unless the owner deactives this
      * configuration.
      */
     private final boolean nonanonymous;
@@ -128,7 +130,12 @@ public class RoomInfo {
     private final Form form;
 
     RoomInfo(DiscoverInfo info) {
-        this.room = info.getFrom();
+        final Jid from = info.getFrom();
+        if (from != null) {
+            this.room = info.getFrom().asEntityBareJidIfPossible();
+        } else {
+            this.room = null;
+        }
         // Get the information based on the discovered features
         this.membersOnly = info.containsFeature("muc_membersonly");
         this.moderated = info.containsFeature("muc_moderated");
@@ -233,7 +240,7 @@ public class RoomInfo {
      *
      * @return the JID of the room whose information was discovered.
      */
-    public String getRoom() {
+    public EntityBareJid getRoom() {
         return room;
     }
 

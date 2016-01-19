@@ -24,22 +24,22 @@ import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.packet.XMPPError.Condition;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.iqlast.packet.LastActivity;
+import org.jxmpp.jid.Jid;
 
 /**
  * A last activity manager for handling information about the last activity
@@ -59,7 +59,7 @@ import org.jivesoftware.smackx.iqlast.packet.LastActivity;
  * <p/>
  * 
  * For example to get the idle time of a user logged in a resource, simple send
- * the LastActivity packet to them, as in the following code:
+ * the LastActivity stanza(/packet) to them, as in the following code:
  * <p>
  * 
  * <pre>
@@ -75,7 +75,7 @@ import org.jivesoftware.smackx.iqlast.packet.LastActivity;
  * LastActivity activity = LastActivity.getLastActivity(con, &quot;xray@jabber.org&quot;);
  * </pre>
  * 
- * To get the uptime of a host, you simple send the LastActivity packet to it,
+ * To get the uptime of a host, you simple send the LastActivity stanza(/packet) to it,
  * as in the following code example:
  * <p>
  * 
@@ -89,10 +89,10 @@ import org.jivesoftware.smackx.iqlast.packet.LastActivity;
  *      Activity</a>
  */
 
-public class LastActivityManager extends Manager {
+public final class LastActivityManager extends Manager {
     private static final Map<XMPPConnection, LastActivityManager> instances = new WeakHashMap<XMPPConnection, LastActivityManager>();
 //    private static final PacketFilter IQ_GET_LAST_FILTER = new AndFilter(IQTypeFilter.GET,
-//                    new PacketTypeFilter(LastActivity.class));
+//                    new StanzaTypeFilter(LastActivity.class));
 
     private static boolean enabledPerDefault = true;
 
@@ -134,8 +134,8 @@ public class LastActivityManager extends Manager {
         super(connection);
 
         // Listen to all the sent messages to reset the idle time on each one
-        connection.addPacketSendingListener(new PacketListener() {
-            public void processPacket(Packet packet) {
+        connection.addPacketSendingListener(new StanzaListener() {
+            public void processPacket(Stanza packet) {
                 Presence presence = (Presence) packet;
                 Presence.Mode mode = presence.getMode();
                 if (mode == null) return;
@@ -145,21 +145,22 @@ public class LastActivityManager extends Manager {
                     // We assume that only a switch to available and chat indicates user activity
                     // since other mode changes could be also a result of some sort of automatism
                     resetIdleTime();
+                    break;
                 default:
                     break;
                 }
             }
-        }, PacketTypeFilter.PRESENCE);
+        }, StanzaTypeFilter.PRESENCE);
 
-        connection.addPacketSendingListener(new PacketListener() {
+        connection.addPacketSendingListener(new StanzaListener() {
             @Override
-            public void processPacket(Packet packet) {
+            public void processPacket(Stanza packet) {
                 Message message = (Message) packet;
                 // if it's not an error message, reset the idle time
                 if (message.getType() == Message.Type.error) return;
                 resetIdleTime();
             }
-        }, PacketTypeFilter.MESSAGE);
+        }, StanzaTypeFilter.MESSAGE);
 
         // Register a listener for a last activity query
         connection.registerIQRequestHandler(new AbstractIqRequestHandler(LastActivity.ELEMENT, LastActivity.NAMESPACE,
@@ -167,12 +168,12 @@ public class LastActivityManager extends Manager {
             @Override
             public IQ handleIQRequest(IQ iqRequest) {
                 if (!enabled)
-                    return IQ.createErrorResponse(iqRequest, new XMPPError(Condition.not_acceptable));
+                    return IQ.createErrorResponse(iqRequest, Condition.not_acceptable);
                 LastActivity message = new LastActivity();
                 message.setType(IQ.Type.result);
                 message.setTo(iqRequest.getFrom());
                 message.setFrom(iqRequest.getTo());
-                message.setPacketID(iqRequest.getPacketID());
+                message.setStanzaId(iqRequest.getStanzaId());
                 message.setLastActivity(getIdleTime());
 
                 return message;
@@ -226,28 +227,30 @@ public class LastActivityManager extends Manager {
      * 
      * @param jid
      *            the JID of the user.
-     * @return the LastActivity packet of the jid.
+     * @return the LastActivity stanza(/packet) of the jid.
      * @throws XMPPErrorException
      *             thrown if a server error has occured.
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
+     * @throws InterruptedException 
      */
-    public LastActivity getLastActivity(String jid) throws NoResponseException, XMPPErrorException,
-                    NotConnectedException {
+    public LastActivity getLastActivity(Jid jid) throws NoResponseException, XMPPErrorException,
+                    NotConnectedException, InterruptedException {
         LastActivity activity = new LastActivity(jid);
         return (LastActivity) connection().createPacketCollectorAndSend(activity).nextResultOrThrow();
     }
 
     /**
-     * Returns true if Last Activity (XEP-0012) is supported by a given JID
+     * Returns true if Last Activity (XEP-0012) is supported by a given JID.
      * 
      * @param jid a JID to be tested for Last Activity support
      * @return true if Last Activity is supported, otherwise false
      * @throws NotConnectedException 
      * @throws XMPPErrorException 
      * @throws NoResponseException 
+     * @throws InterruptedException 
      */
-    public boolean isLastActivitySupported(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean isLastActivitySupported(Jid jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid, LastActivity.NAMESPACE);
     }
 }

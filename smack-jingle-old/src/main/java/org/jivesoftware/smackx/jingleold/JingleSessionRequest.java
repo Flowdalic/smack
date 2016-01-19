@@ -22,12 +22,13 @@ import java.util.logging.Logger;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smackx.jingleold.packet.Jingle;
+import org.jxmpp.jid.Jid;
 
 /**
  * A Jingle session request.
  * <p/>
  * This class is a facade of a received Jingle request. The user can have direct
- * access to the Jingle packet (<i>JingleSessionRequest.getJingle() </i>) of
+ * access to the Jingle stanza(/packet) (<i>JingleSessionRequest.getJingle() </i>) of
  * the request or can use the convencience methods provided by this class.
  *
  * @author Alvaro Saurin
@@ -61,7 +62,7 @@ public class JingleSessionRequest {
      * @return Returns the fully-qualified jabber ID of the user that requested
      *         this session.
      */
-    public String getFrom() {
+    public Jid getFrom() {
         return jingle.getFrom();
     }
 
@@ -75,7 +76,7 @@ public class JingleSessionRequest {
     }
 
     /**
-     * Returns the Jingle packet that was sent by the requester which contains
+     * Returns the Jingle stanza(/packet) that was sent by the requester which contains
      * the parameters of the session.
      */
     public Jingle getJingle() {
@@ -107,8 +108,9 @@ public class JingleSessionRequest {
      * @return Returns the <b><i>IncomingJingleSession</b></i> on which the
      *         negotiation can be carried out.
      * @throws SmackException 
+     * @throws InterruptedException 
      */
-    public synchronized JingleSession accept() throws XMPPException, SmackException {
+    public synchronized JingleSession accept() throws XMPPException, SmackException, InterruptedException {
         JingleSession session = null;
         synchronized (manager) {
             session = manager.createIncomingJingleSession(this);

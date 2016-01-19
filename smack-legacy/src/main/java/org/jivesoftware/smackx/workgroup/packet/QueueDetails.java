@@ -19,8 +19,8 @@ package org.jivesoftware.smackx.workgroup.packet;
 
 import org.jivesoftware.smackx.workgroup.QueueUser;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smack.provider.PacketExtensionProvider;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -34,19 +34,19 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Queue details packet extension, which contains details about the users
+ * Queue details stanza(/packet) extension, which contains details about the users
  * currently in a queue.
  */
-public class QueueDetails implements PacketExtension {
+public final class QueueDetails implements ExtensionElement {
     private static final Logger LOGGER = Logger.getLogger(QueueDetails.class.getName());
-    
+
     /**
-     * Element name of the packet extension.
+     * Element name of the stanza(/packet) extension.
      */
     public static final String ELEMENT_NAME = "notify-queue-details";
 
     /**
-     * Namespace of the packet extension.
+     * Namespace of the stanza(/packet) extension.
      */
     public static final String NAMESPACE = "http://jabber.org/protocol/workgroup";
 
@@ -56,14 +56,7 @@ public class QueueDetails implements PacketExtension {
     /**
      * The list of users in the queue.
      */
-    private Set<QueueUser> users;
-
-    /**
-     * Creates a new QueueDetails packet
-     */
-    private QueueDetails() {
-        users = new HashSet<QueueUser>();
-    }
+    private final Set<QueueUser> users = new HashSet<>();
 
     /**
      * Returns the number of users currently in the queue that are waiting to
@@ -108,11 +101,11 @@ public class QueueDetails implements PacketExtension {
 
     public String toXML() {
         StringBuilder buf = new StringBuilder();
-        buf.append("<").append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
+        buf.append('<').append(ELEMENT_NAME).append(" xmlns=\"").append(NAMESPACE).append("\">");
 
         synchronized (users) {
             for (Iterator<QueueUser> i=users.iterator(); i.hasNext(); ) {
-                QueueUser user = (QueueUser)i.next();
+                QueueUser user = i.next();
                 int position = user.getQueuePosition();
                 int timeRemaining = user.getEstimatedRemainingTime();
                 Date timestamp = user.getQueueJoinTimestamp();
@@ -136,20 +129,20 @@ public class QueueDetails implements PacketExtension {
                 buf.append("</user>");
             }
         }
-        buf.append("</").append(ELEMENT_NAME).append(">");
+        buf.append("</").append(ELEMENT_NAME).append('>');
         return buf.toString();
     }
 
     /**
-     * Provider class for QueueDetails packet extensions.
+     * Provider class for QueueDetails stanza(/packet) extensions.
      */
-    public static class Provider extends PacketExtensionProvider<QueueDetails> {
+    public static class Provider extends ExtensionElementProvider<QueueDetails> {
 
         @Override
         public QueueDetails parse(XmlPullParser parser,
                         int initialDepth) throws XmlPullParserException,
                         IOException, SmackException {
-            
+
             SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
             QueueDetails queueDetails = new QueueDetails();
 
@@ -165,7 +158,7 @@ public class QueueDetails implements PacketExtension {
                     Date joinTime = null;
 
                     uid = parser.getAttributeValue("", "jid");
-               
+
                     if (uid == null) {
                         // throw exception
                     }
@@ -173,7 +166,7 @@ public class QueueDetails implements PacketExtension {
                     eventType = parser.next();
                     while ((eventType != XmlPullParser.END_TAG)
                                 || (! "user".equals(parser.getName())))
-                    {                        
+                    {
                         if ("position".equals(parser.getName())) {
                             position = Integer.parseInt(parser.nextText());
                         }

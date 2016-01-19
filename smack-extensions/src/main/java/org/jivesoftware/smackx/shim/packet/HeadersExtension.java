@@ -19,18 +19,18 @@ package org.jivesoftware.smackx.shim.packet;
 import java.util.Collections;
 import java.util.List;
 
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.ExtensionElement;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 /**
- * Extension representing a list of headers as specified in <a href="http://xmpp.org/extensions/xep-0131">Stanza Headers and Internet Metadata (SHIM)</a>
+ * Extension representing a list of headers as specified in <a href="http://xmpp.org/extensions/xep-0131">Stanza Headers and Internet Metadata (SHIM)</a>.
  * 
  * @see Header
  * 
  * @author Robin Collier
  */
-public class HeadersExtension implements PacketExtension {
+public class HeadersExtension implements ExtensionElement {
     public static final String ELEMENT = "headers";
     public static final String NAMESPACE = "http://jabber.org/protocol/shim";
 
@@ -71,7 +71,7 @@ public class HeadersExtension implements PacketExtension {
      * @param packet
      * @return the headers extension or null.
      */
-    public static HeadersExtension from(Packet packet) {
+    public static HeadersExtension from(Stanza packet) {
         return packet.getExtension(ELEMENT, NAMESPACE);
     }
 }
