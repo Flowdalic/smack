@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.iot.control.element;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
@@ -27,8 +28,13 @@ public class IoTSetRequest extends IQ {
 
     private final List<SetData> setData;
 
-    protected IoTSetRequest(int seqNr, boolean momentary) {
+    protected IoTSetRequest(List<SetData> setData) {
         super(ELEMENT, NAMESPACE);
+        this.setData = Collections.unmodifiableList(setData);
+    }
+
+    public List<SetData> getSetData() {
+        return setData;
     }
 
     @Override

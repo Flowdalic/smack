@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.control.element;
 
-public class Constants {
-
-    public static final String IOT_CONTROL_NAMESPACE = "urn:xmpp:iot:control";
-
-}
+/**
+ * Smack's API for XMPP IoT.
+ */
+package org.jivesoftware.smackx.iot.control.provider;

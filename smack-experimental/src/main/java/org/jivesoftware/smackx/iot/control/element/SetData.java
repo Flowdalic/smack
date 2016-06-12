@@ -57,7 +57,7 @@ public abstract class SetData implements NamedElement {
     public final String getName() {
         return name;
     }
-    
+
     public final String getValue() {
         return value;
     }

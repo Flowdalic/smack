@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.iot.provisioning.provider;
 
 import org.jivesoftware.smack.provider.IQProvider;
+
 import org.jivesoftware.smack.util.ParserUtils;
 import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriend;
 import org.jxmpp.jid.Jid;
