@@ -52,4 +52,53 @@
         <className>org.jivesoftware.smackx.gcm.provider.GcmExtensionProvider</className>
     </extensionProvider>
 
+    <!-- XEP-0347: Internet of Things - Discovery -->
+    <iqProvider>
+      <elementName>register</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTRegisterProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>registered</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTRegisteredProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>claimed</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTClaimedProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>disown</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTDisownProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>disowned</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTDisownedProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>remove</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTRemoveProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>disown</elementName>
+      <namespace>urn:xmpp:iot:disvoery</namespace>
+      <className>org.jivesoftare.smackx.iot.discovery.provider.IoTRemovedProvider</className>
+    </iqProvider>
+
+    <!-- XEP-0324: Internet of Things - Provisioning -->
+   <iqProvider>
+      <elementName>isFriend</elementName>
+      <namespace>urn:xmpp:iot:provisioning</namespace>
+      <className>org.jivesoftare.smackx.iot.provisioning.provider.IoTIsFriendProvider</className>
+    </iqProvider>
+   <iqProvider>
+      <elementName>isFriendResponse</elementName>
+      <namespace>urn:xmpp:iot:provisioning</namespace>
+      <className>org.jivesoftare.smackx.iot.provisioning.provider.IoTIsFriendResponseProvider</className>
+    </iqProvider>
+
 </smackProviders>
