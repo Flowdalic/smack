@@ -33,9 +33,16 @@ public class Tag implements NamedElement {
     private final String value;
 
     public Tag(String name, Type type, String value) {
+        // TODO According to XEP-0347 § 5.2 names are case insensitive. Uppercase them all?
         this.name = StringUtils.requireNotNullOrEmpty(name, "name must not be null or empty");
         this.type = Objects.requireNonNull(type);
         this.value =  StringUtils.requireNotNullOrEmpty(value, "value must not be null or empty");
+        if (this.name.length() > 32) {
+            throw new IllegalArgumentException("Meta Tag names must not be longer then 32 characters (XEP-0347 § 5.2");
+        }
+        if (this.type == Type.str && this.value.length() > 128) {
+            throw new IllegalArgumentException("Meta Tag string values must not be longer then 128 characters (XEP-0347 § 5.2");
+        }
     }
 
     public String getName() {

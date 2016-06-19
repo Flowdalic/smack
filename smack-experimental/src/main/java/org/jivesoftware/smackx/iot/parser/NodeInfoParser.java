@@ -14,23 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery.provider;
+package org.jivesoftware.smackx.iot.parser;
 
-import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smack.util.ParserUtils;
-import org.jivesoftware.smackx.iot.discovery.element.IoTDisown;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
-import org.jivesoftware.smackx.iot.parser.NodeInfoParser;
-import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
 
-public class IoTDisownProvider extends IQProvider<IoTDisown> {
+import static org.jivesoftware.smack.util.StringUtils.isNullOrEmpty;
 
-    @Override
-    public IoTDisown parse(XmlPullParser parser, int initialDepth) throws Exception {
-        Jid jid = ParserUtils.getJidAttribute(parser);
-        NodeInfo nodeInfo = NodeInfoParser.parse(parser);
-        return new IoTDisown(jid, nodeInfo);
+public class NodeInfoParser {
+
+    public static NodeInfo parse(XmlPullParser parser) {
+        String nodeId = parser.getAttributeValue(null, "nodeId");
+        String sourceId = parser.getAttributeValue(null, "sourceId");
+        String cacheType = parser.getAttributeValue(null, "cacheType");
+        if (isNullOrEmpty(nodeId) && isNullOrEmpty(sourceId) && isNullOrEmpty(cacheType)) {
+            return null;
+        }
+        return new NodeInfo(nodeId, sourceId, cacheType);
     }
-
 }

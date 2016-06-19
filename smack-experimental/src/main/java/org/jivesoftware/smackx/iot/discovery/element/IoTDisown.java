@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.iot.discovery.element;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
 import org.jxmpp.jid.Jid;
 
 public class IoTDisown extends IQ {
@@ -26,19 +27,16 @@ public class IoTDisown extends IQ {
 
     private final Jid jid;
 
-    private final String nodeId;
-
-    private final String sourceId;
+    private final NodeInfo nodeInfo;
 
     public IoTDisown(Jid jid) {
-        this(jid, null, null);
+        this(jid, null);
     }
 
-    public IoTDisown(Jid jid, String nodeId, String sourceId) {
+    public IoTDisown(Jid jid, NodeInfo nodeInfo) {
         super(ELEMENT, NAMESPACE);
         this.jid = jid;
-        this.nodeId = nodeId;
-        this.sourceId = sourceId;
+        this.nodeInfo = nodeInfo;
     }
 
     public Jid getJid() {
@@ -46,18 +44,17 @@ public class IoTDisown extends IQ {
     }
 
     public String getNodeId() {
-        return nodeId;
+        return nodeInfo != null ? nodeInfo.getNodeId() : null;
     }
 
     public String getSourceId() {
-        return sourceId;
+        return nodeInfo != null ? nodeInfo.getSourceId() : null;
     }
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
-        xml.optAttribute("nodeId", nodeId);
-        xml.optAttribute("sourceId", sourceId);
+        NodeInfo.eventuallyAppend(nodeInfo, xml);
         xml.closeEmptyElement();
         return xml;
     }

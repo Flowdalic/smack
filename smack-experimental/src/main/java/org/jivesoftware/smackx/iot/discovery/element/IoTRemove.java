@@ -17,6 +17,8 @@
 package org.jivesoftware.smackx.iot.discovery.element;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
+import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
 public class IoTRemove extends IQ {
@@ -24,21 +26,22 @@ public class IoTRemove extends IQ {
     public static final String ELEMENT = "remove";
     public static final String NAMESPACE = Constants.IOT_DISCOVERY_NAMESPACE;
 
-    private final Jid jid;
+    /**
+     * The XMPP address of the Thing to be removed from the registry. According to XEP-0347 § 3.10 the
+     * "resource-less JID of the Thing" has to be used, therefore we use {@link BareJid} here.
+     */
+    private final BareJid jid;
 
-    private final String nodeId;
+    private final NodeInfo nodeInfo;
 
-    private final String sourceId;
-
-    public IoTRemove(Jid jid) {
-        this(jid, null, null);
+    public IoTRemove(BareJid jid) {
+        this(jid, null);
     }
 
-    public IoTRemove(Jid jid, String nodeId, String sourceId) {
+    public IoTRemove(BareJid jid, NodeInfo nodeInfo) {
         super(ELEMENT, NAMESPACE);
         this.jid = jid;
-        this.nodeId = nodeId;
-        this.sourceId = sourceId;
+        this.nodeInfo = nodeInfo;
     }
 
     public Jid getJid() {
@@ -46,18 +49,17 @@ public class IoTRemove extends IQ {
     }
 
     public String getNodeId() {
-        return nodeId;
+        return nodeInfo != null ? nodeInfo.getNodeId() : null;
     }
 
     public String getSourceId() {
-        return sourceId;
+        return nodeInfo != null ? nodeInfo.getSourceId() : null;
     }
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
-        xml.optAttribute("nodeId", nodeId);
-        xml.optAttribute("sourceId", sourceId);
+        NodeInfo.eventuallyAppend(nodeInfo, xml);
         xml.closeEmptyElement();
         return xml;
     }

@@ -16,6 +16,64 @@
  */
 package org.jivesoftware.smackx.iot;
 
-public class Thing {
+import java.util.List;
 
+import org.jivesoftware.smackx.iot.discovery.element.Tag;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
+
+public final class Thing {
+
+    private final List<Tag> metaTags;
+    private final boolean selfOwned;
+    private final NodeInfo nodeInfo;
+
+    private Thing(Builder builder) {
+        this.metaTags = builder.metaTags;
+        this.selfOwned = builder.selfOwned;
+        this.nodeInfo = builder.nodeInfo;
+    }
+
+    public List<Tag> getMetaTags() {
+        return metaTags;
+    }
+
+    public boolean isSelfOwened() {
+        return selfOwned;
+    }
+
+    public NodeInfo getNodeInfo() {
+        return nodeInfo;
+    }
+
+    public String getNodeId() {
+        if (nodeInfo == null)
+            return null;
+
+        return nodeInfo.getNodeId();
+    }
+
+    public String getSourceId() {
+        if (nodeInfo == null)
+            return null;
+
+        return nodeInfo.getSourceId();
+    }
+
+    public String getCacheType() {
+        if (nodeInfo == null)
+            return null;
+
+        return nodeInfo.getCacheType();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private List<Tag> metaTags;
+        private boolean selfOwned;
+        private NodeInfo nodeInfo;
+
+    }
 }

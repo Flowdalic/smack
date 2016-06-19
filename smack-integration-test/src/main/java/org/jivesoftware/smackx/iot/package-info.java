@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2016 Florian Schmaus
+ * Copyright 2015 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery.element;
 
-public class Constants {
-
-    public static final String IOT_DISCOVERY_NAMESPACE = "urn:xmpp:iot:discovery";
-
-}
+/**
+ * TODO describe me.
+ */
+package org.jivesoftware.smackx.iot;

@@ -19,34 +19,26 @@ package org.jivesoftware.smackx.iot.discovery.element;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smackx.iot.element.NodeInfo;
 
-public class IoTRegister extends IQ {
+public class IoTMine extends IQ {
 
-    public static final String ELEMENT = "register";
+    public static final String ELEMENT = "mine";
     public static final String NAMESPACE = Constants.IOT_DISCOVERY_NAMESPACE;
 
-    private final List<Tag> tags;
-    private final NodeInfo nodeInfo;
-    private final boolean selfOwned;
+    private final List<Tag> metaTags;
+    private final boolean publicThing;
 
-    public IoTRegister(List<Tag> tags, NodeInfo nodeInfo, boolean selfOwned) {
+    public IoTMine(List<Tag> metaTags, boolean publicThing) {
         super(ELEMENT, NAMESPACE);
-        if (tags.isEmpty()) {
-            throw new IllegalArgumentException();
-        }
-        this.tags = tags;
-        this.nodeInfo = nodeInfo;
-        this.selfOwned = selfOwned;
+        this.metaTags = metaTags;
+        this.publicThing = publicThing;
     }
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
-        xml.optBooleanAttribute("selfOwned", selfOwned);
+        xml.optBooleanAttributeDefaultTrue("public", publicThing);
         xml.rightAngleBracket();
-
-        xml.append(tags);
+        xml.append(metaTags);
 
         return xml;
     }

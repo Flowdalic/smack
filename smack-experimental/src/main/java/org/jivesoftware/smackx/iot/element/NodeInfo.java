@@ -14,35 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery.element;
+package org.jivesoftware.smackx.iot.element;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jxmpp.jid.Jid;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 
-public class IoTClaimed extends IQ {
-
-    public static final String ELEMENT = "claimed";
-    public static final String NAMESPACE = Constants.IOT_DISCOVERY_NAMESPACE;
-
-    private final Jid jid;
+public class NodeInfo {
 
     private final String nodeId;
-
     private final String sourceId;
+    private final String cacheType;
 
-    public IoTClaimed(Jid jid) {
-        this(jid, null, null);
-    }
-
-    public IoTClaimed(Jid jid, String nodeId, String sourceId) {
-        super(ELEMENT, NAMESPACE);
-        this.jid = jid;
+    public NodeInfo(String nodeId, String sourceId, String cacheType) {
         this.nodeId = nodeId;
         this.sourceId = sourceId;
-    }
-
-    public Jid getJid() {
-        return jid;
+        this.cacheType = cacheType;
     }
 
     public String getNodeId() {
@@ -53,13 +38,18 @@ public class IoTClaimed extends IQ {
         return sourceId;
     }
 
-    @Override
-    protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        xml.attribute("jid", jid);
-        xml.optAttribute("nodeId", nodeId);
-        xml.optAttribute("sourceId", sourceId);
-        xml.closeEmptyElement();
-        return xml;
+    public String getCacheType() {
+        return cacheType;
     }
 
+    public void appendTo(XmlStringBuilder xml) {
+        xml.attribute("nodeId", nodeId).attribute("sourceId", sourceId).attribute("cacheType", cacheType);
+    }
+
+    public static void eventuallyAppend(NodeInfo nodeInfo, XmlStringBuilder xml) {
+        if (nodeInfo == null)
+            return;
+
+        nodeInfo.appendTo(xml);
+    }
 }

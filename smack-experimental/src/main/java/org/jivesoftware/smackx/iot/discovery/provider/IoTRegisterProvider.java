@@ -23,6 +23,8 @@ import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRegister;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
+import org.jivesoftware.smackx.iot.parser.NodeInfoParser;
 import org.xmlpull.v1.XmlPullParser;
 
 public class IoTRegisterProvider extends IQProvider<IoTRegister> {
@@ -30,8 +32,7 @@ public class IoTRegisterProvider extends IQProvider<IoTRegister> {
     @Override
     public IoTRegister parse(XmlPullParser parser, int initialDepth) throws Exception {
         boolean selfOwned = ParserUtils.getBooleanAttribute(parser, "selfOwned", false);
-        String nodeId = parser.getAttributeValue(null, "nodeId");
-        String sourceId = parser.getAttributeValue(null, "sourceId");
+        NodeInfo nodeInfo = NodeInfoParser.parse(parser);
         List<Tag> tags = new ArrayList<>();
         while (parser.getDepth() != initialDepth) {
             int event = parser.next();
@@ -55,7 +56,7 @@ public class IoTRegisterProvider extends IQProvider<IoTRegister> {
             String value = parser.getAttributeValue(null, "value");
             tags.add(new Tag(name, type, value));
         }
-        return new IoTRegister(tags, nodeId, sourceId, selfOwned);
+        return new IoTRegister(tags, nodeInfo, selfOwned);
     }
 
 }
