@@ -55,7 +55,7 @@ public class IoTDisown extends IQ {
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
         NodeInfo.eventuallyAppend(nodeInfo, xml);
-        xml.closeEmptyElement();
+        xml.rightAngleBracket();
         return xml;
     }
 

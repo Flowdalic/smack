@@ -16,14 +16,16 @@
  */
 package org.jivesoftware.smackx.iot;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
 
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
+import org.jivesoftware.smackx.iot.discovery.element.Tag.Type;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 
 public final class Thing {
 
-    private final List<Tag> metaTags;
+    private final HashMap<String, Tag> metaTags;
     private final boolean selfOwned;
     private final NodeInfo nodeInfo;
 
@@ -33,8 +35,8 @@ public final class Thing {
         this.nodeInfo = builder.nodeInfo;
     }
 
-    public List<Tag> getMetaTags() {
-        return metaTags;
+    public Collection<Tag> getMetaTags() {
+        return metaTags.values();
     }
 
     public boolean isSelfOwened() {
@@ -71,9 +73,47 @@ public final class Thing {
     }
 
     public static class Builder {
-        private List<Tag> metaTags;
+        private HashMap<String, Tag> metaTags = new HashMap<>();
         private boolean selfOwned;
         private NodeInfo nodeInfo;
 
+        public Builder setSerialNumber(String sn) {
+            final String name = "SN";
+            Tag tag = new Tag(name, Type.str, sn);
+            metaTags.put(name, tag);
+            return this;
+        }
+
+        public Builder setKey(String key) {
+            final String name = "KEY";
+            Tag tag = new Tag(name, Type.str, key);
+            metaTags.put(name, tag);
+            return this;
+        }
+
+        public Builder setManufacturer(String manufacturer) {
+            final String name = "MAN";
+            Tag tag = new Tag(name, Type.str, manufacturer);
+            metaTags.put(name, tag);
+            return this;
+        }
+
+        public Builder setModel(String model) {
+            final String name = "MODEL";
+            Tag tag = new Tag(name, Type.str, model);
+            metaTags.put(name, tag);
+            return this;
+        }
+
+        public Builder setVersion(String version) {
+            final String name = "V";
+            Tag tag = new Tag(name, Type.num, version);
+            metaTags.put(name, tag);
+            return this;
+        }
+
+        public Thing build() {
+            return new Thing(this);
+        }
     }
 }

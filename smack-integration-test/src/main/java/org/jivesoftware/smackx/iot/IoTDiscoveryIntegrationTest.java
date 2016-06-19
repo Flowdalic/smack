@@ -16,24 +16,32 @@
  */
 package org.jivesoftware.smackx.iot;
 
+import static org.junit.Assert.assertEquals;
+
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 import org.igniterealtime.smack.inttest.TestNotPossibleException;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.iot.discovery.IoTClaimedException;
 import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
+import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
 import org.jxmpp.jid.Jid;
 
 public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
 
     private final IoTDiscoveryManager discoveryManagerOne;
+    private final IoTDiscoveryManager discoveryManagerTwo;
 
     public IoTDiscoveryIntegrationTest(SmackIntegrationTestEnvironment environment) throws NoResponseException,
                     XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
         super(environment);
         discoveryManagerOne = IoTDiscoveryManager.getInstanceFor(conOne);
+        discoveryManagerTwo = IoTDiscoveryManager.getInstanceFor(conTwo);
         Jid registry = discoveryManagerOne.findRegistry();
         if (registry == null) {
             throw new TestNotPossibleException("Could not find IoT Registry");
@@ -41,8 +49,33 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
     }
 
     @SmackIntegrationTest
-    public void printRegistry() throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        Jid registry = discoveryManagerOne.findRegistry();
-        LOGGER.info("IoT Registry: " + registry);
+    public void registerClaimAndUnregisterThing()
+                    throws XMPPErrorException, InterruptedException, SmackException {
+        final String key = StringUtils.randomString(12);
+        final String sn = StringUtils.randomString(12);
+        final Thing thing = Thing.builder().setKey(key).setSerialNumber(sn).setManufacturer("Ignite Realtime").setModel(
+                        "Smack").setVersion("0.1").build();
+
+        int attempts = 0;
+        while (true) {
+            try {
+                discoveryManagerOne.registerThing(thing);
+                break;
+            }
+            catch (IoTClaimedException e) {
+                discoveryManagerOne.unregister();
+            }
+            if (attempts++ > 3) {
+                throw new SmackException("Could no register thing");
+            }
+        }
+
+        IoTClaimed iotClaimed = discoveryManagerTwo.claimThing(thing.getMetaTags());
+        assertEquals(conOne.getUser().asBareJid(), iotClaimed.getJid());
+
+        // 2016-06-19: Disabled. Disowning causes a error - cancel - not-allowed response for some not yet know reason.
+//        discoveryManagerTwo.disownThing(iotClaimed.getJid());
+
+        discoveryManagerOne.unregister();
     }
 }

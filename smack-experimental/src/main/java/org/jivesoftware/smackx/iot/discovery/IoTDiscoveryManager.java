@@ -16,15 +16,21 @@
  */
 package org.jivesoftware.smackx.iot.discovery;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Logger;
 
+import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPConnectionRegistry;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
+import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
@@ -35,14 +41,33 @@ import org.jivesoftware.smackx.iot.discovery.element.IoTDisown;
 import org.jivesoftware.smackx.iot.discovery.element.IoTMine;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRegister;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRemove;
+import org.jivesoftware.smackx.iot.discovery.element.IoTUnregister;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
+/**
+ * A manager for XMPP IoT Discovery. Used to register and discover things.
+ *
+ * @author Florian Schmaus <flo@geekplace.eu>
+ * @see <a href="http://xmpp.org/extensions/xep-0347.html">XEP-0347: Internet of Things - Discovery</a>
+ *
+ */
 public final class IoTDiscoveryManager extends Manager {
 
+    private static final Logger LOGGER = Logger.getLogger(IoTDiscoveryManager.class.getName());
+
     private static final Map<XMPPConnection, IoTDiscoveryManager> INSTANCES = new WeakHashMap<>();
+
+    // Ensure a IoTProvisioningManager exists for every connection.
+    static {
+        XMPPConnectionRegistry.addConnectionCreationListener(new ConnectionCreationListener() {
+            public void connectionCreated(XMPPConnection connection) {
+                getInstanceFor(connection);
+            }
+        });
+    }
 
     public static synchronized IoTDiscoveryManager getInstanceFor(XMPPConnection connection) {
         IoTDiscoveryManager manager = INSTANCES.get(connection);
@@ -57,6 +82,19 @@ public final class IoTDiscoveryManager extends Manager {
 
     private IoTDiscoveryManager(XMPPConnection connection) {
         super(connection);
+
+        connection.registerIQRequestHandler(
+                        new AbstractIqRequestHandler(IoTClaimed.ELEMENT, IoTClaimed.NAMESPACE, IQ.Type.set, Mode.sync) {
+                            @Override
+                            public IQ handleIQRequest(IQ iqRequest) {
+                                IoTClaimed iotClaimed = (IoTClaimed) iqRequest;
+
+                                LOGGER.info("Our thing claimed by " + iotClaimed.getJid() + ". " + iotClaimed);
+                                // TODO Handle claimed.
+
+                                return IQ.createResultIQ(iqRequest);
+                            }
+                        });
     }
 
     /**
@@ -88,30 +126,35 @@ public final class IoTDiscoveryManager extends Manager {
     // Thing Registration - XEP-0347 § 3.6 - 3.8
 
     public void registerThing(Thing thing)
-                    throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException {
+                    throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException, IoTClaimedException {
         Jid registry = findRegistry();
         registerThing(registry, thing);
     }
 
     public void registerThing(Jid registry, Thing thing)
-                    throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException {
+                    throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException, IoTClaimedException {
         IoTRegister iotRegister = new IoTRegister(thing.getMetaTags(), thing.getNodeInfo(), thing.isSelfOwened());
         iotRegister.setTo(registry);
         IQ result = connection().createPacketCollectorAndSend(iotRegister).nextResultOrThrow();
         if (result instanceof IoTClaimed) {
-            // TODO handle <claimed/> in extra IoTException.
+            IoTClaimed iotClaimedResult = (IoTClaimed) result;
+            throw new IoTClaimedException(iotClaimedResult);
         }
         // TODO the thing should now be prepared to receive <removed/> or <disowned/> IQs from the registry
     }
 
     // Thing Claiming - XEP-0347 § 3.9
 
-    public IoTClaimed claimThing(List<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+    public IoTClaimed claimThing(Collection<Tag> metaTags) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        return claimThing(metaTags, true);
+    }
+
+    public IoTClaimed claimThing(Collection<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         Jid registry = findRegistry();
         return claimThing(registry, metaTags, publicThing);
     }
 
-    public IoTClaimed claimThing(Jid registry, List<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+    public IoTClaimed claimThing(Jid registry, Collection<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         IoTMine iotMine = new IoTMine(metaTags, publicThing);
         iotMine.setTo(registry);
         IoTClaimed iotClaimed = connection().createPacketCollectorAndSend(iotMine).nextResultOrThrow();
@@ -136,6 +179,26 @@ public final class IoTDiscoveryManager extends Manager {
         IoTRemove iotRemove = new IoTRemove(thing, nodeInfo);
         iotRemove.setTo(registry);
         connection().createPacketCollectorAndSend(iotRemove).nextResultOrThrow();
+    }
+
+    // Thing Unregistering - XEP-0347 § 3.16
+
+    public void unregister()
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        unregister(null);
+    }
+
+    public void unregister(NodeInfo nodeInfo)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        Jid registry = findRegistry();
+        unregister(registry, nodeInfo);
+    }
+
+    public void unregister(Jid registry, NodeInfo nodeInfo)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        IoTUnregister iotUnregister = new IoTUnregister(nodeInfo);
+        iotUnregister.setTo(registry);
+        connection().createPacketCollectorAndSend(iotUnregister).nextResultOrThrow();
     }
 
     // Thing Disowning - XEP-0347 § 3.17

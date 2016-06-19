@@ -60,6 +60,9 @@ public class Tag implements NamedElement {
     @Override
     public XmlStringBuilder toXML() {
         XmlStringBuilder xml = new XmlStringBuilder(this);
+        xml.attribute("name", name);
+        xml.attribute("value", value);
+        xml.closeEmptyElement();
         return xml;
     }
 

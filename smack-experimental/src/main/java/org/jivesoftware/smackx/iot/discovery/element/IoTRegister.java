@@ -16,7 +16,7 @@
  */
 package org.jivesoftware.smackx.iot.discovery.element;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
@@ -26,11 +26,11 @@ public class IoTRegister extends IQ {
     public static final String ELEMENT = "register";
     public static final String NAMESPACE = Constants.IOT_DISCOVERY_NAMESPACE;
 
-    private final List<Tag> tags;
+    private final Collection<Tag> tags;
     private final NodeInfo nodeInfo;
     private final boolean selfOwned;
 
-    public IoTRegister(List<Tag> tags, NodeInfo nodeInfo, boolean selfOwned) {
+    public IoTRegister(Collection<Tag> tags, NodeInfo nodeInfo, boolean selfOwned) {
         super(ELEMENT, NAMESPACE);
         if (tags.isEmpty()) {
             throw new IllegalArgumentException();
