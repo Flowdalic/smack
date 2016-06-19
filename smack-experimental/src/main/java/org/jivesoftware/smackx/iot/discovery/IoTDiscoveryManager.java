@@ -42,7 +42,7 @@ import org.jxmpp.jid.Jid;
 
 public final class IoTDiscoveryManager extends Manager {
 
-    private static Map<XMPPConnection, IoTDiscoveryManager> INSTANCES = new WeakHashMap<>();
+    private static final Map<XMPPConnection, IoTDiscoveryManager> INSTANCES = new WeakHashMap<>();
 
     public static synchronized IoTDiscoveryManager getInstanceFor(XMPPConnection connection) {
         IoTDiscoveryManager manager = INSTANCES.get(connection);

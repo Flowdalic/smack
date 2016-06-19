@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2016 Florian Schmaus
+ * Copyright © 2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,18 @@
  */
 package org.jivesoftware.smackx.iot.provisioning.provider;
 
-import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.provider.ExtensionElementProvider;
 import org.jivesoftware.smack.util.ParserUtils;
-import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriendResponse;
+import org.jivesoftware.smackx.iot.provisioning.element.Unfriend;
 import org.jxmpp.jid.BareJid;
-import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
 
-public class IoTIsFriendResponseProvider extends IQProvider<IoTIsFriendResponse> {
+public class UnfriendProvider extends ExtensionElementProvider<Unfriend> {
 
     @Override
-    public IoTIsFriendResponse parse(XmlPullParser parser, int initialDepth) throws Exception {
-        Jid jid = ParserUtils.getJidAttribute(parser);
-        BareJid bareJid = jid.asBareJid();
-        boolean result = ParserUtils.getBooleanAttribute(parser, "result");
-
-        return new IoTIsFriendResponse(bareJid, result);
+    public Unfriend parse(XmlPullParser parser, int initialDepth) throws Exception {
+        BareJid jid = ParserUtils.getBareJidAttribute(parser);
+        return new Unfriend(jid);
     }
 
 }

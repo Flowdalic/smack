@@ -24,7 +24,7 @@ import org.jivesoftware.smack.XMPPConnection;
 
 public final class IoTControlManager extends Manager {
 
-    private static Map<XMPPConnection, IoTControlManager> INSTANCES = new WeakHashMap<>();
+    private static final Map<XMPPConnection, IoTControlManager> INSTANCES = new WeakHashMap<>();
 
     public static synchronized IoTControlManager getInstanceFor(XMPPConnection connection) {
         IoTControlManager manager = INSTANCES.get(connection);

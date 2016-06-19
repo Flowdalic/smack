@@ -17,21 +17,15 @@
 package org.jivesoftware.smackx.iot.provisioning.provider;
 
 import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smack.util.ParserUtils;
-import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriendResponse;
-import org.jxmpp.jid.BareJid;
-import org.jxmpp.jid.Jid;
+
+import org.jivesoftware.smackx.iot.provisioning.element.ClearCacheResponse;
 import org.xmlpull.v1.XmlPullParser;
 
-public class IoTIsFriendResponseProvider extends IQProvider<IoTIsFriendResponse> {
+public class ClearCacheResponseProvider extends IQProvider<ClearCacheResponse> {
 
     @Override
-    public IoTIsFriendResponse parse(XmlPullParser parser, int initialDepth) throws Exception {
-        Jid jid = ParserUtils.getJidAttribute(parser);
-        BareJid bareJid = jid.asBareJid();
-        boolean result = ParserUtils.getBooleanAttribute(parser, "result");
-
-        return new IoTIsFriendResponse(bareJid, result);
+    public ClearCacheResponse parse(XmlPullParser parser, int initialDepth) throws Exception {
+        return new ClearCacheResponse();
     }
 
 }

@@ -16,37 +16,44 @@
  */
 package org.jivesoftware.smackx.iot.provisioning.element;
 
-import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jxmpp.jid.BareJid;
 
-public class IoTIsFriendResponse extends IQ {
-
-    public static final String ELEMENT = "isFriend";
+public class Unfriend implements ExtensionElement {
+    public static final String ELEMENT = "UNFRIEND";
     public static final String NAMESPACE = Constants.IOT_PROVISIONING_NAMESPACE;
 
     private final BareJid jid;
 
-    private final boolean result;
-
-    public IoTIsFriendResponse(BareJid jid, boolean result) {
-        super(ELEMENT, NAMESPACE);
+    public Unfriend(BareJid jid) {
         this.jid = jid;
-        this.result = result;
     }
 
     public BareJid getJid() {
         return jid;
     }
 
-    public boolean getIsFriendResult() {
-        return result;
+    @Override
+    public String getElementName() {
+        return ELEMENT;
     }
 
     @Override
-    protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
+    public String getNamespace() {
+        return NAMESPACE;
+    }
+
+    @Override
+    public XmlStringBuilder toXML() {
+        XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("jid", jid);
-        xml.attribute("result", result);
+        xml.closeEmptyElement();
         return xml;
     }
 
+    public static Unfriend from(Message message) {
+        return message.getExtension(ELEMENT, NAMESPACE);
+    }
 }

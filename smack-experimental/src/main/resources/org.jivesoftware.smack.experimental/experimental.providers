@@ -95,5 +95,20 @@
       <namespace>urn:xmpp:iot:provisioning</namespace>
       <className>org.jivesoftware.smackx.iot.provisioning.provider.IoTIsFriendResponseProvider</className>
     </iqProvider>
+   <iqProvider>
+      <elementName>clearCache</elementName>
+      <namespace>urn:xmpp:iot:provisioning</namespace>
+      <className>org.jivesoftware.smackx.iot.provisioning.provider.ClearCacheProvider</className>
+    </iqProvider>
+   <iqProvider>
+      <elementName>clearCacheResponse</elementName>
+      <namespace>urn:xmpp:iot:provisioning</namespace>
+      <className>org.jivesoftware.smackx.iot.provisioning.provider.ClearCacheResponseProvider</className>
+    </iqProvider>
+    <extensionProvider>
+        <elementName>unfriend</elementName>
+        <namespace>urn:xmpp:iot:provisioning</namespace>
+        <className>org.jivesoftware.smackx.iot.provisioning.provider.UnfriendProvider</className>
+    </extensionProvider>
 
 </smackProviders>

@@ -16,37 +16,22 @@
  */
 package org.jivesoftware.smackx.iot.provisioning.element;
 
-import org.jivesoftware.smack.packet.IQ;
-import org.jxmpp.jid.BareJid;
+import org.jivesoftware.smack.packet.SimpleIQ;
 
-public class IoTIsFriendResponse extends IQ {
+public class ClearCacheResponse extends SimpleIQ {
 
-    public static final String ELEMENT = "isFriend";
+    public static final String ELEMENT = "clearCacheResponse";
     public static final String NAMESPACE = Constants.IOT_PROVISIONING_NAMESPACE;
 
-    private final BareJid jid;
-
-    private final boolean result;
-
-    public IoTIsFriendResponse(BareJid jid, boolean result) {
+    public ClearCacheResponse() {
         super(ELEMENT, NAMESPACE);
-        this.jid = jid;
-        this.result = result;
+        // <clearCacheResponse/> IQs are always of type 'result' (XEP-0324 § 3.5.1, see also the XEPs history remarks)
+        setType(Type.result);
     }
 
-    public BareJid getJid() {
-        return jid;
+    public ClearCacheResponse(ClearCache clearCacheRequest) {
+        this();
+        setStanzaId(clearCacheRequest.getStanzaId());
+        setTo(clearCacheRequest.getFrom());
     }
-
-    public boolean getIsFriendResult() {
-        return result;
-    }
-
-    @Override
-    protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        xml.attribute("jid", jid);
-        xml.attribute("result", result);
-        return xml;
-    }
-
 }
