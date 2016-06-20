@@ -42,7 +42,6 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
@@ -102,8 +101,7 @@ public final class IoTProvisioningManager extends Manager {
                 BareJid unfriendJid = unfriend.getJid();
                 final XMPPConnection connection = connection();
                 Roster roster = Roster.getInstanceFor(connection);
-                RosterEntry entry = roster.getEntry(unfriendJid);
-                if (!entry.canSeeMyPresence()) {
+                if (!roster.isSubscribedToMyPresence(unfriendJid)) {
                     LOGGER.warning("Ignoring <unfriend/> request '" + stanza + "' because " + unfriendJid
                                     + " is already not subscribed to our presence.");
                     return;

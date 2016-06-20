@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.iot.element;
 
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
 public class NodeInfo {
@@ -25,7 +26,7 @@ public class NodeInfo {
     private final String cacheType;
 
     public NodeInfo(String nodeId, String sourceId, String cacheType) {
-        this.nodeId = nodeId;
+        this.nodeId = StringUtils.requireNotNullOrEmpty(nodeId, "Node ID must not be null or empty");
         this.sourceId = sourceId;
         this.cacheType = cacheType;
     }
@@ -43,7 +44,7 @@ public class NodeInfo {
     }
 
     public void appendTo(XmlStringBuilder xml) {
-        xml.attribute("nodeId", nodeId).attribute("sourceId", sourceId).attribute("cacheType", cacheType);
+        xml.attribute("nodeId", nodeId).optAttribute("sourceId", sourceId).optAttribute("cacheType", cacheType);
     }
 
     public static void eventuallyAppend(NodeInfo nodeInfo, XmlStringBuilder xml) {

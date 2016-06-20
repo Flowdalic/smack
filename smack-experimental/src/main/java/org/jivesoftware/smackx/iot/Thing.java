@@ -32,6 +32,8 @@ public final class Thing {
     private Thing(Builder builder) {
         this.metaTags = builder.metaTags;
         this.selfOwned = builder.selfOwned;
+
+        // TODO Make nodeInfo mandatory? Seems to be required for XEP-0323 Data.
         this.nodeInfo = builder.nodeInfo;
     }
 

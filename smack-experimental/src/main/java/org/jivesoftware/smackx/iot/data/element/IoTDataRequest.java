@@ -43,4 +43,7 @@ public class IoTDataRequest extends IQ {
         return null;
     }
 
+    public boolean isMomentary() {
+        return momentary;
+    }
 }

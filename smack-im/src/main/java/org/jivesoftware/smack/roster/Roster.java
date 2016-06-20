@@ -1053,13 +1053,7 @@ public final class Roster extends Manager {
         if (entry == null) {
             return false;
         }
-        switch (entry.getType()) {
-        case from:
-        case both:
-            return true;
-        default:
-            return false;
-        }
+        return entry.canSeeMyPresence();
     }
 
     /**

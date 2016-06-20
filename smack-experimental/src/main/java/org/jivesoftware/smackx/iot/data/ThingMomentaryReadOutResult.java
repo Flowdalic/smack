@@ -14,25 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery;
+package org.jivesoftware.smackx.iot.data;
 
-import org.jivesoftware.smackx.iot.IoTException;
-import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
+import java.util.List;
 
-public class IoTClaimedException extends IoTException {
+import org.jivesoftware.smackx.iot.data.element.IoTDataField;
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
+public interface ThingMomentaryReadOutResult {
 
-    private final IoTClaimed iotClaimed;
+    public void momentaryReadOut(List<IoTDataField> results);
 
-    public IoTClaimedException(IoTClaimed iotClaimed) {
-        this.iotClaimed = iotClaimed;
-    }
-
-    public IoTClaimed getIoTClaimed() {
-        return iotClaimed;
-    }
 }
