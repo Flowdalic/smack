@@ -19,6 +19,7 @@ package org.jivesoftware.smackx.iot;
 import java.util.Collection;
 import java.util.HashMap;
 
+import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
 import org.jivesoftware.smackx.iot.discovery.element.Tag.Type;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
@@ -29,12 +30,16 @@ public final class Thing {
     private final boolean selfOwned;
     private final NodeInfo nodeInfo;
 
+    private final ThingMomentaryReadOutRequest momentaryReadOutRequestHandler;
+
     private Thing(Builder builder) {
         this.metaTags = builder.metaTags;
         this.selfOwned = builder.selfOwned;
 
         // TODO Make nodeInfo mandatory? Seems to be required for XEP-0323 Data.
         this.nodeInfo = builder.nodeInfo;
+
+        this.momentaryReadOutRequestHandler = builder.momentaryReadOutRequest;
     }
 
     public Collection<Tag> getMetaTags() {
@@ -70,6 +75,10 @@ public final class Thing {
         return nodeInfo.getCacheType();
     }
 
+    public ThingMomentaryReadOutRequest getMomentaryReadOutRequestHandler() {
+        return momentaryReadOutRequestHandler;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -78,6 +87,7 @@ public final class Thing {
         private HashMap<String, Tag> metaTags = new HashMap<>();
         private boolean selfOwned;
         private NodeInfo nodeInfo;
+        private ThingMomentaryReadOutRequest momentaryReadOutRequest;
 
         public Builder setSerialNumber(String sn) {
             final String name = "SN";
@@ -111,6 +121,11 @@ public final class Thing {
             final String name = "V";
             Tag tag = new Tag(name, Type.num, version);
             metaTags.put(name, tag);
+            return this;
+        }
+
+        public Builder setMomentaryReadOutRequestHandler(ThingMomentaryReadOutRequest momentaryReadOutRequestHandler) {
+            this.momentaryReadOutRequest = momentaryReadOutRequestHandler;
             return this;
         }
 

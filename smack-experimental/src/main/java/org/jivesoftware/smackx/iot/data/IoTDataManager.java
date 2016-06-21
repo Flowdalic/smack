@@ -76,8 +76,8 @@ public final class IoTDataManager extends Manager {
                 ThingMomentaryReadOutRequest readOutRequest = null;
                 readOutRequest.momentaryReadOutRequest(new ThingMomentaryReadOutResult() {
                     @Override
-                    public void momentaryReadOut(List<IoTDataField> results) {
-                        // TODO return results in message.
+                    public void momentaryReadOut(List<? extends IoTDataField> results) {
+                        // TODO send results to requestor
                     }
                 });
                 // TODO return result IQ
