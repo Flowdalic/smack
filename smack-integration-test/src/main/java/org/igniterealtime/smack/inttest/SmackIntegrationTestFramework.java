@@ -165,6 +165,7 @@ public class SmackIntegrationTestFramework {
             // Ensure that the accounts are deleted and disconnected before we continue
             disconnectAndMaybeDelete(environment.conOne);
             disconnectAndMaybeDelete(environment.conTwo);
+            disconnectAndMaybeDelete(environment.conThree);
         }
 
         return testRunResult;
@@ -471,26 +472,33 @@ public class SmackIntegrationTestFramework {
                     NoSuchAlgorithmException {
         XMPPTCPConnection conOne = null;
         XMPPTCPConnection conTwo = null;
+        XMPPTCPConnection conThree = null;
         try {
             conOne = getConnectedConnectionFor(AccountNum.One);
             conTwo = getConnectedConnectionFor(AccountNum.Two);
+            conThree = getConnectedConnectionFor(AccountNum.Three);
         }
         catch (Exception e) {
+            // TODO Reverse the order, i.e. conThree should be disconnected first.
             if (conOne != null) {
                 conOne.disconnect();
             }
             if (conTwo != null) {
                 conTwo.disconnect();
             }
+            if (conThree != null) {
+                conThree.disconnect();
+            }
             throw e;
         }
 
-        return new SmackIntegrationTestEnvironment(conOne, conTwo, testRunResult.testRunId, config);
+        return new SmackIntegrationTestEnvironment(conOne, conTwo, conThree, testRunResult.testRunId, config);
     }
 
     enum AccountNum {
         One,
         Two,
+        Three,
     }
 
     private static final String USERNAME_PREFIX = "smack-inttest";
@@ -511,6 +519,11 @@ public class SmackIntegrationTestFramework {
             accountUsername = config.accountTwoUsername;
             accountPassword = config.accountTwoPassword;
             middlefix = "two";
+            break;
+        case Three:
+            accountUsername = config.accountThreeUsername;
+            accountPassword = config.accountThreePassword;
+            middlefix = "three";
             break;
         default:
             throw new IllegalStateException();
