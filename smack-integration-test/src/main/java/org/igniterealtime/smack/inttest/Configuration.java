@@ -164,12 +164,12 @@ public final class Configuration {
 
         public Builder setUsernamesAndPassword(String accountOneUsername, String accountOnePassword,
                         String accountTwoUsername, String accountTwoPassword, String accountThreeUsername, String accountThreePassword) {
-            this.accountOneUsername = accountOneUsername;
-            this.accountOnePassword = accountOnePassword;
-            this.accountTwoUsername = accountTwoUsername;
-            this.accountTwoPassword = accountTwoPassword;
-            this.accountThreeUsername = accountThreeUsername;
-            this.accountThreePassword = accountThreePassword;
+            this.accountOneUsername = StringUtils.requireNotNullOrEmpty(accountOneUsername, "accountOneUsername must not be null or empty");
+            this.accountOnePassword = StringUtils.requireNotNullOrEmpty(accountOnePassword, "accountOnePassword must not be null or empty");
+            this.accountTwoUsername = StringUtils.requireNotNullOrEmpty(accountTwoUsername, "accountTwoUsername must not be null or empty");
+            this.accountTwoPassword = StringUtils.requireNotNullOrEmpty(accountTwoPassword, "accountTwoPasswordmust not be null or empty");
+            this.accountThreeUsername = StringUtils.requireNotNullOrEmpty(accountThreeUsername, "accountThreeUsername must not be null or empty");
+            this.accountThreePassword = StringUtils.requireNotNullOrEmpty(accountThreePassword, "accountThreePassword must not be null or empty");
             return this;
         }
 
