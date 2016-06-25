@@ -276,7 +276,7 @@ public final class Configuration {
         return builder.build();
     }
 
-    private static File findPropertiesFile() throws IOException {
+    private static File findPropertiesFile() {
         List<String> possibleLocations = new LinkedList<>();
         possibleLocations.add("properties");
         String userHome = System.getProperty("user.home");

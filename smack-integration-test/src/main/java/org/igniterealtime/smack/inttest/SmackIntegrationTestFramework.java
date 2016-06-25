@@ -49,7 +49,6 @@ import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
@@ -173,7 +172,7 @@ public class SmackIntegrationTestFramework {
 
     @SuppressWarnings({"unchecked", "Finally"})
     private void runTests(Set<Class<? extends AbstractSmackIntTest>> classes)
-                    throws NoResponseException, NotConnectedException, InterruptedException {
+                    throws NoResponseException, InterruptedException {
         for (Class<? extends AbstractSmackIntTest> testClass : classes) {
             final String testClassName = testClass.getName();
 
