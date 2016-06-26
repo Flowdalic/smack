@@ -39,6 +39,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.iot.Thing;
+import org.jivesoftware.smackx.iot.data.IoTDataManager;
 import org.jivesoftware.smackx.iot.discovery.element.Constants;
 import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
 import org.jivesoftware.smackx.iot.discovery.element.IoTDisown;
@@ -46,6 +47,7 @@ import org.jivesoftware.smackx.iot.discovery.element.IoTDisowned;
 import org.jivesoftware.smackx.iot.discovery.element.IoTMine;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRegister;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRemove;
+import org.jivesoftware.smackx.iot.discovery.element.IoTRemoved;
 import org.jivesoftware.smackx.iot.discovery.element.IoTUnregister;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
@@ -105,7 +107,7 @@ public final class IoTDiscoveryManager extends Manager {
                                 NodeInfo nodeInfo = iotClaimed.getNodeInfo();
                                 // Update the state.
                                 ThingState state = getStateFor(nodeInfo);
-                                state.owner = owner.asBareJid();
+                                state.setOwner(owner.asBareJid());
                                 LOGGER.info("Our thing got claimed by " + owner + ". " + iotClaimed);
 
                                 IoTProvisioningManager iotProvisioningManager = IoTProvisioningManager.getInstanceFor(
@@ -130,21 +132,36 @@ public final class IoTDiscoveryManager extends Manager {
 
                 NodeInfo nodeInfo = iotDisowned.getNodeInfo();
                 ThingState state = getStateFor(nodeInfo);
-                if (!from.equals(state.registry)) {
+                if (!from.equals(state.getRegistry())) {
                     LOGGER.severe("Received <disowned/> for " + nodeInfo + " from " + from
-                                    + " but this is not the registry " + state.registry + " of the thing.");
+                                    + " but this is not the registry " + state.getRegistry() + " of the thing.");
                     return null;
                 }
 
-                if (state.owner != null) {
-                    state.owner = null;
+                if (state.isOwned()) {
+                    state.setUnowned();
                 } else {
                     LOGGER.fine("Received <disowned/> for " + nodeInfo + " but thing was not owned.");
                 }
 
                 return IQ.createResultIQ(iqRequest);
             }
+        });
 
+        // XEP-0347 § 3.9 (ex28-29): <removed/>
+        connection.registerIQRequestHandler(new AbstractIqRequestHandler(IoTRemoved.ELEMENT, IoTRemoved.NAMESPACE, IQ.Type.set, Mode.sync) {
+            @Override
+            public IQ handleIQRequest(IQ iqRequest) {
+                IoTRemoved iotRemoved = (IoTRemoved) iqRequest;
+
+                ThingState state = getStateFor(iotRemoved.getNodeInfo());
+                state.setRemoved();
+
+                // TODO unfriend registry here. "It does this, so the Thing can remove the friendship and stop any
+                // meta data updates to the Registry."
+
+                return IQ.createResultIQ(iqRequest);
+            }
         });
     }
 
@@ -176,28 +193,33 @@ public final class IoTDiscoveryManager extends Manager {
 
     // Thing Registration - XEP-0347 § 3.6 - 3.8
 
-    public void registerThing(Thing thing)
+    public ThingState registerThing(Thing thing)
                     throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException, IoTClaimedException {
         Jid registry = findRegistry();
-        registerThing(registry, thing);
+        return registerThing(registry, thing);
     }
 
-    public void registerThing(Jid registry, Thing thing)
+    public ThingState registerThing(Jid registry, Thing thing)
                     throws NotConnectedException, InterruptedException, NoResponseException, XMPPErrorException, IoTClaimedException {
+        final XMPPConnection connection = connection();
         IoTRegister iotRegister = new IoTRegister(thing.getMetaTags(), thing.getNodeInfo(), thing.isSelfOwened());
         iotRegister.setTo(registry);
-        IQ result = connection().createPacketCollectorAndSend(iotRegister).nextResultOrThrow();
+        IQ result = connection.createPacketCollectorAndSend(iotRegister).nextResultOrThrow();
         if (result instanceof IoTClaimed) {
             IoTClaimed iotClaimedResult = (IoTClaimed) result;
             throw new IoTClaimedException(iotClaimedResult);
         }
 
         ThingState state = getStateFor(thing.getNodeInfo());
-        state.registry = registry.asBareJid();
+        state.setRegistry(registry.asBareJid());
 
         interactWithRegistry(registry);
 
-        // TODO the thing should now be prepared to receive <removed/> or <disowned/> IQs from the registry
+        IoTDataManager.getInstanceFor(connection).installThing(thing);
+
+        // TODO the thing should now be prepared to receive <removed/> IQs from the registry
+
+        return state;
     }
 
     // Thing Claiming - XEP-0347 § 3.9
@@ -211,6 +233,20 @@ public final class IoTDiscoveryManager extends Manager {
         return claimThing(registry, metaTags, publicThing);
     }
 
+    /**
+     * Claim a thing by providing a collection of meta tags. If the claim was successful, then a {@link IoTClaimed}
+     * instance will be returned, which contains the XMPP address of the thing. Use {@link IoTClaimed#getJid()} to
+     * retrieve this address.
+     *
+     * @param registry the registry use to claim the thing.
+     * @param metaTags a collection of meta tags used to identify the thing.
+     * @param publicThing if this is a public thing.
+     * @return a {@link IoTClaimed} if successful.
+     * @throws NoResponseException
+     * @throws XMPPErrorException
+     * @throws NotConnectedException
+     * @throws InterruptedException
+     */
     public IoTClaimed claimThing(Jid registry, Collection<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         interactWithRegistry(registry);
 
@@ -230,7 +266,7 @@ public final class IoTDiscoveryManager extends Manager {
 
     public void removeThing(BareJid thing)
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        removeThing(thing, null);
+        removeThing(thing, NodeInfo.EMPTY);
     }
 
     public void removeThing(BareJid thing, NodeInfo nodeInfo)
@@ -246,13 +282,15 @@ public final class IoTDiscoveryManager extends Manager {
         IoTRemove iotRemove = new IoTRemove(thing, nodeInfo);
         iotRemove.setTo(registry);
         connection().createPacketCollectorAndSend(iotRemove).nextResultOrThrow();
+
+        // We no not update the ThingState here, as this is done in the <removed/> IQ handler above.;
     }
 
     // Thing Unregistering - XEP-0347 § 3.16
 
     public void unregister()
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        unregister(null);
+        unregister(NodeInfo.EMPTY);
     }
 
     public void unregister(NodeInfo nodeInfo)
@@ -268,13 +306,16 @@ public final class IoTDiscoveryManager extends Manager {
         IoTUnregister iotUnregister = new IoTUnregister(nodeInfo);
         iotUnregister.setTo(registry);
         connection().createPacketCollectorAndSend(iotUnregister).nextResultOrThrow();
+
+        ThingState state = getStateFor(nodeInfo);
+        state.setUnregistered();
     }
 
     // Thing Disowning - XEP-0347 § 3.17
 
     public void disownThing(Jid thing)
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
-        disownThing(thing, null);
+        disownThing(thing, NodeInfo.EMPTY);
     }
 
     public void disownThing(Jid thing, NodeInfo nodeInfo)
@@ -315,17 +356,17 @@ public final class IoTDiscoveryManager extends Manager {
         iotProvisioningManager.sendFriendshipRequestIfRequired(registry);
     }
 
+    public ThingState getStateFor(Thing thing) {
+        return things.get(thing.getNodeInfo());
+    }
+
     private ThingState getStateFor(NodeInfo nodeInfo) {
         ThingState state = things.get(nodeInfo);
         if (state == null) {
-            state = new ThingState();
+            state = new ThingState(nodeInfo);
             things.put(nodeInfo, state);
         }
         return state;
     }
 
-    private static class ThingState {
-        private BareJid registry;
-        private BareJid owner;
-    }
 }

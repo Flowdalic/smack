@@ -30,6 +30,7 @@ import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.iot.discovery.IoTClaimedException;
 import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
+import org.jivesoftware.smackx.iot.discovery.ThingState;
 import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
 import org.jxmpp.jid.Jid;
 
@@ -54,19 +55,7 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
         final Thing thing = Thing.builder().setKey(key).setSerialNumber(sn).setManufacturer("Ignite Realtime").setModel(
                         "Smack").setVersion("0.1").build();
 
-        int attempts = 0;
-        while (true) {
-            try {
-                discoveryManagerOne.registerThing(thing);
-                break;
-            }
-            catch (IoTClaimedException e) {
-                discoveryManagerOne.unregister();
-            }
-            if (attempts++ > 3) {
-                throw new SmackException("Could no register thing");
-            }
-        }
+        registerThing(discoveryManagerOne, thing);
 
         IoTClaimed iotClaimed = discoveryManagerTwo.claimThing(thing.getMetaTags());
         assertEquals(conOne.getUser().asBareJid(), iotClaimed.getJid());
@@ -82,6 +71,21 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
         Jid registry = discoveryManager.findRegistry();
         if (registry == null) {
             throw new TestNotPossibleException("Could not find IoT Registry");
+        }
+    }
+
+    public static ThingState registerThing(IoTDiscoveryManager iotDiscoveryManager, Thing thing) throws XMPPErrorException, InterruptedException, SmackException {
+        int attempts = 0;
+        while (true) {
+            try {
+                return iotDiscoveryManager.registerThing(thing);
+            }
+            catch (IoTClaimedException e) {
+                iotDiscoveryManager.unregister();
+            }
+            if (attempts++ > 3) {
+                throw new SmackException("Could no register thing");
+            }
         }
     }
 }

@@ -34,7 +34,7 @@ public class IoTUnregister extends IQ {
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.rightAngleBracket();
         return xml;
     }

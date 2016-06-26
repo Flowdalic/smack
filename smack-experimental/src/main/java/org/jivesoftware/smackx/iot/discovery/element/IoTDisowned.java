@@ -45,7 +45,7 @@ public class IoTDisowned extends IQ {
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.closeEmptyElement();
         return xml;
     }

@@ -35,7 +35,7 @@ public class IoTRemove extends IQ {
     private final NodeInfo nodeInfo;
 
     public IoTRemove(BareJid jid) {
-        this(jid, null);
+        this(jid, NodeInfo.EMPTY);
     }
 
     public IoTRemove(BareJid jid, NodeInfo nodeInfo) {
@@ -59,7 +59,7 @@ public class IoTRemove extends IQ {
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.closeEmptyElement();
         return xml;
     }

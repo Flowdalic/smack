@@ -22,6 +22,7 @@ import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 import org.igniterealtime.smack.inttest.TestNotPossibleException;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
@@ -34,12 +35,14 @@ import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 
 public class IoTTest extends AbstractSmackIntegrationTest {
 
+    private final IoTDiscoveryManager iotDiscoveryManagerOne;
+
     private final IoTDiscoveryManager iotDiscoveryManagerTwo;
 
     public IoTTest(SmackIntegrationTestEnvironment environment) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
         super(environment);
         IoTDiscoveryIntegrationTest.checkPrerequisites(connection);
-        
+        iotDiscoveryManagerOne = IoTDiscoveryManager.getInstanceFor(conOne);
         iotDiscoveryManagerTwo = IoTDiscoveryManager.getInstanceFor(conTwo);
     }
 
@@ -48,9 +51,12 @@ public class IoTTest extends AbstractSmackIntegrationTest {
      * - conOne: Owner of data thing.
      * - conTwo: The data thing.
      * - conThree: The thing that wants to read data from data thing.
+     * @throws SmackException 
+     * @throws InterruptedException 
+     * @throws XMPPErrorException 
      */
     @SmackIntegrationTest
-    public void threeEntityDataReadOutTest() {
+    public void threeEntityDataReadOutTest() throws XMPPErrorException, InterruptedException, SmackException {
         final String key = StringUtils.randomString(12);
         final String sn = StringUtils.randomString(12);
         Thing dataThing = Thing.builder().setKey(key).setSerialNumber(sn).setMomentaryReadOutRequestHandler(new ThingMomentaryReadOutRequest() {
@@ -60,5 +66,8 @@ public class IoTTest extends AbstractSmackIntegrationTest {
                 callback.momentaryReadOut(Collections.singletonList(field));
             }
         }).build();
+        IoTDiscoveryIntegrationTest.registerThing(iotDiscoveryManagerTwo, dataThing);
+
+        iotDiscoveryManagerOne.claimThing(dataThing.getMetaTags());
     }
 }

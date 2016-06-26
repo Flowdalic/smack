@@ -16,12 +16,32 @@
  */
 package org.jivesoftware.smackx.iot.data.element;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
 
 public class IoTFieldsExtension implements ExtensionElement {
 
     public static final String ELEMENT = "fields";
     public static final String NAMESPACE = Constants.IOT_SENSORDATA_NAMESPACE;
+
+    private final int seqNr;
+    private final boolean done;
+    private final List<NodeElement> nodes;
+
+    public IoTFieldsExtension(int seqNr, boolean done, NodeElement node) {
+        this(seqNr, done, Collections.singletonList(node));
+    }
+
+    public IoTFieldsExtension(int seqNr, boolean done, List<NodeElement> nodes) {
+        this.seqNr = seqNr;
+        this.done = done;
+        this.nodes = nodes;
+    }
 
     @Override
     public String getElementName() {
@@ -34,8 +54,22 @@ public class IoTFieldsExtension implements ExtensionElement {
     }
 
     @Override
-    public CharSequence toXML() {
-        // TODO Auto-generated method stub
-        return null;
+    public XmlStringBuilder toXML() {
+        XmlStringBuilder xml = new XmlStringBuilder(this);
+        xml.attribute("seqnr", Integer.toString(seqNr));
+        xml.attribute("done", done);
+        xml.rightAngleBracket();
+
+        xml.append(nodes);
+
+        xml.closeElement(this);
+        return xml;
+    }
+
+    public static IoTFieldsExtension buildFor(int seqNr, boolean done, NodeInfo nodeInfo,
+                    List<? extends IoTDataField> data) {
+        TimestampElement timestampElement = new TimestampElement(new Date(), data);
+        NodeElement nodeElement = new NodeElement(nodeInfo, timestampElement);
+        return new IoTFieldsExtension(seqNr, done, nodeElement);
     }
 }

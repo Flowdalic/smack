@@ -30,7 +30,7 @@ public class IoTDisown extends IQ {
     private final NodeInfo nodeInfo;
 
     public IoTDisown(Jid jid) {
-        this(jid, null);
+        this(jid, NodeInfo.EMPTY);
     }
 
     public IoTDisown(Jid jid, NodeInfo nodeInfo) {
@@ -54,7 +54,7 @@ public class IoTDisown extends IQ {
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.rightAngleBracket();
         return xml;
     }

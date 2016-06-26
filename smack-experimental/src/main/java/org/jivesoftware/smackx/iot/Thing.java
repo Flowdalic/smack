@@ -36,7 +36,6 @@ public final class Thing {
         this.metaTags = builder.metaTags;
         this.selfOwned = builder.selfOwned;
 
-        // TODO Make nodeInfo mandatory? Seems to be required for XEP-0323 Data.
         this.nodeInfo = builder.nodeInfo;
 
         this.momentaryReadOutRequestHandler = builder.momentaryReadOutRequest;
@@ -55,23 +54,14 @@ public final class Thing {
     }
 
     public String getNodeId() {
-        if (nodeInfo == null)
-            return null;
-
         return nodeInfo.getNodeId();
     }
 
     public String getSourceId() {
-        if (nodeInfo == null)
-            return null;
-
         return nodeInfo.getSourceId();
     }
 
     public String getCacheType() {
-        if (nodeInfo == null)
-            return null;
-
         return nodeInfo.getCacheType();
     }
 
@@ -86,7 +76,7 @@ public final class Thing {
     public static class Builder {
         private HashMap<String, Tag> metaTags = new HashMap<>();
         private boolean selfOwned;
-        private NodeInfo nodeInfo;
+        private NodeInfo nodeInfo = NodeInfo.EMPTY;
         private ThingMomentaryReadOutRequest momentaryReadOutRequest;
 
         public Builder setSerialNumber(String sn) {

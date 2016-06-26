@@ -14,20 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery.provider;
+package org.jivesoftware.smackx.iot.discovery;
 
-import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smackx.iot.discovery.element.IoTRemoved;
-import org.jivesoftware.smackx.iot.element.NodeInfo;
-import org.jivesoftware.smackx.iot.parser.NodeInfoParser;
-import org.xmlpull.v1.XmlPullParser;
+import org.jxmpp.jid.BareJid;
 
-public class IoTRemovedProvider extends IQProvider<IoTRemoved> {
+public interface ThingStateChangeListener {
 
-    @Override
-    public IoTRemoved parse(XmlPullParser parser, int initialDepth) throws Exception {
-        NodeInfo nodeInfo = NodeInfoParser.parse(parser);
-        return new IoTRemoved(nodeInfo);
-    }
+    public void owned(BareJid owner);
 
 }

@@ -17,39 +17,40 @@
 package org.jivesoftware.smackx.iot.discovery.element;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
 
 public class IoTRemoved extends IQ {
 
     public static final String ELEMENT = "removed";
     public static final String NAMESPACE = Constants.IOT_DISCOVERY_NAMESPACE;
 
-    private final String nodeId;
-
-    private final String sourceId;
+    private final NodeInfo nodeInfo;
 
     public IoTRemoved() {
-        this(null, null);
+        this(NodeInfo.EMPTY);
     }
 
-    public IoTRemoved(String nodeId, String sourceId) {
+    public IoTRemoved(NodeInfo nodeInfo) {
         super(ELEMENT, NAMESPACE);
-        this.nodeId = nodeId;
-        this.sourceId = sourceId;
+        this.nodeInfo = nodeInfo;
     }
 
     public String getNodeId() {
-        return nodeId;
+        return nodeInfo.getNodeId();
     }
 
     public String getSourceId() {
-        return sourceId;
+        return nodeInfo.getSourceId();
+    }
+
+    public NodeInfo getNodeInfo() {
+        return nodeInfo;
     }
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        xml.optAttribute("nodeId", nodeId);
-        xml.optAttribute("sourceId", sourceId);
-        xml.closeEmptyElement();
+        nodeInfo.appendTo(xml);
+        xml.setEmptyElement();
         return xml;
     }
 

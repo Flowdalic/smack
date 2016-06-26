@@ -28,7 +28,7 @@ public class NodeInfoParser {
         String sourceId = parser.getAttributeValue(null, "sourceId");
         String cacheType = parser.getAttributeValue(null, "cacheType");
         if (isNullOrEmpty(nodeId) && isNullOrEmpty(sourceId) && isNullOrEmpty(cacheType)) {
-            return null;
+            return NodeInfo.EMPTY;
         }
         return new NodeInfo(nodeId, sourceId, cacheType);
     }

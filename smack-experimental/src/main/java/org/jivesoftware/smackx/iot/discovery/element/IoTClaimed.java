@@ -30,7 +30,7 @@ public class IoTClaimed extends IQ {
     private final NodeInfo nodeInfo;
 
     public IoTClaimed(Jid jid) {
-        this(jid, null);
+        this(jid, NodeInfo.EMPTY);
     }
 
     public IoTClaimed(Jid jid, NodeInfo nodeInfo) {
@@ -58,7 +58,7 @@ public class IoTClaimed extends IQ {
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.closeEmptyElement();
         return xml;
     }

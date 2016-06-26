@@ -42,7 +42,7 @@ public class IoTRegister extends IQ {
 
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
-        NodeInfo.eventuallyAppend(nodeInfo, xml);
+        nodeInfo.appendTo(xml);
         xml.optBooleanAttribute("selfOwned", selfOwned);
         xml.rightAngleBracket();
 

@@ -34,6 +34,13 @@ public class IoTDataReadOutAccepted extends IQ {
         super(ELEMENT, NAMESPACE);
         this.seqNr = seqNr;
         this.queued = queued;
+        setType(Type.result);
+    }
+
+    public IoTDataReadOutAccepted(IoTDataRequest dataRequest) {
+        this(dataRequest.getSequenceNr(), false);
+        setStanzaId(dataRequest.getStanzaId());
+        setTo(dataRequest.getFrom());
     }
 
     @Override

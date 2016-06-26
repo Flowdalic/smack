@@ -36,6 +36,10 @@ public class IoTDataRequest extends IQ {
         this.momentary = momentary;
     }
 
+    public int getSequenceNr() {
+        return seqNr;
+    }
+
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("seqnr", seqNr);

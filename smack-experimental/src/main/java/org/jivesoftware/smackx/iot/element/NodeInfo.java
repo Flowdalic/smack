@@ -19,11 +19,22 @@ package org.jivesoftware.smackx.iot.element;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 
-public class NodeInfo {
+public final class NodeInfo {
+
+    public static final NodeInfo EMPTY = new NodeInfo();
 
     private final String nodeId;
     private final String sourceId;
     private final String cacheType;
+
+    /**
+     * The internal constructor for the {@link EMPTY} node info marker class.
+     */
+    private NodeInfo() {
+        this.nodeId = null;
+        this.sourceId = null;
+        this.cacheType = null;
+    }
 
     public NodeInfo(String nodeId, String sourceId, String cacheType) {
         this.nodeId = StringUtils.requireNotNullOrEmpty(nodeId, "Node ID must not be null or empty");
@@ -44,13 +55,51 @@ public class NodeInfo {
     }
 
     public void appendTo(XmlStringBuilder xml) {
+        if (nodeId == null) {
+            return;
+        }
         xml.attribute("nodeId", nodeId).optAttribute("sourceId", sourceId).optAttribute("cacheType", cacheType);
     }
 
-    public static void eventuallyAppend(NodeInfo nodeInfo, XmlStringBuilder xml) {
-        if (nodeInfo == null)
-            return;
-
-        nodeInfo.appendTo(xml);
+    @Override
+    public int hashCode() {
+        if (this == EMPTY) {
+            return 0;
+        }
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + nodeId.hashCode();
+        result = prime * result + ((sourceId == null) ? 0 : sourceId.hashCode());
+        result = prime * result + ((cacheType == null) ? 0 : cacheType.hashCode());
+        return result;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (!(other instanceof NodeInfo)) {
+            return false;
+        }
+        NodeInfo otherNodeInfo = (NodeInfo) other;
+        if (!nodeId.equals(otherNodeInfo.nodeId)) {
+            return false;
+        }
+        if (StringUtils.nullSafeCharSequenceEquals(sourceId, otherNodeInfo.sourceId)
+                        && StringUtils.nullSafeCharSequenceEquals(cacheType, otherNodeInfo.cacheType)) {
+            return true;
+        }
+        return false;
+    }
+
+//    public static void eventuallyAppend(NodeInfo nodeInfo, XmlStringBuilder xml) {
+//        if (nodeInfo == null)
+//            return;
+//
+//        nodeInfo.appendTo(xml);
+//    }
 }
