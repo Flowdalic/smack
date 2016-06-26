@@ -30,7 +30,7 @@ public class IoTDataRequest extends IQ {
 
     private final boolean momentary;
 
-    protected IoTDataRequest(int seqNr, boolean momentary) {
+    public IoTDataRequest(int seqNr, boolean momentary) {
         super(ELEMENT, NAMESPACE);
         this.seqNr = seqNr;
         this.momentary = momentary;

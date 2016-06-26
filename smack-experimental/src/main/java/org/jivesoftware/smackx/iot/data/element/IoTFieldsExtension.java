@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 
@@ -41,6 +42,14 @@ public class IoTFieldsExtension implements ExtensionElement {
         this.seqNr = seqNr;
         this.done = done;
         this.nodes = nodes;
+    }
+
+    public int getSequenceNr() {
+        return seqNr;
+    }
+
+    public boolean isDone() {
+        return done;
     }
 
     @Override
@@ -71,5 +80,9 @@ public class IoTFieldsExtension implements ExtensionElement {
         TimestampElement timestampElement = new TimestampElement(new Date(), data);
         NodeElement nodeElement = new NodeElement(nodeInfo, timestampElement);
         return new IoTFieldsExtension(seqNr, done, nodeElement);
+    }
+
+    public static IoTFieldsExtension from(Message message) {
+        return message.getExtension(ELEMENT, NAMESPACE);
     }
 }

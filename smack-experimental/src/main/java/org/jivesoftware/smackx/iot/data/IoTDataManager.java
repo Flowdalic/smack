@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.iot.data;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -26,9 +27,13 @@ import java.util.logging.Logger;
 
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.PacketCollector;
+import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPConnectionRegistry;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
@@ -38,6 +43,7 @@ import org.jivesoftware.smackx.iot.data.element.IoTDataField;
 import org.jivesoftware.smackx.iot.data.element.IoTDataReadOutAccepted;
 import org.jivesoftware.smackx.iot.data.element.IoTDataRequest;
 import org.jivesoftware.smackx.iot.data.element.IoTFieldsExtension;
+import org.jivesoftware.smackx.iot.data.filter.IoTFieldsExtensionFilter;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 import org.jxmpp.jid.EntityFullJid;
 
@@ -121,13 +127,49 @@ public final class IoTDataManager extends Manager {
         things.put(thing.getNodeInfo(), thing);
     }
 
+    public Thing uninstallThing(Thing thing) {
+        return uninstallThing(thing.getNodeInfo());
+    }
+
     public Thing uninstallThing(NodeInfo nodeInfo) {
         return things.remove(nodeInfo);
     }
 
-    public IoTFieldsExtension requestMomentaryValuesReadOut(EntityFullJid jid) {
+    public List<IoTFieldsExtension> requestMomentaryValuesReadOut(EntityFullJid jid)
+                    throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         final XMPPConnection connection = connection();
+        final int seqNr = nextSeqNr.incrementAndGet();
+        IoTDataRequest iotDataRequest = new IoTDataRequest(seqNr, true);
+        iotDataRequest.setTo(jid);
 
-        return null;
+        StanzaFilter doneFilter = new IoTFieldsExtensionFilter(seqNr, true);
+        StanzaFilter dataFilter = new IoTFieldsExtensionFilter(seqNr, false);
+
+        PacketCollector iqResponseCollector = connection.createPacketCollectorAndSend(iotDataRequest);
+        PacketCollector doneCollector = connection.createPacketCollector(doneFilter);
+
+        PacketCollector.Configuration dataCollectorConfiguration = PacketCollector.newConfiguration().setStanzaFilter(
+                        dataFilter).setCollectorToReset(doneCollector);
+        PacketCollector dataCollector = connection.createPacketCollector(dataCollectorConfiguration);
+
+        try {
+            iqResponseCollector.nextResultOrThrow();
+            doneCollector.nextResult();
+        }
+        finally {
+            dataCollector.cancel();
+            doneCollector.cancel();
+            // No need to cancel() iqResponseCollector, this is done automatically by nextResultOrThrow().
+        }
+
+        int collectedCount = dataCollector.getCollectedCount();
+        List<IoTFieldsExtension> res = new ArrayList<>(collectedCount);
+        for (int i = 0; i < collectedCount; i++) {
+            Message message = dataCollector.pollResult();
+            IoTFieldsExtension iotFieldsExtension = IoTFieldsExtension.from(message);
+            res.add(iotFieldsExtension);
+        }
+
+        return res;
     }
 }
