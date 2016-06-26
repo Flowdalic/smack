@@ -19,6 +19,8 @@ package org.jivesoftware.smackx.iot.discovery.provider;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.ParserUtils;
 import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
+import org.jivesoftware.smackx.iot.parser.NodeInfoParser;
 import org.jxmpp.jid.Jid;
 import org.xmlpull.v1.XmlPullParser;
 
@@ -27,9 +29,8 @@ public class IoTClaimedProvider extends IQProvider<IoTClaimed> {
     @Override
     public IoTClaimed parse(XmlPullParser parser, int initialDepth) throws Exception {
         Jid jid = ParserUtils.getJidAttribute(parser);
-        String nodeId = parser.getAttributeValue(null, "nodeId");
-        String sourceId = parser.getAttributeValue(null, "sourceId"); 
-        return new IoTClaimed(jid, nodeId, sourceId);
+        NodeInfo nodeInfo = NodeInfoParser.parse(parser);
+        return new IoTClaimed(jid, nodeInfo);
     }
 
 }

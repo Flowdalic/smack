@@ -42,9 +42,12 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.SubscribeListener;
 import org.jivesoftware.smack.util.Objects;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 import org.jivesoftware.smackx.iot.provisioning.element.ClearCache;
 import org.jivesoftware.smackx.iot.provisioning.element.ClearCacheResponse;
 import org.jivesoftware.smackx.iot.provisioning.element.Constants;
@@ -53,9 +56,14 @@ import org.jivesoftware.smackx.iot.provisioning.element.IoTIsFriendResponse;
 import org.jivesoftware.smackx.iot.provisioning.element.Unfriend;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.DomainBareJid;
-import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 
+/**
+ * A manager for XMPP IoT Provisioning (XEP-0324).
+ *
+ * @author Florian Schmaus {@literal <flo@geekplace.eu>}
+ * @see <a href="http://xmpp.org/extensions/xep-0324.html">XEP-0324: Internet of Things - Provisioning</a>
+ */
 public final class IoTProvisioningManager extends Manager {
 
     private static final Logger LOGGER = Logger.getLogger(IoTProvisioningManager.class.getName());
@@ -82,6 +90,8 @@ public final class IoTProvisioningManager extends Manager {
         }
         return manager;
     }
+
+    private final Roster roster;
 
     private Jid configuredProvisioningServer;
 
@@ -127,6 +137,50 @@ public final class IoTProvisioningManager extends Manager {
                                 return new ClearCacheResponse(clearCache);
                             }
                         });
+
+        roster = Roster.getInstanceFor(connection);
+        roster.setSubscribeListener(new SubscribeListener() {
+            @Override
+            public SubscribeAnswer processSubscribe(Jid from, Presence subscribeRequest) {
+                // First check if the subscription request comes from a known registry and accept the request if so.
+                try {
+                    if (IoTDiscoveryManager.getInstanceFor(connection()).isRegistry(from.asBareJid())) {
+                        return SubscribeAnswer.Approve;
+                    }
+                }
+                catch (NoResponseException | XMPPErrorException | NotConnectedException | InterruptedException e) {
+                    LOGGER.log(Level.WARNING, "Could not determine if " + from + " is a registry", e);
+                }
+
+                Jid provisioningServer = null;
+                try {
+                    provisioningServer = getConfiguredProvisioningServer();
+                }
+                catch (NoResponseException | XMPPErrorException | NotConnectedException | InterruptedException e) {
+                    LOGGER.log(Level.WARNING,
+                                    "Could not determine privisioning server. Ignoring friend request from " + from, e);
+                }
+                if (provisioningServer == null) {
+                    return null;
+                }
+
+                boolean isFriend;
+                try {
+                    isFriend = isFriend(provisioningServer, from.asBareJid());
+                }
+                catch (NoResponseException | XMPPErrorException | NotConnectedException | InterruptedException e) {
+                    LOGGER.log(Level.WARNING, "Could not determine if " + from + " is a friend.", e);
+                    return null;
+                }
+
+                if (isFriend) {
+                    return SubscribeAnswer.Approve;
+                }
+                else {
+                    return SubscribeAnswer.Deny;
+                }
+            }
+        });
     }
 
     public void setConfiguredProvisioningServer(Jid provisioningServer) {
@@ -163,12 +217,30 @@ public final class IoTProvisioningManager extends Manager {
         return jid.asDomainBareJid();
     }
 
-    public boolean isFriend(Jid provisioningServer, EntityBareJid friendInQuestion) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+    public boolean isFriend(Jid provisioningServer, BareJid friendInQuestion) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
         IoTIsFriend iotIsFriend = new IoTIsFriend(friendInQuestion);
         iotIsFriend.setTo(provisioningServer);
         IoTIsFriendResponse response = connection().createPacketCollectorAndSend(iotIsFriend).nextResultOrThrow();
         assert (response.getJid().equals(friendInQuestion));
         return response.getIsFriendResult();
+    }
+
+    public void sendFriendshipRequest(Jid jid) throws NotConnectedException, InterruptedException {
+        Presence presence = new Presence(Presence.Type.subscribe);
+        presence.setTo(jid);
+        connection().sendStanza(presence);
+    }
+
+    public void sendFriendshipRequestIfRequired(Jid jid) throws NotConnectedException, InterruptedException {
+        RosterEntry entry = roster.getEntry(jid.asBareJid());
+        if (entry != null && entry.canSeeHisPresence()) {
+            return;
+        }
+        sendFriendshipRequest(jid);
+    }
+
+    public boolean isBefriended(Jid friendInQuestion) {
+        return roster.isSubscribedToMyPresence(friendInQuestion);
     }
 
     private boolean isFromProvisioningService(Stanza stanza) {

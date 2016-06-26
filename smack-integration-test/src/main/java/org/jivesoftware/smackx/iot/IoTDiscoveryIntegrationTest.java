@@ -25,6 +25,7 @@ import org.igniterealtime.smack.inttest.TestNotPossibleException;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.iot.discovery.IoTClaimedException;
@@ -42,10 +43,7 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
         super(environment);
         discoveryManagerOne = IoTDiscoveryManager.getInstanceFor(conOne);
         discoveryManagerTwo = IoTDiscoveryManager.getInstanceFor(conTwo);
-        Jid registry = discoveryManagerOne.findRegistry();
-        if (registry == null) {
-            throw new TestNotPossibleException("Could not find IoT Registry");
-        }
+        checkPrerequisites(conOne);
     }
 
     @SmackIntegrationTest
@@ -73,9 +71,17 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
         IoTClaimed iotClaimed = discoveryManagerTwo.claimThing(thing.getMetaTags());
         assertEquals(conOne.getUser().asBareJid(), iotClaimed.getJid());
 
-        // 2016-06-19: Disabled. Disowning causes a error - cancel - not-allowed response for some not yet know reason.
-//        discoveryManagerTwo.disownThing(iotClaimed.getJid());
+        discoveryManagerTwo.disownThing(iotClaimed.getJid());
 
         discoveryManagerOne.unregister();
+    }
+
+    static void checkPrerequisites(XMPPConnection connection) throws NoResponseException, XMPPErrorException,
+                    NotConnectedException, InterruptedException, TestNotPossibleException {
+        IoTDiscoveryManager discoveryManager = IoTDiscoveryManager.getInstanceFor(connection);
+        Jid registry = discoveryManager.findRegistry();
+        if (registry == null) {
+            throw new TestNotPossibleException("Could not find IoT Registry");
+        }
     }
 }

@@ -17,9 +17,13 @@
 package org.jivesoftware.smackx.iot.discovery;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jivesoftware.smack.ConnectionCreationListener;
@@ -38,19 +42,21 @@ import org.jivesoftware.smackx.iot.Thing;
 import org.jivesoftware.smackx.iot.discovery.element.Constants;
 import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
 import org.jivesoftware.smackx.iot.discovery.element.IoTDisown;
+import org.jivesoftware.smackx.iot.discovery.element.IoTDisowned;
 import org.jivesoftware.smackx.iot.discovery.element.IoTMine;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRegister;
 import org.jivesoftware.smackx.iot.discovery.element.IoTRemove;
 import org.jivesoftware.smackx.iot.discovery.element.IoTUnregister;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
+import org.jivesoftware.smackx.iot.provisioning.IoTProvisioningManager;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
 /**
  * A manager for XMPP IoT Discovery. Used to register and discover things.
  *
- * @author Florian Schmaus <flo@geekplace.eu>
+ * @author Florian Schmaus {@literal <flo@geekplace.eu>}
  * @see <a href="http://xmpp.org/extensions/xep-0347.html">XEP-0347: Internet of Things - Discovery</a>
  *
  */
@@ -80,6 +86,13 @@ public final class IoTDiscoveryManager extends Manager {
 
     private Jid preconfiguredRegistry;
 
+    private final Set<Jid> usedRegistries = new HashSet<>();
+
+    /**
+     * Internal state of the things. Uses <code>null</code> for the single thing without node info attached.
+     */
+    private final Map<NodeInfo, ThingState> things = new HashMap<>();
+
     private IoTDiscoveryManager(XMPPConnection connection) {
         super(connection);
 
@@ -88,13 +101,51 @@ public final class IoTDiscoveryManager extends Manager {
                             @Override
                             public IQ handleIQRequest(IQ iqRequest) {
                                 IoTClaimed iotClaimed = (IoTClaimed) iqRequest;
+                                Jid owner = iotClaimed.getJid();
+                                NodeInfo nodeInfo = iotClaimed.getNodeInfo();
+                                // Update the state.
+                                ThingState state = getStateFor(nodeInfo);
+                                state.owner = owner.asBareJid();
+                                LOGGER.info("Our thing got claimed by " + owner + ". " + iotClaimed);
 
-                                LOGGER.info("Our thing claimed by " + iotClaimed.getJid() + ". " + iotClaimed);
-                                // TODO Handle claimed.
+                                IoTProvisioningManager iotProvisioningManager = IoTProvisioningManager.getInstanceFor(
+                                                connection());
+                                try {
+                                    iotProvisioningManager.sendFriendshipRequest(owner);
+                                }
+                                catch (NotConnectedException | InterruptedException e) {
+                                    LOGGER.log(Level.WARNING, "Could not friendship owner", e);
+                                }
 
                                 return IQ.createResultIQ(iqRequest);
                             }
                         });
+
+        connection.registerIQRequestHandler(new AbstractIqRequestHandler(IoTDisowned.ELEMENT, IoTDisowned.NAMESPACE,
+                        IQ.Type.set, Mode.sync) {
+            @Override
+            public IQ handleIQRequest(IQ iqRequest) {
+                IoTDisowned iotDisowned = (IoTDisowned) iqRequest;
+                Jid from = iqRequest.getFrom();
+
+                NodeInfo nodeInfo = iotDisowned.getNodeInfo();
+                ThingState state = getStateFor(nodeInfo);
+                if (!from.equals(state.registry)) {
+                    LOGGER.severe("Received <disowned/> for " + nodeInfo + " from " + from
+                                    + " but this is not the registry " + state.registry + " of the thing.");
+                    return null;
+                }
+
+                if (state.owner != null) {
+                    state.owner = null;
+                } else {
+                    LOGGER.fine("Received <disowned/> for " + nodeInfo + " but thing was not owned.");
+                }
+
+                return IQ.createResultIQ(iqRequest);
+            }
+
+        });
     }
 
     /**
@@ -140,6 +191,12 @@ public final class IoTDiscoveryManager extends Manager {
             IoTClaimed iotClaimedResult = (IoTClaimed) result;
             throw new IoTClaimedException(iotClaimedResult);
         }
+
+        ThingState state = getStateFor(thing.getNodeInfo());
+        state.registry = registry.asBareJid();
+
+        interactWithRegistry(registry);
+
         // TODO the thing should now be prepared to receive <removed/> or <disowned/> IQs from the registry
     }
 
@@ -155,9 +212,17 @@ public final class IoTDiscoveryManager extends Manager {
     }
 
     public IoTClaimed claimThing(Jid registry, Collection<Tag> metaTags, boolean publicThing) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        interactWithRegistry(registry);
+
         IoTMine iotMine = new IoTMine(metaTags, publicThing);
         iotMine.setTo(registry);
         IoTClaimed iotClaimed = connection().createPacketCollectorAndSend(iotMine).nextResultOrThrow();
+
+        // The 'jid' attribute of the <claimed/> response now represents the XMPP address of the thing we just successfully claimed.
+        Jid thing = iotClaimed.getJid();
+
+        IoTProvisioningManager.getInstanceFor(connection()).sendFriendshipRequest(thing);
+
         return iotClaimed;
     }
 
@@ -176,6 +241,8 @@ public final class IoTDiscoveryManager extends Manager {
 
     public void removeThing(Jid registry, BareJid thing, NodeInfo nodeInfo)
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        interactWithRegistry(registry);
+
         IoTRemove iotRemove = new IoTRemove(thing, nodeInfo);
         iotRemove.setTo(registry);
         connection().createPacketCollectorAndSend(iotRemove).nextResultOrThrow();
@@ -196,6 +263,8 @@ public final class IoTDiscoveryManager extends Manager {
 
     public void unregister(Jid registry, NodeInfo nodeInfo)
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        interactWithRegistry(registry);
+
         IoTUnregister iotUnregister = new IoTUnregister(nodeInfo);
         iotUnregister.setTo(registry);
         connection().createPacketCollectorAndSend(iotUnregister).nextResultOrThrow();
@@ -216,8 +285,47 @@ public final class IoTDiscoveryManager extends Manager {
 
     public void disownThing(Jid registry, Jid thing, NodeInfo nodeInfo)
                     throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        interactWithRegistry(registry);
+
         IoTDisown iotDisown = new IoTDisown(thing, nodeInfo);
         iotDisown.setTo(registry);
         connection().createPacketCollectorAndSend(iotDisown).nextResultOrThrow();
+    }
+
+    // Registry utility methods
+
+    public boolean isRegistry(BareJid jid) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        // At some point 'usedRegistries' will also contain the registry returned by findRegistry(), but since this is
+        // not the case from the beginning, we perform findRegistry().equals(jid) too.
+        if (findRegistry().equals(jid)) {
+            return true;
+        }
+        if (usedRegistries.contains(jid)) {
+            return true;
+        }
+        return false;
+    }
+
+    private void interactWithRegistry(Jid registry) throws NotConnectedException, InterruptedException {
+        boolean isNew = usedRegistries.add(registry);
+        if (!isNew) {
+            return;
+        }
+        IoTProvisioningManager iotProvisioningManager = IoTProvisioningManager.getInstanceFor(connection());
+        iotProvisioningManager.sendFriendshipRequestIfRequired(registry);
+    }
+
+    private ThingState getStateFor(NodeInfo nodeInfo) {
+        ThingState state = things.get(nodeInfo);
+        if (state == null) {
+            state = new ThingState();
+            things.put(nodeInfo, state);
+        }
+        return state;
+    }
+
+    private static class ThingState {
+        private BareJid registry;
+        private BareJid owner;
     }
 }

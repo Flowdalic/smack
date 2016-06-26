@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.discovery.provider;
+package org.jivesoftware.smackx.iot;
 
-import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smackx.iot.discovery.element.IoTDisowned;
-import org.jivesoftware.smackx.iot.element.NodeInfo;
-import org.jivesoftware.smackx.iot.parser.NodeInfoParser;
-import org.xmlpull.v1.XmlPullParser;
+import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTest;
+import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
 
-public class IoTDisownedProvider extends IQProvider<IoTDisowned> {
+public class IoTTest extends AbstractSmackIntegrationTest {
 
-    @Override
-    public IoTDisowned parse(XmlPullParser parser, int initialDepth) throws Exception {
-        NodeInfo nodeInfo = NodeInfoParser.parse(parser);
-        return new IoTDisowned(nodeInfo);
+    public IoTTest(SmackIntegrationTestEnvironment environment) {
+        super(environment);
     }
 
+    @SmackIntegrationTest
+    public void threeEntityDataReadOutTest() {
+    }
 }

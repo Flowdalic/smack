@@ -34,6 +34,7 @@ public class IoTIsFriend extends IQ {
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("jid", jid);
+        xml.setEmptyElement();
         return xml;
     }
 
