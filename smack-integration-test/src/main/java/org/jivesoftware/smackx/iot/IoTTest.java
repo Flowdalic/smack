@@ -16,17 +16,49 @@
  */
 package org.jivesoftware.smackx.iot;
 
+import java.util.Collections;
+
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
+import org.igniterealtime.smack.inttest.TestNotPossibleException;
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
+import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutResult;
+import org.jivesoftware.smackx.iot.data.element.IoTDataField;
+import org.jivesoftware.smackx.iot.data.element.IoTDataField.IntField;
+import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 
 public class IoTTest extends AbstractSmackIntegrationTest {
 
-    public IoTTest(SmackIntegrationTestEnvironment environment) {
+    private final IoTDiscoveryManager iotDiscoveryManagerTwo;
+
+    public IoTTest(SmackIntegrationTestEnvironment environment) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
         super(environment);
+        IoTDiscoveryIntegrationTest.checkPrerequisites(connection);
+        
+        iotDiscoveryManagerTwo = IoTDiscoveryManager.getInstanceFor(conTwo);
     }
 
+    /**
+     * Roles:
+     * - conOne: Owner of data thing.
+     * - conTwo: The data thing.
+     * - conThree: The thing that wants to read data from data thing.
+     */
     @SmackIntegrationTest
     public void threeEntityDataReadOutTest() {
+        final String key = StringUtils.randomString(12);
+        final String sn = StringUtils.randomString(12);
+        Thing dataThing = Thing.builder().setKey(key).setSerialNumber(sn).setMomentaryReadOutRequestHandler(new ThingMomentaryReadOutRequest() {
+            @Override
+            public void momentaryReadOutRequest(ThingMomentaryReadOutResult callback) {
+                IoTDataField.IntField field = new IntField("timestamp", (int) (System.currentTimeMillis() / 1000));
+                callback.momentaryReadOut(Collections.singletonList(field));
+            }
+        }).build();
     }
 }
