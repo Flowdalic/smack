@@ -145,7 +145,7 @@ public final class IoTDataManager extends Manager {
         StanzaFilter doneFilter = new IoTFieldsExtensionFilter(seqNr, true);
         StanzaFilter dataFilter = new IoTFieldsExtensionFilter(seqNr, false);
 
-        PacketCollector iqResponseCollector = connection.createPacketCollectorAndSend(iotDataRequest);
+        // Setup the IoTFieldsExtension message collectors before sending the IQ to avoid a data race.
         PacketCollector doneCollector = connection.createPacketCollector(doneFilter);
 
         PacketCollector.Configuration dataCollectorConfiguration = PacketCollector.newConfiguration().setStanzaFilter(
@@ -153,13 +153,14 @@ public final class IoTDataManager extends Manager {
         PacketCollector dataCollector = connection.createPacketCollector(dataCollectorConfiguration);
 
         try {
-            iqResponseCollector.nextResultOrThrow();
+            connection.createPacketCollectorAndSend(iotDataRequest).nextResultOrThrow();
+            // Wait until a message with an IoTFieldsExtension and the done flag comes in.
             doneCollector.nextResult();
         }
         finally {
+            // Ensure that the two collectors are canceled in any case.
             dataCollector.cancel();
             doneCollector.cancel();
-            // No need to cancel() iqResponseCollector, this is done automatically by nextResultOrThrow().
         }
 
         int collectedCount = dataCollector.getCollectedCount();
