@@ -22,6 +22,12 @@ import java.util.WeakHashMap;
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.XMPPConnection;
 
+/**
+ * A manger for XEP-0325: Internet of Things - Control.
+ * 
+ * @author Florian Schmaus {@literal <flo@geekplace.eu>}
+ * @see <a href="http://xmpp.org/extensions/xep-0325.html">XEP-0323: Internet of Things - Control</a>
+ */
 public final class IoTControlManager extends Manager {
 
     private static final Map<XMPPConnection, IoTControlManager> INSTANCES = new WeakHashMap<>();

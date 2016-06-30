@@ -88,6 +88,7 @@ public class IoT {
         });
         // Wait until the thing is owned.
         syncPoint.waitForResult(10 * 60 * 1000);
+        printStatus("OWNED: Thing now onwed by " + dataThingState.getOwner());
     }
 
     private static ThingState actAsDataThing(XMPPTCPConnection connection) throws XMPPException, SmackException, InterruptedException {
@@ -109,9 +110,13 @@ public class IoT {
                         .build();
         IoTDiscoveryManager iotDiscoveryManager = IoTDiscoveryManager.getInstanceFor(connection);
         ThingState state = IoTDiscoveryIntegrationTest.registerThing(iotDiscoveryManager, dataThing);
-        // CHECKSTYLE:OFF
-        System.out.println("Thing successfully registered. SN: " + sn + ", KEY: " + key);
-        // CHECKSTYLE:ON
+        printStatus("SUCCESS: Thing registered:" + dataThing);
         return state;
+    }
+
+    private static void printStatus(CharSequence status) {
+        // CHECKSTYLE:OFF
+        System.out.println(status);
+        // CHECKSTYLE:ON
     }
 }

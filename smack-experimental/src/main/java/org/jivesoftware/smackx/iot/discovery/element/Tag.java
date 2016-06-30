@@ -70,4 +70,9 @@ public class Tag implements NamedElement {
     public String getElementName() {
         return getType().toString();
     }
+
+    @Override
+    public String toString() {
+        return name + '(' + type + "):" + value;
+    }
 }

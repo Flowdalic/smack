@@ -18,6 +18,7 @@ package org.jivesoftware.smackx.iot;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
@@ -67,6 +68,27 @@ public final class Thing {
 
     public ThingMomentaryReadOutRequest getMomentaryReadOutRequestHandler() {
         return momentaryReadOutRequestHandler;
+    }
+
+    private String toStringCache;
+
+    @Override
+    public String toString() {
+        if (toStringCache == null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append( "Thing " + nodeInfo + " [");
+            Iterator<Tag> it = metaTags.values().iterator();
+            while (it.hasNext()) {
+                Tag tag = it.next();
+                sb.append(tag);
+                if (it.hasNext()) {
+                    sb.append(' ');
+                }
+            }
+            sb.append(']');
+            toStringCache = sb.toString();
+        }
+        return toStringCache;
     }
 
     public static Builder builder() {

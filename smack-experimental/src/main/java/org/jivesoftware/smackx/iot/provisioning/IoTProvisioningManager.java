@@ -59,7 +59,7 @@ import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.Jid;
 
 /**
- * A manager for XMPP IoT Provisioning (XEP-0324).
+ * A manager for XEP-0324: Internet of Things - Provisioning.
  *
  * @author Florian Schmaus {@literal <flo@geekplace.eu>}
  * @see <a href="http://xmpp.org/extensions/xep-0324.html">XEP-0324: Internet of Things - Provisioning</a>

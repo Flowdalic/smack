@@ -47,6 +47,12 @@ import org.jivesoftware.smackx.iot.data.filter.IoTFieldsExtensionFilter;
 import org.jivesoftware.smackx.iot.element.NodeInfo;
 import org.jxmpp.jid.EntityFullJid;
 
+/**
+ * A manager for XEP-0323: Internet of Things - Sensor Data.
+ * 
+ * @author Florian Schmaus {@literal <flo@geekplace.eu>}
+ * @see <a href="http://xmpp.org/extensions/xep-0323.html">XEP-0323: Internet of Things - Sensor Data</a>
+ */
 public final class IoTDataManager extends Manager {
 
     private static final Logger LOGGER = Logger.getLogger(IoTDataManager.class.getName());

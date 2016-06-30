@@ -27,23 +27,24 @@ import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.iot.data.IoTDataManager;
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutResult;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField.IntField;
 import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 
-public class IoTTest extends AbstractSmackIntegrationTest {
+public class IoTDataIntegrationTest extends AbstractSmackIntegrationTest {
 
-    private final IoTDiscoveryManager iotDiscoveryManagerOne;
+    private final IoTDataManager iotDataManagerOne;
 
-    private final IoTDiscoveryManager iotDiscoveryManagerTwo;
+    private final IoTDataManager iotDataManagerTwo;
 
-    public IoTTest(SmackIntegrationTestEnvironment environment) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
+    public IoTDataIntegrationTest(SmackIntegrationTestEnvironment environment) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
         super(environment);
         IoTDiscoveryIntegrationTest.checkPrerequisites(connection);
-        iotDiscoveryManagerOne = IoTDiscoveryManager.getInstanceFor(conOne);
-        iotDiscoveryManagerTwo = IoTDiscoveryManager.getInstanceFor(conTwo);
+        iotDataManagerOne = IoTDataManager.getInstanceFor(conOne);
+        iotDataManagerTwo = IoTDataManager.getInstanceFor(conTwo);
     }
 
     /**
@@ -66,8 +67,6 @@ public class IoTTest extends AbstractSmackIntegrationTest {
                 callback.momentaryReadOut(Collections.singletonList(field));
             }
         }).build();
-        IoTDiscoveryIntegrationTest.registerThing(iotDiscoveryManagerTwo, dataThing);
 
-        iotDiscoveryManagerOne.claimThing(dataThing.getMetaTags());
     }
 }

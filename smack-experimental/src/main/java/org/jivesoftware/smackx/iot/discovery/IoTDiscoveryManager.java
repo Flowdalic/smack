@@ -56,7 +56,7 @@ import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.Jid;
 
 /**
- * A manager for XMPP IoT Discovery. Used to register and discover things.
+ * A manager for XEP-0347: Internet of Things - Discovery. Used to register and discover things.
  *
  * @author Florian Schmaus {@literal <flo@geekplace.eu>}
  * @see <a href="http://xmpp.org/extensions/xep-0347.html">XEP-0347: Internet of Things - Discovery</a>
