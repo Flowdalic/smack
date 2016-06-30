@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2015 Florian Schmaus
+ * Copyright © 2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.igniterealtime.smack.inttest;
 
-import java.util.Random;
-import java.util.logging.Logger;
-
-public abstract class AbstractSmackIntTest {
-
-    protected static final Logger LOGGER = Logger.getLogger(AbstractSmackIntTest.class.getName());
-
-    protected static final Random INSECURE_RANDOM = new Random();
-
-}
+/**
+ * Smack's API for XMPP IoT.
+ */
+package org.jivesoftware.smackx.iot.data.provider;

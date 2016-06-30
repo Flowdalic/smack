@@ -44,7 +44,8 @@ public class IoTDataRequest extends IQ {
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("seqnr", seqNr);
         xml.optBooleanAttribute("momentary", momentary);
-        return null;
+        xml.setEmptyElement();
+        return xml;
     }
 
     public boolean isMomentary() {

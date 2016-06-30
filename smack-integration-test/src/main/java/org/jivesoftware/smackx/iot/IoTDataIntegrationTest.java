@@ -16,23 +16,23 @@
  */
 package org.jivesoftware.smackx.iot;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import org.igniterealtime.smack.inttest.AbstractSmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTest;
 import org.igniterealtime.smack.inttest.SmackIntegrationTestEnvironment;
-import org.igniterealtime.smack.inttest.TestNotPossibleException;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.SmackException.NoResponseException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.roster.RosterIntegrationTest;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.iot.data.IoTDataManager;
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutResult;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField.IntField;
-import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
+import org.jivesoftware.smackx.iot.data.element.IoTFieldsExtension;
 
 public class IoTDataIntegrationTest extends AbstractSmackIntegrationTest {
 
@@ -40,33 +40,45 @@ public class IoTDataIntegrationTest extends AbstractSmackIntegrationTest {
 
     private final IoTDataManager iotDataManagerTwo;
 
-    public IoTDataIntegrationTest(SmackIntegrationTestEnvironment environment) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException, TestNotPossibleException {
+    public IoTDataIntegrationTest(SmackIntegrationTestEnvironment environment) {
         super(environment);
-        IoTDiscoveryIntegrationTest.checkPrerequisites(connection);
         iotDataManagerOne = IoTDataManager.getInstanceFor(conOne);
         iotDataManagerTwo = IoTDataManager.getInstanceFor(conTwo);
     }
 
     /**
-     * Roles:
-     * - conOne: Owner of data thing.
-     * - conTwo: The data thing.
-     * - conThree: The thing that wants to read data from data thing.
-     * @throws SmackException 
-     * @throws InterruptedException 
-     * @throws XMPPErrorException 
+     * Connection one provides a thing, which momentary value is read out by connection two.
+     *
+     * @throws Exception 
+     * @throws TimeoutException 
      */
     @SmackIntegrationTest
-    public void threeEntityDataReadOutTest() throws XMPPErrorException, InterruptedException, SmackException {
+    public void dataTest() throws TimeoutException, Exception {
         final String key = StringUtils.randomString(12);
         final String sn = StringUtils.randomString(12);
+        final int value = INSECURE_RANDOM.nextInt();
+
         Thing dataThing = Thing.builder().setKey(key).setSerialNumber(sn).setMomentaryReadOutRequestHandler(new ThingMomentaryReadOutRequest() {
             @Override
             public void momentaryReadOutRequest(ThingMomentaryReadOutResult callback) {
-                IoTDataField.IntField field = new IntField("timestamp", (int) (System.currentTimeMillis() / 1000));
+                IoTDataField.IntField field = new IntField(testRunId, value);
                 callback.momentaryReadOut(Collections.singletonList(field));
             }
         }).build();
 
+        iotDataManagerOne.installThing(dataThing);
+
+        List<IoTFieldsExtension> values;
+        try {
+            RosterIntegrationTest.ensureBothAccountsAreSubscribedToEachOther(conOne, conTwo, defaultTimeout);
+
+            values = iotDataManagerTwo.requestMomentaryValuesReadOut(conOne.getUser());
+        }
+        finally {
+            iotDataManagerOne.uninstallThing(dataThing);
+            RosterIntegrationTest.ensureBothAccountsAreNotInEachOthersRoster(conOne, conTwo);
+        }
+
+        assertEquals(1, values.size());
     }
 }

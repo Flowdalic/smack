@@ -30,7 +30,7 @@ public class IoTDataReadOutAccepted extends IQ {
 
     private final boolean queued;
 
-    protected IoTDataReadOutAccepted(int seqNr, boolean queued) {
+    public IoTDataReadOutAccepted(int seqNr, boolean queued) {
         super(ELEMENT, NAMESPACE);
         this.seqNr = seqNr;
         this.queued = queued;
