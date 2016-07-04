@@ -238,7 +238,11 @@ public final class ReconnectionManager {
                     // Makes a reconnection attempt
                     try {
                         if (isReconnectionPossible(connection)) {
-                            connection.connect();
+                            try {
+                                connection.connect();
+                            } catch (SmackException.AlreadyConnectedException e) {
+                                LOGGER.log(Level.FINER, "Connection was already connected on reconnection attempt", e);
+                            }
                         }
                         // TODO Starting with Smack 4.2, connect() will no
                         // longer login automatically. So change this and the
@@ -249,6 +253,12 @@ public final class ReconnectionManager {
                         }
                         // Successfully reconnected.
                         attempts = 0;
+                    }
+                    catch (SmackException.AlreadyLoggedInException e) {
+                        // This can happen if another thread concurrently triggers a reconnection
+                        // and/or login. Obviously it should not be handled as a reconnection
+                        // failure. See also SMACK-725.
+                        LOGGER.log(Level.FINER, "Reconnection not required, was already logged in", e);
                     }
                     catch (SmackException | IOException | XMPPException | InterruptedException e) {
                         // Fires the failed reconnection notification
