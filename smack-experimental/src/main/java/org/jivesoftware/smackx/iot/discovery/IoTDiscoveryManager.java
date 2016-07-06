@@ -113,7 +113,7 @@ public final class IoTDiscoveryManager extends Manager {
                                 IoTProvisioningManager iotProvisioningManager = IoTProvisioningManager.getInstanceFor(
                                                 connection());
                                 try {
-                                    iotProvisioningManager.sendFriendshipRequest(owner);
+                                    iotProvisioningManager.sendFriendshipRequest(owner.asBareJid());
                                 }
                                 catch (NotConnectedException | InterruptedException e) {
                                     LOGGER.log(Level.WARNING, "Could not friendship owner", e);
@@ -257,7 +257,7 @@ public final class IoTDiscoveryManager extends Manager {
         // The 'jid' attribute of the <claimed/> response now represents the XMPP address of the thing we just successfully claimed.
         Jid thing = iotClaimed.getJid();
 
-        IoTProvisioningManager.getInstanceFor(connection()).sendFriendshipRequest(thing);
+        IoTProvisioningManager.getInstanceFor(connection()).sendFriendshipRequest(thing.asBareJid());
 
         return iotClaimed;
     }
@@ -353,7 +353,7 @@ public final class IoTDiscoveryManager extends Manager {
             return;
         }
         IoTProvisioningManager iotProvisioningManager = IoTProvisioningManager.getInstanceFor(connection());
-        iotProvisioningManager.sendFriendshipRequestIfRequired(registry);
+        iotProvisioningManager.sendFriendshipRequestIfRequired(registry.asBareJid());
     }
 
     public ThingState getStateFor(Thing thing) {

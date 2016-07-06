@@ -225,14 +225,14 @@ public final class IoTProvisioningManager extends Manager {
         return response.getIsFriendResult();
     }
 
-    public void sendFriendshipRequest(Jid jid) throws NotConnectedException, InterruptedException {
+    public void sendFriendshipRequest(BareJid bareJid) throws NotConnectedException, InterruptedException {
         Presence presence = new Presence(Presence.Type.subscribe);
-        presence.setTo(jid);
+        presence.setTo(bareJid);
         connection().sendStanza(presence);
     }
 
-    public void sendFriendshipRequestIfRequired(Jid jid) throws NotConnectedException, InterruptedException {
-        RosterEntry entry = roster.getEntry(jid.asBareJid());
+    public void sendFriendshipRequestIfRequired(BareJid jid) throws NotConnectedException, InterruptedException {
+        RosterEntry entry = roster.getEntry(jid);
         if (entry != null && entry.canSeeHisPresence()) {
             return;
         }

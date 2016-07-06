@@ -17,6 +17,8 @@
 package org.igniterealtime.smack.smackrepl;
 
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterUtil;
 
 import java.util.Collections;
 import java.util.concurrent.TimeoutException;
@@ -36,6 +38,7 @@ import org.jivesoftware.smackx.iot.data.element.IoTDataField.IntField;
 import org.jivesoftware.smackx.iot.discovery.AbstractThingStateChangeListener;
 import org.jivesoftware.smackx.iot.discovery.IoTDiscoveryManager;
 import org.jivesoftware.smackx.iot.discovery.ThingState;
+import org.jivesoftware.smackx.iot.provisioning.IoTProvisioningManager;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -75,6 +78,7 @@ public class IoT {
 
     public static void iotScenario(XMPPTCPConnection dataThingConnection, XMPPTCPConnection readingThingConnection)
                     throws TimeoutException, Exception {
+        final long timeout = 10 * 60 * 1000;
         dataThingConnection.connect().login();
         readingThingConnection.connect().login();
         ThingState dataThingState = actAsDataThing(dataThingConnection);
@@ -87,8 +91,14 @@ public class IoT {
             }
         });
         // Wait until the thing is owned.
-        syncPoint.waitForResult(10 * 60 * 1000);
+        syncPoint.waitForResult(timeout);
         printStatus("OWNED: Thing now onwed by " + dataThingState.getOwner());
+
+        IoTProvisioningManager readingThingProvisioningManager = IoTProvisioningManager.getInstanceFor(readingThingConnection);
+        readingThingProvisioningManager.sendFriendshipRequestIfRequired(dataThingConnection.getUser().asBareJid());
+
+        Roster dataThingRoster = Roster.getInstanceFor(dataThingConnection);
+        RosterUtil.waitUntilOtherEntityIsSubscribed(dataThingRoster, readingThingConnection.getUser().asBareJid(), timeout);
     }
 
     private static ThingState actAsDataThing(XMPPTCPConnection connection) throws XMPPException, SmackException, InterruptedException {
