@@ -177,12 +177,12 @@ public class SmackIntegrationTestFramework {
         for (Class<? extends AbstractSmackIntTest> testClass : classes) {
             final String testClassName = testClass.getName();
 
-            if (config.enabledTests != null && !config.enabledTests.contains(testClassName)) {
+            if (config.enabledTests != null && !isInSet(testClass, config.enabledTests)) {
                 LOGGER.info("Skipping test class " + testClassName + " because it is not enabled");
                 continue;
             }
 
-            if (config.disabledTests != null && config.disabledTests.contains(testClassName)) {
+            if (isInSet(testClass, config.disabledTests)) {
                 LOGGER.info("Skipping test class " + testClassName + " because it is disalbed");
                 continue;
             }
@@ -233,9 +233,8 @@ public class SmackIntegrationTestFramework {
             while (it.hasNext()) {
                 final Method method = it.next();
                 final String methodName = method.getName();
-                final String className = method.getDeclaringClass().getName();
-                if (config.enabledTests != null && !config.enabledTests.contains(methodName)
-                                && !config.enabledTests.contains(className)) {
+                if (config.enabledTests != null && !(config.enabledTests.contains(methodName)
+                                || isInSet(testClass, config.enabledTests))) {
                     LOGGER.fine("Skipping test method " + methodName + " because it is not enabled");
                     it.remove();
                     continue;
@@ -594,6 +593,15 @@ public class SmackIntegrationTestFramework {
             throw (Error) e;
         }
         return (Exception) e;
+    }
+
+    private static boolean isInSet(Class<?> clz, Set<String> classes) {
+        if (classes == null) {
+            return false;
+        }
+        final String className = clz.getName();
+        final String unqualifiedClassName = clz.getSimpleName();
+        return (classes.contains(className) || classes.contains(unqualifiedClassName));
     }
 
     public static final class TestRunResult {

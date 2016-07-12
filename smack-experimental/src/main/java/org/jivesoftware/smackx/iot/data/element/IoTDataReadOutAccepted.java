@@ -24,7 +24,7 @@ public class IoTDataReadOutAccepted extends IQ {
     public static final String NAMESPACE = Constants.IOT_SENSORDATA_NAMESPACE;
 
     /**
-     * The sequence nummber. According to XEP-0323 an xs:int.
+     * The sequence number. According to XEP-0323 an xs:int.
      */
     private final int seqNr;
 
@@ -47,6 +47,7 @@ public class IoTDataReadOutAccepted extends IQ {
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
         xml.attribute("seqnr", seqNr);
         xml.optBooleanAttribute("queued", queued);
+        xml.setEmptyElement();
         return xml;
     }
 

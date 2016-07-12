@@ -36,7 +36,11 @@ public class NodeElement implements NamedElement {
 
     public NodeElement(NodeInfo nodeInfo, List<TimestampElement> timestampElements) {
         this.nodeInfo = nodeInfo;
-        this.timestampElements = timestampElements;
+        this.timestampElements = Collections.unmodifiableList(timestampElements);
+    }
+
+    public List<TimestampElement> getTimestampElements() {
+        return timestampElements;
     }
 
     @Override

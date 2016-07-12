@@ -57,6 +57,7 @@ import org.jivesoftware.smackx.iot.provisioning.element.Unfriend;
 import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.Jid;
+import org.jxmpp.util.cache.LruCache;
 
 /**
  * A manager for XEP-0324: Internet of Things - Provisioning.
@@ -92,6 +93,7 @@ public final class IoTProvisioningManager extends Manager {
     }
 
     private final Roster roster;
+    private final LruCache<Jid, LruCache<BareJid, Void>> negativeFriendshipRequestCache = new LruCache<>(8);
 
     private Jid configuredProvisioningServer;
 
@@ -132,7 +134,12 @@ public final class IoTProvisioningManager extends Manager {
 
                                 ClearCache clearCache = (ClearCache) iqRequest;
 
-                                // TODO Handle clear cache request.
+                                // Handle <clearCache/> request.
+                                Jid from = iqRequest.getFrom();
+                                LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.get(from);
+                                if (cache != null) {
+                                    cache.clear();
+                                }
 
                                 return new ClearCacheResponse(clearCache);
                             }
@@ -218,11 +225,26 @@ public final class IoTProvisioningManager extends Manager {
     }
 
     public boolean isFriend(Jid provisioningServer, BareJid friendInQuestion) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        LruCache<BareJid, Void> cache = negativeFriendshipRequestCache.get(provisioningServer);
+        if (cache != null && cache.containsKey(friendInQuestion)) {
+            // We hit a cached negative isFriend response for this provisioning server.
+            return false;
+        }
+
         IoTIsFriend iotIsFriend = new IoTIsFriend(friendInQuestion);
         iotIsFriend.setTo(provisioningServer);
         IoTIsFriendResponse response = connection().createPacketCollectorAndSend(iotIsFriend).nextResultOrThrow();
         assert (response.getJid().equals(friendInQuestion));
-        return response.getIsFriendResult();
+        boolean isFriend = response.getIsFriendResult();
+        if (!isFriend) {
+            // Cache the negative is friend response.
+            if (cache == null) {
+                cache = new LruCache<>(1024);
+                negativeFriendshipRequestCache.put(provisioningServer, cache);
+            }
+            cache.put(friendInQuestion, null);
+        }
+        return isFriend;
     }
 
     public void sendFriendshipRequest(BareJid bareJid) throws NotConnectedException, InterruptedException {

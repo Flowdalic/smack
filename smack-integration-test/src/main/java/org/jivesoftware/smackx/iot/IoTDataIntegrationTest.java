@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.iot;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,8 @@ import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutResult;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField;
 import org.jivesoftware.smackx.iot.data.element.IoTDataField.IntField;
 import org.jivesoftware.smackx.iot.data.element.IoTFieldsExtension;
+import org.jivesoftware.smackx.iot.data.element.NodeElement;
+import org.jivesoftware.smackx.iot.data.element.TimestampElement;
 
 public class IoTDataIntegrationTest extends AbstractSmackIntegrationTest {
 
@@ -80,5 +83,22 @@ public class IoTDataIntegrationTest extends AbstractSmackIntegrationTest {
         }
 
         assertEquals(1, values.size());
+        IoTFieldsExtension iotFieldsExtension = values.get(0);
+        List<NodeElement> nodes = iotFieldsExtension.getNodes();
+
+        assertEquals(1, nodes.size());
+        NodeElement node = nodes.get(0);
+        List<TimestampElement> timestamps = node.getTimestampElements();
+
+        assertEquals(1, timestamps.size());
+        TimestampElement timestamp = timestamps.get(0);
+        List<? extends IoTDataField> fields = timestamp.getDataFields();
+
+        assertEquals(1, fields.size());
+        IoTDataField dataField = fields.get(0);
+        assertTrue(dataField instanceof IoTDataField.IntField);
+        IoTDataField.IntField intDataField = (IoTDataField.IntField) dataField;
+        assertEquals(testRunId, intDataField.getName());
+        assertEquals(value, intDataField.getValue());
     }
 }

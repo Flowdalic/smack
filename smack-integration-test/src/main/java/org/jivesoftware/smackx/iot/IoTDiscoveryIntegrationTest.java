@@ -88,4 +88,5 @@ public class IoTDiscoveryIntegrationTest extends AbstractSmackIntegrationTest {
             }
         }
     }
+
 }

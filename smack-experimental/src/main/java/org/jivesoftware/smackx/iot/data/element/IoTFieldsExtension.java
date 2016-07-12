@@ -41,7 +41,7 @@ public class IoTFieldsExtension implements ExtensionElement {
     public IoTFieldsExtension(int seqNr, boolean done, List<NodeElement> nodes) {
         this.seqNr = seqNr;
         this.done = done;
-        this.nodes = nodes;
+        this.nodes = Collections.unmodifiableList(nodes);
     }
 
     public int getSequenceNr() {
@@ -50,6 +50,10 @@ public class IoTFieldsExtension implements ExtensionElement {
 
     public boolean isDone() {
         return done;
+    }
+
+    public List<NodeElement> getNodes() {
+        return nodes;
     }
 
     @Override

@@ -41,6 +41,10 @@ public abstract class IoTDataField implements NamedElement {
         this.name = name;
     }
 
+    public final String getName() {
+        return name;
+    }
+
     @Override
     public final String getElementName() {
         return type.stringRepresentation;
@@ -78,6 +82,10 @@ public abstract class IoTDataField implements NamedElement {
         @Override
         protected String getValueInternal() {
             return Integer.toString(value);
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 }

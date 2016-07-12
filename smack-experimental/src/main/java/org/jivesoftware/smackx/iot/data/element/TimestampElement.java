@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.iot.data.element;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -31,7 +32,11 @@ public class TimestampElement implements NamedElement {
 
     public TimestampElement(Date date, List<? extends IoTDataField> fields) {
         this.date = date;
-        this.fields = fields;
+        this.fields = Collections.unmodifiableList(fields);
+    }
+
+    public List<? extends IoTDataField> getDataFields() {
+        return fields;
     }
 
     @Override
