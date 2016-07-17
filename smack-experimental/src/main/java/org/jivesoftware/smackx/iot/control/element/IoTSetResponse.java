@@ -27,8 +27,14 @@ public class IoTSetResponse extends IQ {
         super(ELEMENT, NAMESPACE);
     }
 
+    public IoTSetResponse(IoTSetRequest iotSetRequest) {
+        this();
+        initialzeAsResultFor(iotSetRequest);
+    }
+
     @Override
     protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
+        xml.setEmptyElement();
         return xml;
     }
 

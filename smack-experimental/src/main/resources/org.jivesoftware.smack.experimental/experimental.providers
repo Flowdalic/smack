@@ -133,4 +133,16 @@
       <className>org.jivesoftware.smackx.iot.data.provider.IoTFieldsExtensionProvider</className>
     </extensionProvider>
 
-  </smackProviders>
+    <!-- XEP-0325: Internet of Things - Control -->
+    <iqProvider>
+      <elementName>set</elementName>
+      <namespace>urn:xmpp:iot:control</namespace>
+      <className>org.jivesoftware.smackx.iot.control.provider.IoTSetRequestProvider</className>
+    </iqProvider>
+    <iqProvider>
+      <elementName>setResponse</elementName>
+      <namespace>urn:xmpp:iot:control</namespace>
+      <className>org.jivesoftware.smackx.iot.control.provider.IoTSetResponseProvider</className>
+    </iqProvider>
+
+</smackProviders>

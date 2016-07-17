@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.jivesoftware.smackx.iot.control.ThingControlRequest;
 import org.jivesoftware.smackx.iot.data.ThingMomentaryReadOutRequest;
 import org.jivesoftware.smackx.iot.discovery.element.Tag;
 import org.jivesoftware.smackx.iot.discovery.element.Tag.Type;
@@ -32,6 +33,7 @@ public final class Thing {
     private final NodeInfo nodeInfo;
 
     private final ThingMomentaryReadOutRequest momentaryReadOutRequestHandler;
+    private final ThingControlRequest controlRequestHandler;
 
     private Thing(Builder builder) {
         this.metaTags = builder.metaTags;
@@ -40,6 +42,7 @@ public final class Thing {
         this.nodeInfo = builder.nodeInfo;
 
         this.momentaryReadOutRequestHandler = builder.momentaryReadOutRequest;
+        this.controlRequestHandler = builder.controlRequest;
     }
 
     public Collection<Tag> getMetaTags() {
@@ -68,6 +71,10 @@ public final class Thing {
 
     public ThingMomentaryReadOutRequest getMomentaryReadOutRequestHandler() {
         return momentaryReadOutRequestHandler;
+    }
+
+    public ThingControlRequest getControlRequestHandler() {
+        return controlRequestHandler;
     }
 
     private String toStringCache;
@@ -100,6 +107,7 @@ public final class Thing {
         private boolean selfOwned;
         private NodeInfo nodeInfo = NodeInfo.EMPTY;
         private ThingMomentaryReadOutRequest momentaryReadOutRequest;
+        private ThingControlRequest controlRequest;
 
         public Builder setSerialNumber(String sn) {
             final String name = "SN";
@@ -138,6 +146,11 @@ public final class Thing {
 
         public Builder setMomentaryReadOutRequestHandler(ThingMomentaryReadOutRequest momentaryReadOutRequestHandler) {
             this.momentaryReadOutRequest = momentaryReadOutRequestHandler;
+            return this;
+        }
+
+        public Builder setControlRequestHandler(ThingControlRequest controlRequest) {
+            this.controlRequest = controlRequest;
             return this;
         }
 

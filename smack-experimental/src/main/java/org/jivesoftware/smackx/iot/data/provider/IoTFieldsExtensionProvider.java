@@ -106,9 +106,15 @@ public class IoTFieldsExtensionProvider extends ExtensionElementProvider<IoTFiel
                 final String fieldName = parser.getAttributeValue(null, "name");
                 final String fieldValue = parser.getAttributeValue(null, "value");
                 switch (name) {
-                case "int":
-                    int fieldValueInt = Integer.parseInt(fieldValue);
-                    field = new IoTDataField.IntField(fieldName, fieldValueInt);
+                case "int": {
+                    int value = Integer.parseInt(fieldValue);
+                    field = new IoTDataField.IntField(fieldName, value);
+                    }
+                    break;
+                case "boolean": {
+                    boolean value = Boolean.parseBoolean(fieldValue);
+                    field = new IoTDataField.BooleanField(fieldName, value);
+                    }
                     break;
                 default:
                     LOGGER.warning("IoT Data field type '" + name + "' not implement yet. Ignoring.");

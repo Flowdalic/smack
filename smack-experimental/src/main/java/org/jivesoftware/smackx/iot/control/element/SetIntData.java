@@ -18,6 +18,11 @@ package org.jivesoftware.smackx.iot.control.element;
 
 public class SetIntData extends SetData {
 
+    public SetIntData(String name, int value) {
+        this(name, Integer.toString(value));
+        integerCache = value;
+    }
+
     protected SetIntData(String name, String value) {
         super(name, Type.INT, value);
     }

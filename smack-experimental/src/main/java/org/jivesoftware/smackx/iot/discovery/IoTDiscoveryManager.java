@@ -39,6 +39,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.iot.Thing;
+import org.jivesoftware.smackx.iot.control.IoTControlManager;
 import org.jivesoftware.smackx.iot.data.IoTDataManager;
 import org.jivesoftware.smackx.iot.discovery.element.Constants;
 import org.jivesoftware.smackx.iot.discovery.element.IoTClaimed;
@@ -216,8 +217,7 @@ public final class IoTDiscoveryManager extends Manager {
         interactWithRegistry(registry);
 
         IoTDataManager.getInstanceFor(connection).installThing(thing);
-
-        // TODO the thing should now be prepared to receive <removed/> IQs from the registry
+        IoTControlManager.getInstanceFor(connection).installThing(thing);
 
         return state;
     }
@@ -309,6 +309,10 @@ public final class IoTDiscoveryManager extends Manager {
 
         ThingState state = getStateFor(nodeInfo);
         state.setUnregistered();
+
+        final XMPPConnection connection = connection();
+        IoTDataManager.getInstanceFor(connection).uninstallThing(nodeInfo);
+        IoTControlManager.getInstanceFor(connection).uninstallThing(nodeInfo);
     }
 
     // Thing Disowning - XEP-0347 § 3.17

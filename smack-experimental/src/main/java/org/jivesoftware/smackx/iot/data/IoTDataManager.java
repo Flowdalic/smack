@@ -88,8 +88,8 @@ public final class IoTDataManager extends Manager {
                         IoTDataRequest.NAMESPACE, IQ.Type.get, Mode.async) {
             @Override
             public IQ handleIQRequest(IQ iqRequest) {
-                // TODO verify that iqRequest.from is friend.
-                // TODO return error if not at least one thing registered.
+                // TODO Verify that iqRequest.from is friend?
+
                 final IoTDataRequest dataRequest = (IoTDataRequest) iqRequest;
 
                 if (!dataRequest.isMomentary()) {
@@ -97,7 +97,13 @@ public final class IoTDataManager extends Manager {
                     return null;
                 }
 
+                // TODO Add support for multiple things(/NodeInfos).
                 final Thing thing = things.get(NodeInfo.EMPTY);
+                if (thing == null) {
+                    // TODO return error if not at least one thing registered.
+                    return null;
+                }
+
                 ThingMomentaryReadOutRequest readOutRequest = thing.getMomentaryReadOutRequestHandler();
                 if (readOutRequest == null) {
                     // TODO Thing does not provide momentary read-out

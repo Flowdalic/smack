@@ -86,6 +86,7 @@ public abstract class SetData implements NamedElement {
         XmlStringBuilder xml = new XmlStringBuilder(this);
         xml.attribute("name", name);
         xml.attribute("value", value);
+        xml.closeEmptyElement();
         return xml;
     }
 }

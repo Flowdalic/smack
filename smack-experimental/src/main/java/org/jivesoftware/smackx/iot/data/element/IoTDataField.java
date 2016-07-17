@@ -23,6 +23,7 @@ public abstract class IoTDataField implements NamedElement {
 
     enum Type {
         integer("int"),
+        bool("boolean"),
         ;
 
         Type(String stringRepresentation) {
@@ -85,6 +86,25 @@ public abstract class IoTDataField implements NamedElement {
         }
 
         public int getValue() {
+            return value;
+        }
+    }
+
+    public static class BooleanField extends IoTDataField {
+
+        private final boolean value;
+
+        public BooleanField(String name, boolean value) {
+            super(Type.bool, name);
+            this.value = value;
+        }
+
+        @Override
+        protected String getValueInternal() {
+            return Boolean.toString(value);
+        }
+
+        public boolean getValue() {
             return value;
         }
     }

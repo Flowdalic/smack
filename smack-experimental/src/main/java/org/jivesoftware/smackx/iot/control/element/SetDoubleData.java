@@ -18,6 +18,11 @@ package org.jivesoftware.smackx.iot.control.element;
 
 public class SetDoubleData extends SetData {
 
+    public SetDoubleData(String name, double value) {
+        this(name, Double.toString(value));
+        doubleCache = value;
+    }
+
     protected SetDoubleData(String name, String value) {
         super(name, Type.DOUBLE, value);
     }

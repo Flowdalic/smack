@@ -18,6 +18,11 @@ package org.jivesoftware.smackx.iot.control.element;
 
 public class SetBoolData extends SetData {
 
+    public SetBoolData(String name, boolean value) {
+        this(name, Boolean.toString(value));
+        booleanCache = value;
+    }
+
     protected SetBoolData(String name, String value) {
         super(name, Type.BOOL, value);
     }

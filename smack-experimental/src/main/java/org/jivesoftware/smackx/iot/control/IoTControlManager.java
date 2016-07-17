@@ -16,11 +16,26 @@
  */
 package org.jivesoftware.smackx.iot.control;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jivesoftware.smack.Manager;
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
+import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smackx.iot.Thing;
+import org.jivesoftware.smackx.iot.control.element.IoTSetRequest;
+import org.jivesoftware.smackx.iot.control.element.IoTSetResponse;
+import org.jivesoftware.smackx.iot.control.element.SetData;
+import org.jivesoftware.smackx.iot.element.NodeInfo;
+import org.jxmpp.jid.FullJid;
 
 /**
  * A manger for XEP-0325: Internet of Things - Control.
@@ -41,8 +56,60 @@ public final class IoTControlManager extends Manager {
         return manager;
     }
 
+    private final Map<NodeInfo, Thing> things = new ConcurrentHashMap<>();
+
     private IoTControlManager(XMPPConnection connection) {
         super(connection);
+        connection.registerIQRequestHandler(new AbstractIqRequestHandler(IoTSetRequest.ELEMENT, IoTSetRequest.NAMESPACE, IQ.Type.set, Mode.async) {
+            @Override
+            public IQ handleIQRequest(IQ iqRequest) {
+                // TODO Lookup thing and provide data.
+                IoTSetRequest iotSetRequest = (IoTSetRequest) iqRequest;
+
+                // TODO Add support for multiple things(/NodeInfos).
+                final Thing thing = things.get(NodeInfo.EMPTY);
+                if (thing == null) {
+                    // TODO return error if not at least one thing registered.
+                    return null;
+                }
+
+                ThingControlRequest controlRequest = thing.getControlRequestHandler();
+                if (controlRequest == null) {
+                    // TODO return error if no request handler for things.
+                    return null;
+                }
+
+                try {
+                    controlRequest.processRequest(iotSetRequest.getFrom(), iotSetRequest.getSetData());
+                } catch (XMPPErrorException e) {
+                    return IQ.createErrorResponse(iotSetRequest, e.getXMPPError());
+                }
+
+                return new IoTSetResponse(iotSetRequest);
+            }
+        });
     }
 
+    public IoTSetResponse setUsingIq(FullJid jid, SetData data) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        return setUsingIq(jid, Collections.singleton(data));
+    }
+
+    public IoTSetResponse setUsingIq(FullJid jid, Collection<SetData> data) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        IoTSetRequest request = new IoTSetRequest(data);
+        request.setTo(jid);
+        IoTSetResponse response = connection().createPacketCollectorAndSend(request).nextResultOrThrow();
+        return response;
+    }
+
+    public void installThing(Thing thing) {
+        things.put(thing.getNodeInfo(), thing);
+    }
+
+    public Thing uninstallThing(Thing thing) {
+        return uninstallThing(thing.getNodeInfo());
+    }
+
+    public Thing uninstallThing(NodeInfo nodeInfo) {
+        return things.remove(nodeInfo);
+    }
 }

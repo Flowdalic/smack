@@ -1,6 +1,6 @@
 /**
  *
- * Copyright © 2016 Florian Schmaus
+ * Copyright 2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.iot.control.element;
+package org.jivesoftware.smackx.iot.control;
 
-public class SetLongData extends SetData {
+import java.util.Collection;
 
-    public SetLongData(String name, long value) {
-        this(name, Long.toString(value));
-        longCache = value;
-    }
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
+import org.jivesoftware.smackx.iot.control.element.SetData;
+import org.jxmpp.jid.Jid;
 
-    protected SetLongData(String name, String value) {
-        super(name, Type.LONG, value);
-    }
+public interface ThingControlRequest {
 
-    private Long longCache;
+    public void processRequest(Jid from, Collection<SetData> setData) throws XMPPErrorException;
 
-    public Long getLongValue() {
-        if (longCache != null) {
-            longCache = Long.valueOf(getValue());
-        }
-        return longCache;
-    }
 }

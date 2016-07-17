@@ -16,16 +16,67 @@
  */
 package org.jivesoftware.smackx.iot.control.provider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smackx.iot.control.element.IoTSetRequest;
+import org.jivesoftware.smackx.iot.control.element.SetBoolData;
+import org.jivesoftware.smackx.iot.control.element.SetData;
+import org.jivesoftware.smackx.iot.control.element.SetDoubleData;
+import org.jivesoftware.smackx.iot.control.element.SetIntData;
+import org.jivesoftware.smackx.iot.control.element.SetLongData;
 import org.xmlpull.v1.XmlPullParser;
 
 public class IoTSetRequestProvider extends IQProvider<IoTSetRequest> {
 
     @Override
     public IoTSetRequest parse(XmlPullParser parser, int initialDepth) throws Exception {
-        // TODO Auto-generated method stub
-        return null;
+        List<SetData> data = new ArrayList<>(4);
+        outerloop: while (true) {
+            final int eventType = parser.next();
+            final String name = parser.getName();
+            switch (eventType) {
+            case XmlPullParser.START_TAG:
+                switch (name) {
+                case "bool": {
+                    String valueName = parser.getAttributeValue(null, "name");
+                    String valueString = parser.getAttributeValue(null, "value");
+                    boolean value = Boolean.parseBoolean(valueString);
+                    data.add(new SetBoolData(valueName, value));
+                }
+                    break;
+                case "double": {
+                    String valueName = parser.getAttributeValue(null, "name");
+                    String valueString = parser.getAttributeValue(null, "value");
+                    double value = Double.parseDouble(valueString);
+                    data.add(new SetDoubleData(valueName, value));
+                }
+                    break;
+                case "int": {
+                    String valueName = parser.getAttributeValue(null, "name");
+                    String valueString = parser.getAttributeValue(null, "value");
+                    int value = Integer.parseInt(valueString);
+                    data.add(new SetIntData(valueName, value));
+                }
+                    break;
+                case "long": {
+                    String valueName = parser.getAttributeValue(null, "name");
+                    String valueString = parser.getAttributeValue(null, "value");
+                    long value = Long.parseLong(valueString);
+                    data.add(new SetLongData(valueName, value));
+                }
+                    break;
+                }
+                break;
+            case XmlPullParser.END_TAG:
+                if (parser.getDepth() == initialDepth) {
+                    break outerloop;
+                }
+                break;
+            }
+        }
+        return new IoTSetRequest(data);
     }
 
 }
