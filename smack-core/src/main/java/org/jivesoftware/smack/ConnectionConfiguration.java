@@ -97,6 +97,8 @@ public abstract class ConnectionConfiguration {
     private final boolean legacySessionDisabled;
     private final SecurityMode securityMode;
 
+    private final DnssecMode dnssecMode;
+
     /**
      * 
      */
@@ -134,6 +136,8 @@ public abstract class ConnectionConfiguration {
 
         proxy = builder.proxy;
         socketFactory = builder.socketFactory;
+
+        dnssecMode = builder.dnssecMode;
 
         securityMode = builder.securityMode;
         keystoreType = builder.keystoreType;
@@ -342,6 +346,17 @@ public abstract class ConnectionConfiguration {
         disabled
     }
 
+    public enum DnssecMode {
+
+        disabled,
+
+        needsDnssec,
+
+        needsDnssecAndDane,
+
+        ;
+    }
+
     /**
      * Returns the username to use when trying to reconnect to the server.
      *
@@ -437,6 +452,7 @@ public abstract class ConnectionConfiguration {
      */
     public static abstract class Builder<B extends Builder<B, C>, C extends ConnectionConfiguration> {
         private SecurityMode securityMode = SecurityMode.ifpossible;
+        private DnssecMode dnssecMode = DnssecMode.disabled;
         private String keystorePath = System.getProperty("javax.net.ssl.keyStore");
         private String keystoreType = "jks";
         private String pkcs11Library = "pkcs11.config";
@@ -566,6 +582,11 @@ public abstract class ConnectionConfiguration {
          */
         public B setCallbackHandler(CallbackHandler callbackHandler) {
             this.callbackHandler = callbackHandler;
+            return getThis();
+        }
+
+        public B setDnssecMode(DnssecMode dnssecMode) {
+            this.dnssecMode = Objects.requireNonNull(dnssecMode, "DNSSEC mode must not be null");
             return getThis();
         }
 
