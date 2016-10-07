@@ -39,6 +39,7 @@ import org.jxmpp.stringprep.XmppStringprepException;
 import javax.net.SocketFactory;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.callback.CallbackHandler;
 
 /**
@@ -99,6 +100,8 @@ public abstract class ConnectionConfiguration {
 
     private final DnssecMode dnssecMode;
 
+    private final X509TrustManager customX509TrustManager;
+
     /**
      * 
      */
@@ -138,6 +141,8 @@ public abstract class ConnectionConfiguration {
         socketFactory = builder.socketFactory;
 
         dnssecMode = builder.dnssecMode;
+
+        customX509TrustManager = builder.customX509TrustManager;
 
         securityMode = builder.securityMode;
         keystoreType = builder.keystoreType;
@@ -194,6 +199,10 @@ public abstract class ConnectionConfiguration {
 
     public DnssecMode getDnssecMode() {
         return dnssecMode;
+    }
+
+    public X509TrustManager getCustomX509TrustManager() {
+        return customX509TrustManager;
     }
 
     /**
@@ -505,6 +514,7 @@ public abstract class ConnectionConfiguration {
         private boolean allowEmptyOrNullUsername = false;
         private boolean saslMechanismsSealed;
         private Set<String> enabledSaslMechanisms;
+        private X509TrustManager customX509TrustManager;
 
         protected Builder() {
         }
@@ -616,6 +626,11 @@ public abstract class ConnectionConfiguration {
 
         public B setDnssecMode(DnssecMode dnssecMode) {
             this.dnssecMode = Objects.requireNonNull(dnssecMode, "DNSSEC mode must not be null");
+            return getThis();
+        }
+
+        public B setCustomX509TrustManager(X509TrustManager x509TrustManager) {
+            this.customX509TrustManager = x509TrustManager;
             return getThis();
         }
 

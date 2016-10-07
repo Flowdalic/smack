@@ -94,6 +94,8 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
@@ -754,12 +756,19 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
             // If the user didn't specify a SSLContext, use the default one
             context = SSLContext.getInstance("TLS");
-            SecureRandom secureRandom = new java.security.SecureRandom();
+
+            final SecureRandom secureRandom = new java.security.SecureRandom();
+            X509TrustManager customTrustManager = config.getCustomX509TrustManager();
+
             if (daneVerifier != null) {
                 // User requested DANE verification.
-                daneVerifier.init(context, kms, null, secureRandom);
+                daneVerifier.init(context, kms, customTrustManager, secureRandom);
             } else {
-                context.init(kms, null, secureRandom);
+                TrustManager[] customTrustManagers = null;
+                if (customTrustManager != null) {
+                    customTrustManagers = new TrustManager[] { customTrustManager };
+                }
+                context.init(kms, customTrustManagers, secureRandom);
             }
         }
 
