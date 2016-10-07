@@ -19,6 +19,7 @@ package org.jivesoftware.smack.tcp;
 import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackConfiguration;
@@ -72,11 +73,14 @@ import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.proxy.ProxyInfo;
 import org.jivesoftware.smack.util.ArrayBlockingQueueWithShutdown;
 import org.jivesoftware.smack.util.Async;
+import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.PacketParserUtils;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.TLSUtils;
 import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smack.util.dns.HostAddress;
+import org.jivesoftware.smack.util.dns.SmackDaneProvider;
+import org.jivesoftware.smack.util.dns.SmackDaneVerifier;
 import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
@@ -113,6 +117,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
@@ -675,6 +680,18 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         KeyStore ks = null;
         KeyManager[] kms = null;
         PasswordCallback pcb = null;
+        SmackDaneVerifier daneVerifier = null;
+
+        if (config.getDnssecMode() == DnssecMode.needsDnssecAndDane) {
+            SmackDaneProvider daneProvider = DNSUtil.getDaneProvider();
+            if (daneProvider == null) {
+                throw new UnsupportedOperationException("DANE enabled but no SmackDaneProvider configured");
+            }
+            daneVerifier = daneProvider.newInstance();
+            if (daneVerifier != null) {
+                throw new IllegalStateException("DANE requested but DANE provider did not return a dane verifier");
+            }
+        }
 
         if (context == null) {
             final String keyStoreType = config.getKeystoreType();
@@ -737,7 +754,13 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
             // If the user didn't specify a SSLContext, use the default one
             context = SSLContext.getInstance("TLS");
-            context.init(kms, null, new java.security.SecureRandom());
+            SecureRandom secureRandom = new java.security.SecureRandom();
+            if (daneVerifier != null) {
+                // User requested DANE verification.
+                daneVerifier.init(context, kms, null, secureRandom);
+            } else {
+                context.init(kms, null, secureRandom);
+            }
         }
 
         Socket plain = socket;
@@ -756,6 +779,10 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
         // Proceed to do the handshake
         sslSocket.startHandshake();
+
+        if (daneVerifier != null) {
+            daneVerifier.finish(sslSocket);
+        }
 
         final HostnameVerifier verifier = getConfiguration().getHostnameVerifier();
         if (verifier == null) {

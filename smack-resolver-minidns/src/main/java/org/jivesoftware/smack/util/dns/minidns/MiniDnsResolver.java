@@ -166,6 +166,7 @@ public class MiniDnsResolver extends DNSResolver implements SmackInitializer {
     @Override
     public List<Exception> initialize() {
         setup();
+        MiniDnsDane.setup();
         return null;
     }
 

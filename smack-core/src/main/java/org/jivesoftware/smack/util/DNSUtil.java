@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.util.dns.DNSResolver;
+import org.jivesoftware.smack.util.dns.SmackDaneProvider;
 import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jivesoftware.smack.util.dns.SRVRecord;
 
@@ -40,6 +41,7 @@ public class DNSUtil {
 
     private static final Logger LOGGER = Logger.getLogger(DNSUtil.class.getName());
     private static DNSResolver dnsResolver = null;
+    private static SmackDaneProvider daneProvider;
 
     /**
      * International Domain Name transformer.
@@ -76,6 +78,23 @@ public class DNSUtil {
         return dnsResolver;
     }
 
+    /**
+     * Set the DANE provider that should be used when DANE is enabled.
+     *
+     * @param daneProvider
+     */
+    public static void setDaneProvider(SmackDaneProvider daneProvider) {
+        daneProvider = Objects.requireNonNull(daneProvider);
+    }
+
+    /**
+     * Returns the currently active DANE provider used when DANE is enabled.
+     *
+     * @return the active DANE provider
+     */
+    public static SmackDaneProvider getDaneProvider() {
+        return daneProvider;
+    }
 
     /**
      * Set the IDNA (Internationalizing Domain Names in Applications, RFC 3490) transformer.
