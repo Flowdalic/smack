@@ -69,6 +69,13 @@ public class HostAddress {
         this.inetAddresses = inetAddresses;
     }
 
+    public HostAddress(String fqdn, Exception e) {
+        this.fqdn = fqdn;
+        this.port = 5222;
+        inetAddresses = Collections.emptyList();
+        setException(e);
+    }
+
     public String getFQDN() {
         return fqdn;
     }

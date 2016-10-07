@@ -187,6 +187,10 @@ public abstract class ConnectionConfiguration {
         return securityMode;
     }
 
+    public DnssecMode getDnssecMode() {
+        return dnssecMode;
+    }
+
     /**
      * Retuns the path to the keystore file. The key store file contains the 
      * certificates that may be used to authenticate the client to the server,

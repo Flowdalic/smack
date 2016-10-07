@@ -107,7 +107,6 @@ import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -118,9 +117,7 @@ import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -559,20 +556,9 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
             String host = hostAddress.getFQDN();
             int port = hostAddress.getPort();
             if (proxyInfo == null) {
-                try {
-                    inetAddresses = Arrays.asList(InetAddress.getAllByName(host)).iterator();
-                    if (!inetAddresses.hasNext()) {
-                        // This should not happen
-                        LOGGER.warning("InetAddress.getAllByName() returned empty result array.");
-                        throw new UnknownHostException(host);
-                    }
-                } catch (UnknownHostException e) {
-                    hostAddress.setException(e);
-                    // TODO: Change to emptyIterator() once Smack's minimum Android SDK level is >= 19.
-                    List<InetAddress> emptyInetAddresses = Collections.emptyList();
-                    inetAddresses = emptyInetAddresses.iterator();
-                    continue;
-                }
+                inetAddresses = hostAddress.getInetAddresses().iterator();
+                assert(inetAddresses.hasNext());
+
                 innerloop: while (inetAddresses.hasNext()) {
                     // Create a *new* Socket before every connection attempt, i.e. connect() call, since Sockets are not
                     // re-usable after a failed connection attempt. See also SMACK-724.

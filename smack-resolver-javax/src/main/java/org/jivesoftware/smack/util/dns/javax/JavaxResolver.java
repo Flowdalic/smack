@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smack.util.dns.javax;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.initializer.SmackInitializer;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.dns.DNSResolver;
+import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jivesoftware.smack.util.dns.SRVRecord;
 
 /**
@@ -77,26 +79,37 @@ public class JavaxResolver extends DNSResolver implements SmackInitializer {
     }
 
     @Override
-    protected List<SRVRecord> lookupSRVRecords0(String name, DnssecMode dnssecMode) throws NamingException {
+    protected List<SRVRecord> lookupSRVRecords0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         List<SRVRecord> res = new ArrayList<SRVRecord>();
 
-        Attributes dnsLookup = dirContext.getAttributes(name, new String[] { "SRV" });
-        Attribute srvAttribute = dnsLookup.get("SRV");
-        if (srvAttribute == null)
-            return res;
-        @SuppressWarnings("unchecked")
-        NamingEnumeration<String> srvRecords = (NamingEnumeration<String>) srvAttribute.getAll();
-        while (srvRecords.hasMore()) {
-            String srvRecordString = srvRecords.next();
-            String[] srvRecordEntries = srvRecordString.split(" ");
-            int priority = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 4]);
-            int port = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 2]);
-            int weight = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 3]);
-            String host = srvRecordEntries[srvRecordEntries.length - 1];
+        try {
+            Attributes dnsLookup = dirContext.getAttributes(name, new String[] { "SRV" });
+            Attribute srvAttribute = dnsLookup.get("SRV");
+            if (srvAttribute == null)
+                return res;
+            @SuppressWarnings("unchecked")
+            NamingEnumeration<String> srvRecords = (NamingEnumeration<String>) srvAttribute.getAll();
+            while (srvRecords.hasMore()) {
+                String srvRecordString = srvRecords.next();
+                String[] srvRecordEntries = srvRecordString.split(" ");
+                int priority = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 4]);
+                int port = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 2]);
+                int weight = Integer.parseInt(srvRecordEntries[srvRecordEntries.length - 3]);
+                String host = srvRecordEntries[srvRecordEntries.length - 1];
 
-            SRVRecord srvRecord = new SRVRecord(host, port, priority, weight);
-            res.add(srvRecord);
+                List<InetAddress> hostAddresses = lookupHostAddress0(host, failedAddresses, dnssecMode);
+                if (hostAddresses == null) {
+                    continue;
+                }
+
+                SRVRecord srvRecord = new SRVRecord(host, port, priority, weight, hostAddresses);
+                res.add(srvRecord);
+            }
         }
+        catch (NamingException e) {
+            throw new IllegalStateException(e);
+        }
+
         return res;
     }
 

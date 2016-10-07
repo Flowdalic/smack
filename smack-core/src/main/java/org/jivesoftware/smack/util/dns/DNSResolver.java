@@ -16,6 +16,9 @@
  */
 package org.jivesoftware.smack.util.dns;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
@@ -32,25 +35,44 @@ public abstract class DNSResolver {
         this.supportsDnssec = supportsDnssec;
     }
 
-    
     /**
      * Gets a list of service records for the specified service.
      * @param name The symbolic name of the service.
      * @return The list of SRV records mapped to the service name.
      */
-    public List<SRVRecord> lookupSRVRecords(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+    public final List<SRVRecord> lookupSRVRecords(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         checkIfDnssecRequestedAndSupported(dnssecMode);
         return lookupSRVRecords0(name, failedAddresses, dnssecMode);
     }
 
     protected abstract List<SRVRecord> lookupSRVRecords0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode);
 
-    public HostAddress lookupHostAddress(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+    public final HostAddress lookupHostAddress(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         checkIfDnssecRequestedAndSupported(dnssecMode);
-        return lookupHostAddress0(name, failedAddresses, dnssecMode);
+        List<InetAddress> inetAddresses = lookupHostAddress0(name, failedAddresses, dnssecMode);
+        if (inetAddresses == null) {
+            return null;
+        }
+        return new HostAddress(name, inetAddresses);
     }
 
-    protected abstract HostAddress lookupHostAddress0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode);
+    protected List<InetAddress> lookupHostAddress0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+        // Default implementation of a DNS name lookup for A/AAAA records. It is assumed that this method does never
+        // support DNSSEC. Subclasses are free to override this method.
+        if (dnssecMode != DnssecMode.disabled) {
+            throw new UnsupportedOperationException("This resolver does not support DNSSEC");
+        }
+
+        InetAddress[] inetAddressArray;
+        try {
+            inetAddressArray = InetAddress.getAllByName(name);
+        } catch (UnknownHostException e) {
+            failedAddresses.add(new HostAddress(name, e));
+            return null;
+        }
+
+        return Arrays.asList(inetAddressArray);
+    }
 
     private final void checkIfDnssecRequestedAndSupported(DnssecMode dnssecMode) {
         if (dnssecMode != DnssecMode.disabled && !supportsDnssec) {

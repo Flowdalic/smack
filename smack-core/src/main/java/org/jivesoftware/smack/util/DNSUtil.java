@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2005 Jive Software.
+ * Copyright 2003-2005 Jive Software, 2016 Florian Schmaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.jivesoftware.smack.util.dns.SRVRecord;
  * Utility class to perform DNS lookups for XMPP services.
  *
  * @author Matt Tucker
+ * @author Florian Schmaus
  */
 public class DNSUtil {
 
@@ -140,7 +141,7 @@ public class DNSUtil {
      * 
      * @param domain the domain.
      * @param domainType the XMPP domain type, server or client.
-     * @param failedAddresses on optional list that will be populated with host addresses that failed to resolve.
+     * @param failedAddresses a list that will be populated with host addresses that failed to resolve.
      * @return a list of resolver host addresses for this domain.
      */
     private static List<HostAddress> resolveDomain(String domain, DomainType domainType,
@@ -163,8 +164,9 @@ public class DNSUtil {
         default:
             throw new AssertionError();
         }
-        try {
-            List<SRVRecord> srvRecords = dnsResolver.lookupSRVRecords(srvDomain, dnssecMode);
+
+        List<SRVRecord> srvRecords = dnsResolver.lookupSRVRecords(srvDomain, failedAddresses, dnssecMode);
+        if (srvRecords != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 String logMessage = "Resolved SRV RR for " + srvDomain + ":";
                 for (SRVRecord r : srvRecords)
@@ -174,18 +176,12 @@ public class DNSUtil {
             List<HostAddress> sortedRecords = sortSRVRecords(srvRecords);
             addresses.addAll(sortedRecords);
         }
-        catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while resovling SRV records for " + domain
-                            + ". Consider adding '_xmpp-(server|client)._tcp' DNS SRV Records", e);
-            if (failedAddresses != null) {
-                HostAddress failedHostAddress = new HostAddress(srvDomain);
-                failedHostAddress.setException(e);
-                failedAddresses.add(failedHostAddress);
-            }
-        }
 
         // Step two: Add the hostname to the end of the list
-        addresses.add(new HostAddress(domain));
+        HostAddress hostAddress = dnsResolver.lookupHostAddress(domain, failedAddresses, dnssecMode);
+        if (hostAddress != null) {
+            addresses.add(hostAddress);
+        }
 
         return addresses;
     }

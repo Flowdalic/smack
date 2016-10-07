@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smack.util.dns.dnsjava;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.initializer.SmackInitializer;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.dns.DNSResolver;
+import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jivesoftware.smack.util.dns.SRVRecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
@@ -46,10 +48,17 @@ public class DNSJavaResolver extends DNSResolver implements SmackInitializer {
     }
 
     @Override
-    public List<SRVRecord> lookupSRVRecords0(String name, DnssecMode dnssecMode) throws TextParseException {
+    protected List<SRVRecord> lookupSRVRecords0(String name, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         List<SRVRecord> res = new ArrayList<SRVRecord>();
 
-        Lookup lookup = new Lookup(name, Type.SRV);
+        Lookup lookup;
+        try {
+            lookup = new Lookup(name, Type.SRV);
+        }
+        catch (TextParseException e) {
+            throw new IllegalStateException(e);
+        }
+
         Record[] recs = lookup.run();
         if (recs == null)
             return res;
@@ -62,7 +71,12 @@ public class DNSJavaResolver extends DNSResolver implements SmackInitializer {
                 int priority = srvRecord.getPriority();
                 int weight = srvRecord.getWeight();
 
-                SRVRecord r = new SRVRecord(host, port, priority, weight);
+                List<InetAddress> hostAddresses = lookupHostAddress0(host, failedAddresses, dnssecMode);
+                if (hostAddresses == null) {
+                    continue;
+                }
+
+                SRVRecord r = new SRVRecord(host, port, priority, weight, hostAddresses);
                 res.add(r);
             }
         }
