@@ -350,15 +350,35 @@ public abstract class ConnectionConfiguration {
         disabled
     }
 
+    /**
+     * Determines the requested DNSSEC security mode.
+     * <b>Note that Smack's support for DNSSEC/DANE is experimental!</b>
+     * <p>
+     * The default '{@link #disabled}' means that neither DNSSEC nor DANE verification will be performed. When
+     * '{@link #needsDnssec}' is used, then the connection will not be established if the resource records used to connect
+     * to the XMPP service are not authenticated by DNSSEC. Additionally, if '{@link #needsDnssecAndDane}' is used, then
+     * the XMPP service's TLS certificate is verified using DANE.
+     *
+     */
     public enum DnssecMode {
 
+        /**
+         * Do not perform any DNSSEC authentication or DANE verification.
+         */
         disabled,
 
+        /**
+         * <b>Experimental!</b>
+         * Require all DNS information to be authenticated by DANE.
+         */
         needsDnssec,
 
+        /**
+         * <b>Experimental!</b>
+         * Require all DNS information to be authenticated by DNSSEC and require the XMPP service's TLS certificate to be verified using DANE.
+         */
         needsDnssecAndDane,
 
-        ;
     }
 
     /**
