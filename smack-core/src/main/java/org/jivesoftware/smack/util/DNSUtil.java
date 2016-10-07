@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.util.dns.DNSResolver;
 import org.jivesoftware.smack.util.dns.HostAddress;
 import org.jivesoftware.smack.util.dns.SRVRecord;
@@ -62,7 +63,7 @@ public class DNSUtil {
      * @param resolver
      */
     public static void setDNSResolver(DNSResolver resolver) {
-        dnsResolver = resolver;
+        dnsResolver = Objects.requireNonNull(resolver);
     }
 
     /**
@@ -109,15 +110,10 @@ public class DNSUtil {
      * @return List of HostAddress, which encompasses the hostname and port that the
      *      XMPP server can be reached at for the specified domain.
      */
-    public static List<HostAddress> resolveXMPPServiceDomain(String domain, List<HostAddress> failedAddresses) {
+    public static List<HostAddress> resolveXMPPServiceDomain(String domain, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         domain = idnaTransformer.transform(domain);
-        if (dnsResolver == null) {
-            LOGGER.warning("No DNS Resolver active in Smack, will be unable to perform DNS SRV lookups");
-            List<HostAddress> addresses = new ArrayList<HostAddress>(1);
-            addresses.add(new HostAddress(domain, 5222));
-            return addresses;
-        }
-        return resolveDomain(domain, DomainType.Client, failedAddresses);
+
+        return resolveDomain(domain, DomainType.Client, failedAddresses, dnssecMode);
     }
 
     /**
@@ -134,15 +130,10 @@ public class DNSUtil {
      * @return List of HostAddress, which encompasses the hostname and port that the
      *      XMPP server can be reached at for the specified domain.
      */
-    public static List<HostAddress> resolveXMPPServerDomain(String domain, List<HostAddress> failedAddresses) {
+    public static List<HostAddress> resolveXMPPServerDomain(String domain, List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
         domain = idnaTransformer.transform(domain);
-        if (dnsResolver == null) {
-            LOGGER.warning("No DNS Resolver active in Smack, will be unable to perform DNS SRV lookups");
-            List<HostAddress> addresses = new ArrayList<HostAddress>(1);
-            addresses.add(new HostAddress(domain, 5269));
-            return addresses;
-        }
-        return resolveDomain(domain, DomainType.Server, failedAddresses);
+
+        return resolveDomain(domain, DomainType.Server, failedAddresses, dnssecMode);
     }
 
     /**
@@ -152,7 +143,12 @@ public class DNSUtil {
      * @param failedAddresses on optional list that will be populated with host addresses that failed to resolve.
      * @return a list of resolver host addresses for this domain.
      */
-    private static List<HostAddress> resolveDomain(String domain, DomainType domainType, List<HostAddress> failedAddresses) {
+    private static List<HostAddress> resolveDomain(String domain, DomainType domainType,
+                    List<HostAddress> failedAddresses, DnssecMode dnssecMode) {
+        if (dnsResolver == null) {
+            throw new IllegalStateException("No DNS Resolver active in Smack");
+        }
+
         List<HostAddress> addresses = new ArrayList<HostAddress>();
 
         // Step one: Do SRV lookups
@@ -168,7 +164,7 @@ public class DNSUtil {
             throw new AssertionError();
         }
         try {
-            List<SRVRecord> srvRecords = dnsResolver.lookupSRVRecords(srvDomain);
+            List<SRVRecord> srvRecords = dnsResolver.lookupSRVRecords(srvDomain, dnssecMode);
             if (LOGGER.isLoggable(Level.FINE)) {
                 String logMessage = "Resolved SRV RR for " + srvDomain + ":";
                 for (SRVRecord r : srvRecords)

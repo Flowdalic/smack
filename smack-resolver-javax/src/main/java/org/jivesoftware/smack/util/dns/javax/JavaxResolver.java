@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2014 Florian Schmaus
+ * Copyright 2013-2016 Florian Schmaus
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import org.jivesoftware.smack.ConnectionConfiguration.DnssecMode;
 import org.jivesoftware.smack.initializer.SmackInitializer;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.dns.DNSResolver;
@@ -38,7 +39,7 @@ import org.jivesoftware.smack.util.dns.SRVRecord;
  * @author Florian Schmaus
  *
  */
-public class JavaxResolver implements SmackInitializer, DNSResolver {
+public class JavaxResolver extends DNSResolver implements SmackInitializer {
 
     private static JavaxResolver instance;
     private static DirContext dirContext;
@@ -71,8 +72,12 @@ public class JavaxResolver implements SmackInitializer, DNSResolver {
         DNSUtil.setDNSResolver(getInstance());
     }
 
+    public JavaxResolver() {
+         super(false);
+    }
+
     @Override
-    public List<SRVRecord> lookupSRVRecords(String name) throws NamingException {
+    protected List<SRVRecord> lookupSRVRecords0(String name, DnssecMode dnssecMode) throws NamingException {
         List<SRVRecord> res = new ArrayList<SRVRecord>();
 
         Attributes dnsLookup = dirContext.getAttributes(name, new String[] { "SRV" });
