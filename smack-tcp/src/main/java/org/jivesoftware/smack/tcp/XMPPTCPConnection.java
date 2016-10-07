@@ -688,7 +688,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                 throw new UnsupportedOperationException("DANE enabled but no SmackDaneProvider configured");
             }
             daneVerifier = daneProvider.newInstance();
-            if (daneVerifier != null) {
+            if (daneVerifier == null) {
                 throw new IllegalStateException("DANE requested but DANE provider did not return a dane verifier");
             }
         }
