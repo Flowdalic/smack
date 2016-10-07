@@ -155,6 +155,11 @@ public abstract class ConnectionConfiguration {
 
         // If the enabledSaslmechanisms are set, then they must not be empty
         assert(enabledSaslMechanisms != null ? !enabledSaslMechanisms.isEmpty() : true);
+
+        if (dnssecMode != DnssecMode.disabled && customSSLContext != null) {
+            throw new IllegalStateException("You can not use a custom SSL context with DNSSEC enabled");
+        }
+
     }
 
     /**
