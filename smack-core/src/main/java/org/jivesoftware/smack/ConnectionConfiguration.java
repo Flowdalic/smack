@@ -383,7 +383,7 @@ public abstract class ConnectionConfiguration {
 
         /**
          * <b>Experimental!</b>
-         * Require all DNS information to be authenticated by DANE.
+         * Require all DNS information to be authenticated by DNSSEC.
          */
         needsDnssec,
 
