@@ -80,9 +80,7 @@ public class MiniDnsResolver extends DNSResolver implements SmackInitializer {
 
         // TODO: Use ResolverResult.getResolutionUnsuccessfulException() found in newer MiniDNS versions.
         if (!result.wasSuccessful()) {
-            Question question = result.getQuestion();
-            RESPONSE_CODE responseCode = result.getResponseCode();
-            ResolutionUnsuccessfulException resolutionUnsuccessfulException = new ResolutionUnsuccessfulException(question, responseCode);
+            ResolutionUnsuccessfulException resolutionUnsuccessfulException = getExceptionFrom(result);
             failedAddresses.add(new HostAddress(name, resolutionUnsuccessfulException));
             return null;
         }
@@ -117,13 +115,14 @@ public class MiniDnsResolver extends DNSResolver implements SmackInitializer {
             aResult = resolver.resolve(name, A.class);
             aaaaResult = resolver.resolve(name, AAAA.class);
         } catch (IOException e) {
-            // TODO: Add to failedAddresses.
+            failedAddresses.add(new HostAddress(name, e));
             return null;
         }
 
         if (!aResult.wasSuccessful() && !aaaaResult.wasSuccessful()) {
             // Both results where not successful.
-            // TODO: Report the reasons.
+            failedAddresses.add(new HostAddress(name, getExceptionFrom(aResult)));
+            failedAddresses.add(new HostAddress(name, getExceptionFrom(aaaaResult)));
             return null;
         }
 
@@ -199,4 +198,10 @@ public class MiniDnsResolver extends DNSResolver implements SmackInitializer {
         return false;
     }
 
+    private static ResolutionUnsuccessfulException getExceptionFrom(ResolverResult<?> result) {
+        Question question = result.getQuestion();
+        RESPONSE_CODE responseCode = result.getResponseCode();
+        ResolutionUnsuccessfulException resolutionUnsuccessfulException = new ResolutionUnsuccessfulException(question, responseCode);
+        return resolutionUnsuccessfulException;
+    }
 }
