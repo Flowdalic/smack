@@ -734,6 +734,8 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                         LOGGER.log(Level.WARNING, "Exception", e);
                         ks = null;
                     }
+                } else {
+                    ks.load(null, null);
                 }
             }
 
