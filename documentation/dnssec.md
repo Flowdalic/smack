@@ -3,7 +3,11 @@ DNSSEC and DANE
 
 [Back](index.md)
 
-**DNSSEC and DANE support in Smack is experimental!**
+**DNSSEC and DANE support in Smack and MiniDNS is still in its
+infancy. It should be considered experimental and not ready for
+production use at this time.** We would like to see more thorough
+testing and review by the security community. If you can help, then
+please do not hesitate to contact us.
 
 About
 -----

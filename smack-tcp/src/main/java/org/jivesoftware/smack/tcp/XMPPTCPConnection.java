@@ -691,7 +691,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
             }
             daneVerifier = daneProvider.newInstance();
             if (daneVerifier == null) {
-                throw new IllegalStateException("DANE requested but DANE provider did not return a dane verifier");
+                throw new IllegalStateException("DANE requested but DANE provider did not return a DANE verifier");
             }
         }
 

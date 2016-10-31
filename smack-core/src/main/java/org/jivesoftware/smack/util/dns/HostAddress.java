@@ -69,6 +69,13 @@ public class HostAddress {
         this.inetAddresses = inetAddresses;
     }
 
+    /**
+     * Constructs a new failed HostAddress. This constructor is usually used when the DNS resolution of the domain name
+     * failed for some reason.
+     *
+     * @param fqdn the domain name of the host.
+     * @param e the exception causing the failure.
+     */
     public HostAddress(String fqdn, Exception e) {
         this.fqdn = fqdn;
         this.port = 5222;
