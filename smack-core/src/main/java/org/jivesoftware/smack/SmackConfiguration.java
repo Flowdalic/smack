@@ -17,6 +17,7 @@
 
 package org.jivesoftware.smack;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,6 +84,12 @@ public final class SmackConfiguration {
     private static ParsingExceptionCallback defaultCallback = new ExceptionThrowingCallbackWithHint();
 
     private static HostnameVerifier defaultHostnameVerififer;
+
+    private static File rootCacheDirectory = null;
+
+    private static File globalCacheDirectory = null;
+
+    private static File accountCacheDirectory = null;
 
     /**
      * Returns the Smack version information, eg "1.3.0".
@@ -364,5 +371,8 @@ public final class SmackConfiguration {
 
     public static void setUnknownIqRequestReplyMode(UnknownIqRequestReplyMode unknownIqRequestReplyMode) {
         SmackConfiguration.unknownIqRequestReplyMode = Objects.requireNonNull(unknownIqRequestReplyMode, "Must set mode");
+    }
+
+    public static void setRootCacheDirectory(File rootCacheDirectory) {
     }
 }
