@@ -18,6 +18,7 @@ package org.jivesoftware.smack.util;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -364,6 +365,13 @@ public class XmlStringBuilder implements Appendable, CharSequence, Element {
     public XmlStringBuilder optAttribute(String name, Number number) {
         if (number != null) {
             attribute(name, number.toString());
+        }
+        return this;
+    }
+
+    public XmlStringBuilder optAttribute(String name, URL url) {
+        if (url != null) {
+            attribute(name, url.toExternalForm());
         }
         return this;
     }
