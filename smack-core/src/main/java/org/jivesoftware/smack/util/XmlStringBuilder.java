@@ -635,8 +635,10 @@ public class XmlStringBuilder implements Appendable, CharSequence, Element {
     }
 
     @Override
-    public CharSequence toXML(XmlEnvironment enclosingXmlEnvironment) {
-        StringBuilder res = new StringBuilder();
+    public StringBuilder toXML(XmlEnvironment enclosingXmlEnvironment) {
+        // This is only the potential length, since the actual length depends on the given XmlEnvironment.
+        int potentialLength = length();
+        StringBuilder res = new StringBuilder(potentialLength);
         try {
             appendXmlTo(res, enclosingXmlEnvironment);
         } catch (IOException e) {
@@ -654,7 +656,7 @@ public class XmlStringBuilder implements Appendable, CharSequence, Element {
             else if (csq instanceof XmlNsAttribute) {
                 XmlNsAttribute xmlNsAttribute = (XmlNsAttribute) csq;
                 if (!xmlNsAttribute.value.equals(enclosingXmlEnvironment.getEffectiveNamespace())) {
-                    sb.append(xmlNsAttribute);
+                    appendable.append(xmlNsAttribute);
                     enclosingXmlEnvironment = new XmlEnvironment(xmlNsAttribute.value);
                 }
             }
