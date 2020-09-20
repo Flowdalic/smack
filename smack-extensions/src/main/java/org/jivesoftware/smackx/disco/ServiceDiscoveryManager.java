@@ -49,11 +49,11 @@ import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler.Mode;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.util.CollectionUtil;
 import org.jivesoftware.smack.util.ExtendedAppendable;
 import org.jivesoftware.smack.util.Objects;
+import org.jivesoftware.smack.util.Pair;
 import org.jivesoftware.smack.util.StringUtils;
 
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
@@ -578,6 +578,9 @@ public final class ServiceDiscoveryManager extends Manager {
         return discoverInfo(entityID, null);
     }
 
+    private static final ExpirationCache<Pair<Jid, String>, DiscoverInfo> DISCOVER_INFO_NODE_CACHE = new ExpirationCache<>(
+                    256, 1000 * 30);
+
     /**
      * Returns the discovered information of a given XMPP entity addressed by its JID and
      * note attribute. Use this message only when trying to query information which is not
@@ -595,6 +598,12 @@ public final class ServiceDiscoveryManager extends Manager {
      * @throws InterruptedException if the calling thread was interrupted.
      */
     public DiscoverInfo discoverInfo(Jid entityID, String node) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        Pair<Jid, String> jidAndNode = Pair.createAndInitHashCode(entityID, node);
+        DiscoverInfo result = DISCOVER_INFO_NODE_CACHE.get(jidAndNode);
+        if (result != null) {
+            return result;
+        }
+
         XMPPConnection connection = connection();
 
         // Discover the entity's info
@@ -603,9 +612,9 @@ public final class ServiceDiscoveryManager extends Manager {
                 .setNode(node)
                 .build();
 
-        Stanza result = connection.createStanzaCollectorAndSend(discoInfoRequest).nextResultOrThrow();
-
-        return (DiscoverInfo) result;
+        result = connection.createStanzaCollectorAndSend(discoInfoRequest).nextResultOrThrow();
+        DISCOVER_INFO_NODE_CACHE.put(jidAndNode, result);
+        return result;
     }
 
     /**
@@ -622,6 +631,9 @@ public final class ServiceDiscoveryManager extends Manager {
         return discoverItems(entityID, null);
     }
 
+    private static final ExpirationCache<Pair<Jid, String>, DiscoverItems> DISCOVER_ITEMS_NODE_CACHE = new ExpirationCache<>(
+                    256, 1000 * 30);
+
     /**
      * Returns the discovered items of a given XMPP entity addressed by its JID and
      * note attribute. Use this message only when trying to query information which is not
@@ -636,14 +648,21 @@ public final class ServiceDiscoveryManager extends Manager {
      * @throws InterruptedException if the calling thread was interrupted.
      */
     public DiscoverItems discoverItems(Jid entityID, String node) throws NoResponseException, XMPPErrorException, NotConnectedException, InterruptedException {
+        Pair<Jid, String> jidAndNode = Pair.createAndInitHashCode(entityID, node);
+        DiscoverItems result = DISCOVER_ITEMS_NODE_CACHE.get(jidAndNode);
+        if (result != null) {
+            return result;
+        }
+
         // Discover the entity's items
         DiscoverItems disco = new DiscoverItems();
         disco.setType(IQ.Type.get);
         disco.setTo(entityID);
         disco.setNode(node);
 
-        Stanza result = connection().createStanzaCollectorAndSend(disco).nextResultOrThrow();
-        return (DiscoverItems) result;
+        result = connection().createStanzaCollectorAndSend(disco).nextResultOrThrow();
+        DISCOVER_ITEMS_NODE_CACHE.put(jidAndNode, result);
+        return result;
     }
 
     /**
